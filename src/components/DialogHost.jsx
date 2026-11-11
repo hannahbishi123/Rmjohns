@@ -254,7 +254,7 @@ const strengthColors = ['', '#e53935', '#fb8c00', '#f9a825', '#43a047', '#1b5e20
 const ADMIN_SETUP_CODE = 'rmjohns2026'
 
 function AccountDialog({ dialog, onClose, notify }) {
-  const { registerAccount } = useApp()
+  const { registerAccount, navigate } = useApp()
   const [mode,      setMode]      = useState(dialog.mode || 'register')
   const [role,      setRole]      = useState('Customer')
   const [setupCode, setSetupCode] = useState('')
@@ -309,17 +309,24 @@ function AccountDialog({ dialog, onClose, notify }) {
     try {
       setLoading(true)
       const normalizedPhone = phoneF.value.trim().replace(/[ -]/g, '')
-      await registerAccount({
+      const result = await registerAccount({
         name:     nameF.value.trim(),
         email:    emailF.value.trim().toLowerCase(),
         phone:    normalizedPhone,
         password: passF.value,
         role,
       })
+
+      // Show success then close the dialog — loginAs() inside registerAccount
+      // already set the page, but we explicitly navigate to make it reliable
+      const roleLanding = { Admin: 'Overview', Staff: 'Staff Dashboard', Customer: 'Home' }
+      const destination  = roleLanding[result?.role || role] || 'Home'
+
       notify(`${role} account created. Welcome, ${nameF.value.trim().split(' ')[0]}!`, {
-        icon: 'success', title: 'Account created',
+        icon: 'success', title: 'Account created', timer: 2000,
       })
       onClose()
+      navigate(destination)
     } catch (err) {
       notify(err.message || 'Could not create account. Please try again.', {
         icon: 'error', title: 'Registration failed',
@@ -537,7 +544,6 @@ function AccountDialog({ dialog, onClose, notify }) {
       </form>
     </Modal>
   )
-}
 }
 
 function FoodDetailsDialog({ item, onClose, setCart, notify }) {
