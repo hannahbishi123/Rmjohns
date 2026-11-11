@@ -1,0 +1,27 @@
+﻿{
+  "name": "RMJohn's EATERY",
+  "short_name": "RMJohn's",
+  "description": "Online ordering, point of sale, staff tools, and guest rewards — all in one connected eatery system.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbfcf8",
+  "theme_color": "#173b2a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/rmjohns.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["food", "shopping", "business"],
+  "lang": "en-PH",
+  "scope": "/"
+}

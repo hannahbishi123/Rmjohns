@@ -1,0 +1,8 @@
+import { useApp } from '../context/AppContext'
+import { Pagination, StatusBadge, usePagination } from '../components/shared'
+
+export default function StaffPage() {
+  const { staff, setDialog } = useApp()
+  const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination(staff, 6)
+  return <section className="panel full-panel"><div className="panel-heading"><div><h2>Team directory</h2><p>{staff.length} team members · {staff.filter((person) => person.status === 'Present').length} active today</p></div><button className="button button-dark" onClick={() => setDialog({ type: 'add', entity: 'staff' })}>＋ <span>Add staff</span></button></div><div className="table-scroll"><table className="data-table"><thead><tr><th>STAFF MEMBER</th><th>STAFF ID</th><th>POSITION</th><th>STATUS</th><th>CONTACT</th><th>ACTIONS</th></tr></thead><tbody>{paginatedItems.map((person) => <tr key={person.id}><td><div className="staff-name"><span className="avatar small-avatar">{person.name.split(' ').map((part) => part[0]).join('')}</span><strong>{person.name}</strong></div></td><td>{person.id}</td><td>{person.role}</td><td><StatusBadge status={person.status} /></td><td>{person.contact || `+63 917 ••• ${person.id.slice(-3)}`}</td><td><div className="row-actions"><button aria-label={`Edit ${person.name}`} onClick={() => setDialog({ type: 'edit-staff', staff: person })}>✎</button><button aria-label={`Deactivate ${person.name}`} onClick={() => setDialog({ type: 'delete-staff', staff: person })}>⌫</button></div></td></tr>)}</tbody></table></div><Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={(page) => setCurrentPage(page)} /></section>
+}

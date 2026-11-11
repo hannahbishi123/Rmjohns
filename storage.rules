@@ -1,0 +1,23 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ── Menu images ────────────────────────────────────────────────────────────
+    // Any authenticated user can read menu images (staff, customer, admin).
+    // Only authenticated users can write — the Admin role check is enforced
+    // in the app layer (MenuForm is only shown to Admin role).
+    match /menu_images/{imageFile} {
+      allow read:  if true;                    // Public read — anyone can view menu images
+      allow write: if request.auth != null     // Must be signed in
+                   && request.resource.size < 5 * 1024 * 1024   // Max 5 MB
+                   && request.resource.contentType.matches('image/.*'); // Images only
+      allow delete: if request.auth != null;  // Signed-in users can delete (admin use)
+    }
+
+    // ── Everything else — deny by default ─────────────────────────────────────
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

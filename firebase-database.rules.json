@@ -1,0 +1,88 @@
+{
+  "rules": {
+    "eateries": {
+
+      "menu_items": {
+        ".read":  true,
+        ".write": "auth != null"
+      },
+
+      "orders": {
+        ".read":  "auth != null",
+        ".write": "auth != null"
+      },
+
+      "payments": {
+        ".read":  "auth != null",
+        ".write": "auth != null"
+      },
+
+      "customers": {
+        ".read":  "auth != null",
+        ".write": "auth != null"
+      },
+
+      "staff": {
+        ".read":  "auth != null",
+        ".write": "auth != null"
+      },
+
+      "rewards": {
+        ".read":  true,
+        ".write": "auth != null"
+      },
+
+      "promotions": {
+        ".read":  true,
+        ".write": "auth != null"
+      },
+
+      "notifications": {
+        ".read":  "auth != null",
+        ".write": "auth != null"
+      },
+
+      "loyalty_transactions": {
+        ".read":  "auth != null",
+        ".write": "auth != null"
+      },
+
+      "attendance_events": {
+        ".read":  "auth != null",
+        ".write": "auth != null"
+      },
+
+      "profile": {
+        ".read":  true,
+        ".write": "auth != null"
+      },
+
+      "points": {
+        ".read":  true,
+        ".write": "auth != null"
+      },
+
+      "syncMeta": {
+        ".read":  true,
+        ".write": "auth != null"
+      },
+
+      "user_accounts": {
+        "$uid": {
+          ".read":  "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+
+    "backups": {
+      ".read":  "auth != null",
+      ".write": "auth != null"
+    },
+
+    "$other": {
+      ".read":  false,
+      ".write": false
+    }
+  }
+}

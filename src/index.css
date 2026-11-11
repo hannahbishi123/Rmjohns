@@ -1,0 +1,71 @@
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: #f4f5f0;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  color: #fff;
+  background: #2d5a3d;
+}
+
+.database-startup {
+  box-sizing: border-box;
+  display: grid;
+  min-height: 100vh;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  padding: 32px;
+  color: #1b3b2b;
+  text-align: center;
+}
+
+.database-startup .brand-logo {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.database-startup h1,
+.database-startup p {
+  max-width: 620px;
+  margin: 0;
+}
+
+.database-startup p {
+  color: #526157;
+  line-height: 1.6;
+}
+
+.database-startup code {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #e8ebe4;
+}
+
+.database-save-warning {
+  padding: 12px 22px;
+  color: #6c301e;
+  background: #fff0e8;
+  border-bottom: 1px solid #e7c0ae;
+  font-size: 13px;
+}

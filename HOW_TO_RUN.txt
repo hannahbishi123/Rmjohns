@@ -1,0 +1,140 @@
+================================================
+  RMJohn's Eateries System — How To Run
+================================================
+
+DATABASE ARCHITECTURE
+---------------------
+This system uses TWO databases that stay in sync automatically:
+
+1. Local MySQL (XAMPP) — Source of Truth
+   - Primary data storage
+   - Must be running for full local functionality
+   - Located at localhost:3306
+
+2. Firebase Realtime Database — Live Cloud Sync
+   - Every save writes to BOTH MySQL AND Firebase simultaneously
+   - Powers the deployed site and real-time listeners
+   - Project: rmjohns-eateries
+   - URL: https://rmjohns-eateries-default-rtdb.firebaseio.com
+
+HOW DATA SYNC WORKS
+--------------------
+Every time you save data in the app:
+  - The backend writes to MySQL first (local, reliable)
+  - Then immediately syncs to Firebase (live cloud)
+  - If Firebase is temporarily unreachable, the write is queued
+    and retried every 30 seconds automatically
+  - The frontend also writes directly to Firebase as a backup path
+
+So running the app locally keeps BOTH databases up to date.
+
+
+FIRST TIME SETUP (do this once)
+---------------------------------
+1. Install XAMPP if you haven't:
+   Download from: https://www.apachefriends.org
+   Install it (default location is fine).
+
+2. Open XAMPP Control Panel and click START next to MySQL.
+   (You can also start Apache if you want phpMyAdmin.)
+
+3. Double-click SETUP.bat in this folder.
+   - It will install Node.js automatically (if needed).
+   - It will install project dependencies.
+   - It will try to import the database automatically.
+   - If the database import fails, do it manually (see below).
+
+4. MANUAL DATABASE IMPORT (if SETUP.bat couldn't do it):
+   a. Open your browser and go to: http://localhost/phpmyadmin
+   b. Click "Import" in the top menu.
+   c. Click "Choose File" and pick: database\eateries_db.sql
+   d. Click "Go". Wait for it to finish.
+
+
+EVERY TIME YOU WANT TO RUN THE APP
+------------------------------------
+1. Open XAMPP Control Panel → click START next to MySQL.
+
+2. Double-click START.bat in this folder.
+   - It starts the backend API (MySQL + Firebase sync)
+   - It starts the Vite frontend dev server
+   - Your browser opens automatically to http://127.0.0.1:5173
+
+   If the browser doesn't open automatically, go to:
+     http://127.0.0.1:5173
+
+3. To STOP the app: close both terminal windows that opened.
+
+ALTERNATIVE: Run from terminal
+   npm run dev        ← starts both backend + frontend together
+   npm run dev:server ← backend only (port 3001)
+   npm run dev:client ← frontend only (port 5173, opens browser)
+
+
+DEMO LOGIN ACCOUNTS
+--------------------
+All accounts use the password: demo1234
+
+  Role       | Username / Email
+  -----------|---------------------------
+  Admin      | admin@rmjohns.com
+  Staff      | staff@rmjohns.com
+  Customer   | maureen.santos@email.com
+
+  (Customer accounts can also register from the app.)
+
+
+TROUBLESHOOTING
+----------------
+- "Database error" on the screen:
+  MySQL is not running. Open XAMPP and start MySQL.
+
+- "npm is not recognized":
+  Run SETUP.bat again. Node.js may need to finish installing.
+
+- App loads but data is wrong:
+  Re-import the database via phpMyAdmin (step 4 above).
+
+- PORT 3001 already in use:
+  Another instance is running. Close all terminal windows,
+  then try START.bat again.
+
+- Data not syncing to Firebase:
+  Check the API terminal window for sync errors.
+  The app will retry automatically every 30 seconds.
+
+
+FILE LOCATIONS
+---------------
+  SETUP.bat          → Run once to install everything
+  START.bat          → Run every time to start the app
+  DEPLOY.bat         → Deploy to Firebase Hosting (production)
+  database\eateries_db.sql  → The database structure
+  .env               → Database and Firebase connection settings
+  backend\           → The API server (MySQL + Firebase sync)
+  src\               → The frontend app code
+
+
+DEPLOYMENT (Production)
+------------------------
+To deploy the frontend to Firebase Hosting:
+
+1. Double-click DEPLOY.bat
+   - This will build the project
+   - Deploy to Firebase Hosting
+   - Your app will be live at: https://rmjohns-eateries.web.app
+
+2. For full online access, you'll also need to:
+   - Deploy the backend to a cloud service (Railway, Render, etc.)
+   - Or keep the backend running locally with port forwarding
+
+See DEPLOYMENT_GUIDE.md for detailed deployment instructions.
+
+
+URLS
+-----
+Local Development:  http://127.0.0.1:5173
+Production:         https://rmjohns-eateries.web.app
+Firebase Console:   https://console.firebase.google.com/project/rmjohns-eateries
+
+================================================

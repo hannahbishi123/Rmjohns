@@ -1,0 +1,29 @@
+import mysql from 'mysql2/promise'
+import { config } from './config.js'
+
+export const pool = mysql.createPool({
+  host: config.database.host,
+  port: config.database.port,
+  user: config.database.user,
+  password: config.database.password,
+  database: config.database.name,
+  waitForConnections: true,
+  connectionLimit: 10,
+  decimalNumbers: true,
+  timezone: 'Z',
+})
+
+export async function withTransaction(operation) {
+  const connection = await pool.getConnection()
+  try {
+    await connection.beginTransaction()
+    const result = await operation(connection)
+    await connection.commit()
+    return result
+  } catch (error) {
+    await connection.rollback()
+    throw error
+  } finally {
+    connection.release()
+  }
+}

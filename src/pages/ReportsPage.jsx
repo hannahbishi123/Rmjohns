@@ -1,0 +1,37 @@
+import { useState } from 'react'
+import { useApp } from '../context/AppContext'
+import { OrdersTable, Pagination, StatusBadge, usePagination } from '../components/shared'
+import { money } from '../data/mockData'
+import { SalesReport } from './SalesPage'
+
+const reportTypes = ['Sales report', 'Order report', 'Menu report', 'Customer report', 'Staff attendance', 'Loyalty report']
+
+export default function ReportsPage() {
+  const { orders, menu, customers, staff, loyaltyHistory, payments } = useApp()
+  const [reportType, setReportType] = useState(reportTypes[0])
+  const [search, setSearch] = useState('')
+  const [dateRange, setDateRange] = useState('This month')
+  const term = search.toLowerCase()
+  const visibleOrders = orders.filter((order) => {
+    const orderDate = order.date || '2026-09-29'
+    const matchesDate = dateRange === 'All time' || (dateRange === 'Today' ? orderDate === '2026-09-29' : dateRange === 'This week' ? orderDate >= '2026-09-23' : orderDate >= '2026-09-01')
+    return matchesDate && `${order.id} ${order.customer} ${order.items}`.toLowerCase().includes(term)
+  })
+  const visibleMenu = menu.filter((item) => `${item.name} ${item.category}`.toLowerCase().includes(term))
+  const visibleCustomers = customers.filter((customer) => `${customer.name} ${customer.email} ${customer.id}`.toLowerCase().includes(term))
+  const visibleStaff = staff.filter((person) => `${person.name} ${person.role} ${person.id}`.toLowerCase().includes(term))
+  const visibleLoyalty = loyaltyHistory.filter((entry) => entry.detail.toLowerCase().includes(term))
+  const orderPagination = usePagination(visibleOrders, 6)
+  const menuPagination = usePagination(visibleMenu, 6)
+  const customerPagination = usePagination(visibleCustomers, 6)
+  const staffPagination = usePagination(visibleStaff, 6)
+  const loyaltyPagination = usePagination(visibleLoyalty, 6)
+  if (reportType === 'Sales report') return <><div className="report-type-toolbar"><label>Report type<select value={reportType} onChange={(event) => setReportType(event.target.value)}>{reportTypes.map((type) => <option key={type}>{type}</option>)}</select></label></div><SalesReport page="Reports" /></>
+  return <><div className="filter-row"><label className="date-filter"><span>▥</span><select value={dateRange} onChange={(event) => setDateRange(event.target.value)}><option>Today</option><option>This week</option><option>This month</option><option>All time</option></select></label><label className="filter-select report-type-select">Report<select value={reportType} onChange={(event) => setReportType(event.target.value)}>{reportTypes.map((type) => <option key={type}>{type}</option>)}</select></label><div className="search-box"><span>⌕</span><input placeholder={`Search ${reportType.toLowerCase()}...`} value={search} maxLength="120" onChange={(event) => setSearch(event.target.value)} /></div><button className="button button-outline" onClick={() => window.print()}>▧ <span>Print / export</span></button></div>
+    {reportType === 'Order report' && <><section className="stat-grid report-stats"><div className="stat-card"><div className="stat-top">ORDERS</div><div className="stat-value">{visibleOrders.length}</div><div className="stat-meta">Current selection</div></div><div className="stat-card"><div className="stat-top">COMPLETED</div><div className="stat-value">{visibleOrders.filter((order) => order.status === 'Completed').length}</div><div className="stat-meta">Orders completed</div></div><div className="stat-card"><div className="stat-top">CANCELLED / REFUNDED</div><div className="stat-value">{visibleOrders.filter((order) => order.status === 'Cancelled' || order.payment === 'Refunded').length}</div><div className="stat-meta">Current selection</div></div><div className="stat-card"><div className="stat-top">PAYMENTS</div><div className="stat-value">{payments.length}</div><div className="stat-meta">Linked records</div></div></section><section className="panel full-panel"><OrdersTable orders={orderPagination.paginatedItems} /><Pagination currentPage={orderPagination.currentPage} totalPages={orderPagination.totalPages} onPageChange={(page) => orderPagination.setCurrentPage(page)} /></section></>}
+    {reportType === 'Menu report' && <section className="panel full-panel"><div className="panel-heading"><div><h2>Product performance</h2><p>Menu availability and sold quantity from linked orders · {dateRange.toLowerCase()}</p></div></div><table className="data-table"><thead><tr><th>ITEM</th><th>CATEGORY</th><th>PRICE</th><th>QTY SOLD</th><th>AVAILABILITY</th></tr></thead><tbody>{menuPagination.paginatedItems.map((item) => { const sold = visibleOrders.flatMap((order) => order.products || []).filter((line) => line.id === item.id).reduce((sum, line) => sum + line.quantity, 0); return <tr key={item.id}><td><strong>{item.name}</strong></td><td>{item.category}</td><td>{money(item.price)}</td><td>{sold}</td><td>{item.available ? 'Available' : 'Unavailable'}</td></tr> })}</tbody></table><Pagination currentPage={menuPagination.currentPage} totalPages={menuPagination.totalPages} onPageChange={(page) => menuPagination.setCurrentPage(page)} /></section>}
+    {reportType === 'Customer report' && <section className="panel full-panel"><div className="panel-heading"><div><h2>Customer summary</h2><p>Orders, lifetime spend, and loyalty points</p></div></div><table className="data-table"><thead><tr><th>CUSTOMER</th><th>EMAIL</th><th>ORDERS</th><th>SPEND</th><th>POINTS</th></tr></thead><tbody>{customerPagination.paginatedItems.map((customer) => <tr key={customer.id}><td>{customer.name}</td><td>{customer.email}</td><td>{customer.orders}</td><td>{money(customer.spend)}</td><td>{customer.points}</td></tr>)}</tbody></table><Pagination currentPage={customerPagination.currentPage} totalPages={customerPagination.totalPages} onPageChange={(page) => customerPagination.setCurrentPage(page)} /></section>}
+    {reportType === 'Staff attendance' && <section className="panel full-panel"><div className="panel-heading"><div><h2>Attendance report</h2><p>Staff status and recorded time-in values</p></div></div><table className="data-table"><thead><tr><th>STAFF</th><th>ID</th><th>POSITION</th><th>TIME IN</th><th>STATUS</th></tr></thead><tbody>{staffPagination.paginatedItems.map((person) => <tr key={person.id}><td>{person.name}</td><td>{person.id}</td><td>{person.role}</td><td>{person.time}</td><td><StatusBadge status={person.status} /></td></tr>)}</tbody></table><Pagination currentPage={staffPagination.currentPage} totalPages={staffPagination.totalPages} onPageChange={(page) => staffPagination.setCurrentPage(page)} /></section>}
+    {reportType === 'Loyalty report' && <section className="panel full-panel"><div className="panel-heading"><div><h2>Loyalty activity</h2><p>Point awards and redemptions</p></div></div><table className="data-table"><thead><tr><th>DATE</th><th>ACTIVITY</th><th>POINTS</th><th>TYPE</th></tr></thead><tbody>{loyaltyPagination.paginatedItems.map((entry) => <tr key={entry.id}><td>{entry.date}</td><td>{entry.detail}</td><td>{Math.abs(entry.delta)}</td><td>{entry.delta >= 0 ? 'Earned' : 'Redeemed'}</td></tr>)}</tbody></table><Pagination currentPage={loyaltyPagination.currentPage} totalPages={loyaltyPagination.totalPages} onPageChange={(page) => loyaltyPagination.setCurrentPage(page)} /></section>}
+  </>
+}
