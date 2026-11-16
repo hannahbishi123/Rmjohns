@@ -1,5 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
- * validation.js — reusable live-validation rules and useField hook
+ * validation.jsx — reusable live-validation rules and useField hook
  *
  * Usage:
  *   const email = useField('', rules.email)

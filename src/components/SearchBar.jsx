@@ -15,7 +15,7 @@
  * - Clicking a result navigates to Menu and pre-applies the search query
  * - Clicking a category chip navigates to Menu and pre-applies the category filter
  */
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
 import { money } from '../data/mockData'
 import { getCategoryIcon } from './shared'

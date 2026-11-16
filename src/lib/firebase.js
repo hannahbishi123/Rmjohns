@@ -8,6 +8,7 @@ import {
   sendPasswordResetEmail,
 } from 'firebase/auth'
 import { getDatabase, ref, set, get, update, onValue, off } from 'firebase/database'
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore'
 import {
   getStorage,
   ref as storageRef,
@@ -28,9 +29,10 @@ const firebaseConfig = {
 
 // Only initialize once
 const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
-const db      = getDatabase(firebaseApp)
-const auth    = getAuth(firebaseApp)
-const storage = getStorage(firebaseApp)
+const db        = getDatabase(firebaseApp)
+const firestore = getFirestore(firebaseApp)
+const auth      = getAuth(firebaseApp)
+const storage   = getStorage(firebaseApp)
 
 // ── Auth helpers ──────────────────────────────────────────────────────────────
 
@@ -121,6 +123,32 @@ export async function firebaseGet(path) {
   } catch (error) {
     console.error('[firebase] read failed:', error.message)
     return null
+  }
+}
+
+/**
+ * Read a user profile & role document from Cloud Firestore (`users/{uid}`).
+ */
+export async function firestoreGetUserProfile(uid) {
+  if (!uid) return null
+  try {
+    const snap = await getDoc(doc(firestore, 'users', String(uid)))
+    return snap.exists() ? snap.data() : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Write or merge a user profile & role document into Cloud Firestore (`users/{uid}`).
+ */
+export async function firestoreSetUserProfile(uid, profileData) {
+  if (!uid || !profileData) return false
+  try {
+    await setDoc(doc(firestore, 'users', String(uid)), profileData, { merge: true })
+    return true
+  } catch {
+    return false
   }
 }
 
@@ -276,4 +304,4 @@ export async function deleteMenuImage(downloadURL) {
   }
 }
 
-export { db, auth, storage, firebaseApp }
+export { db, firestore, auth, storage, firebaseApp }

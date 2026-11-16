@@ -92,6 +92,7 @@ const categoryIcons = {
   ),
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function getCategoryIcon(category) {
   return categoryIcons[category] || categoryIcons.default
 }
@@ -180,33 +181,184 @@ export function CartLine({ item, changeQuantity }) {
   return <div className="cart-line"><FoodThumb item={item} small /><div className="cart-line-info"><strong>{item.name}</strong><small>{money(item.price)}</small><div className="quantity-control"><button onClick={() => changeQuantity(item.id, -1)} aria-label="Decrease quantity">−</button><span>{item.quantity}</span><button onClick={() => changeQuantity(item.id, 1)} aria-label="Increase quantity">＋</button></div></div><strong>{money(item.price * item.quantity)}</strong></div>
 }
 
-// This custom hook is colocated with the shared table components.
-// eslint-disable-next-line react-refresh/only-export-components
-export function usePagination(items, pageSize = 8) {
-  const [currentPage, setCurrentPage] = useState(1)
-  const totalPages = Math.max(1, Math.ceil((items?.length || 0) / pageSize))
-  const visiblePage = Math.min(currentPage, totalPages)
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
 
-  const paginatedItems = useMemo(() => {
-    const start = (visiblePage - 1) * pageSize
-    return (items || []).slice(start, start + pageSize)
-  }, [items, visiblePage, pageSize])
+function buildPageRange(currentPage, totalPages) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, idx) => idx + 1)
+  }
+  const pages = [1]
+  const left = Math.max(2, currentPage - 1)
+  const right = Math.min(totalPages - 1, currentPage + 1)
 
-  return { currentPage: visiblePage, setCurrentPage, totalPages, paginatedItems }
+  if (left > 2) {
+    pages.push('ellipsis-left')
+  }
+  for (let p = left; p <= right; p++) {
+    pages.push(p)
+  }
+  if (right < totalPages - 1) {
+    pages.push('ellipsis-right')
+  }
+  pages.push(totalPages)
+  return pages
 }
 
-export function Pagination({ currentPage, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null
+// This custom hook is colocated with the shared table components.
+// eslint-disable-next-line react-refresh/only-export-components
+export function usePagination(items, initialPageSize = 10) {
+  const defaultSize = PAGE_SIZE_OPTIONS.includes(initialPageSize) ? initialPageSize : 10
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSizeState] = useState(defaultSize)
 
-  const pages = Array.from({ length: totalPages }, (_, index) => index + 1)
+  const totalItems = items?.length || 0
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
+  const visiblePage = Math.min(Math.max(1, currentPage), totalPages)
 
-  return <div className="pagination" aria-label="Table pagination">
-    <button type="button" className="pagination-button" disabled={currentPage === 1} onClick={() => onPageChange(currentPage - 1)}>Previous</button>
-    <div className="pagination-pages">
-      {pages.map((page) => <button key={page} type="button" className={`pagination-page ${page === currentPage ? 'active' : ''}`} onClick={() => onPageChange(page)}>{page}</button>)}
+  const startIndex = totalItems === 0 ? 0 : (visiblePage - 1) * pageSize
+  const endIndex = Math.min(startIndex + pageSize, totalItems)
+  const startEntry = totalItems === 0 ? 0 : startIndex + 1
+  const endEntry = endIndex
+
+  const paginatedItems = useMemo(() => {
+    return (items || []).slice(startIndex, endIndex)
+  }, [items, startIndex, endIndex])
+
+  function setPageSize(nextSize) {
+    const parsed = Number(nextSize)
+    if (PAGE_SIZE_OPTIONS.includes(parsed)) {
+      setPageSizeState(parsed)
+      setCurrentPage(1)
+    }
+  }
+
+  return {
+    currentPage: visiblePage,
+    setCurrentPage,
+    onPageChange: setCurrentPage,
+    pageSize,
+    setPageSize,
+    onPageSizeChange: setPageSize,
+    totalPages,
+    totalItems,
+    startEntry,
+    endEntry,
+    paginatedItems,
+  }
+}
+
+export function Pagination({
+  currentPage = 1,
+  totalPages = 1,
+  totalItems,
+  pageSize = 10,
+  startEntry,
+  endEntry,
+  onPageChange,
+  onPageSizeChange,
+}) {
+  const resolvedTotal = typeof totalItems === 'number' ? totalItems : totalPages * pageSize
+  const resolvedStart = typeof startEntry === 'number'
+    ? startEntry
+    : (resolvedTotal === 0 ? 0 : (currentPage - 1) * pageSize + 1)
+  const resolvedEnd = typeof endEntry === 'number'
+    ? endEntry
+    : Math.min(currentPage * pageSize, resolvedTotal)
+
+  if (resolvedTotal === 0 && totalPages <= 1) return null
+
+  const pageTokens = buildPageRange(currentPage, totalPages)
+
+  return (
+    <div className="pagination" role="navigation" aria-label="Table pagination">
+      {/* Left: Record summary & per-page selector */}
+      <div className="pagination-meta">
+        <span className="pagination-info">
+          Showing <strong>{resolvedStart}&ndash;{resolvedEnd}</strong> of <strong>{resolvedTotal}</strong> entries
+        </span>
+        {onPageSizeChange && (
+          <label className="pagination-size-label">
+            <span>Rows per page:</span>
+            <select
+              className="pagination-size-select"
+              value={pageSize}
+              onChange={(e) => onPageSizeChange(Number(e.target.value))}
+              aria-label="Records per page"
+            >
+              {PAGE_SIZE_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
+
+      {/* Right: First, Prev, Page Numbers + Ellipsis, Next, Last */}
+      <div className="pagination-controls">
+        <button
+          type="button"
+          className="pagination-button pagination-nav-btn"
+          disabled={currentPage <= 1}
+          onClick={() => onPageChange?.(1)}
+          aria-label="First page"
+          title="First page"
+        >
+          &laquo; First
+        </button>
+        <button
+          type="button"
+          className="pagination-button pagination-nav-btn"
+          disabled={currentPage <= 1}
+          onClick={() => onPageChange?.(currentPage - 1)}
+          aria-label="Previous page"
+          title="Previous page"
+        >
+          &lsaquo; Prev
+        </button>
+
+        <div className="pagination-pages">
+          {pageTokens.map((token) =>
+            typeof token === 'string' ? (
+              <span key={token} className="pagination-ellipsis" aria-hidden="true">
+                &hellip;
+              </span>
+            ) : (
+              <button
+                key={token}
+                type="button"
+                className={`pagination-page ${token === currentPage ? 'active' : ''}`}
+                aria-current={token === currentPage ? 'page' : undefined}
+                onClick={() => onPageChange?.(token)}
+              >
+                {token}
+              </button>
+            ),
+          )}
+        </div>
+
+        <button
+          type="button"
+          className="pagination-button pagination-nav-btn"
+          disabled={currentPage >= totalPages}
+          onClick={() => onPageChange?.(currentPage + 1)}
+          aria-label="Next page"
+          title="Next page"
+        >
+          Next &rsaquo;
+        </button>
+        <button
+          type="button"
+          className="pagination-button pagination-nav-btn"
+          disabled={currentPage >= totalPages}
+          onClick={() => onPageChange?.(totalPages)}
+          aria-label="Last page"
+          title="Last page"
+        >
+          Last &raquo;
+        </button>
+      </div>
     </div>
-    <button type="button" className="pagination-button" disabled={currentPage === totalPages} onClick={() => onPageChange(currentPage + 1)}>Next</button>
-  </div>
+  )
 }
 
 export function Modal({ onClose, children }) {

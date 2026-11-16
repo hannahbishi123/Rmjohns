@@ -112,7 +112,7 @@ function SyncDirectionCard({ from, to, active, description, pending = 0 }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function SettingsPage() {
-  const { notify, preferences, setPreferences, firebaseConnected, confirmAction } = useApp()
+  const { notify, preferences, setPreferences, firebaseConnected, confirmAction, setDialog, swalShowLoading, swalCloseLoading } = useApp()
   const defaults = { orders: true, attendance: true, loyalty: false, receipts: true }
 
   const [syncing, setSyncing]       = useState(false)
@@ -159,15 +159,19 @@ export default function SettingsPage() {
   }
 
   async function runInitialSync() {
+    if (syncing) return
     setSyncing(true)
     setSyncResult(null)
+    swalShowLoading('Synchronizing database…', 'Pushing local MySQL records to Firebase Realtime Database.')
     try {
       const result = await apiRequest('/api/sync/initial', { method: 'POST' })
+      swalCloseLoading()
       setSyncResult({ ok: true, message: result.message, synced: result.synced })
       notify(result.message, { icon: 'success', title: 'MySQL → Firebase sync complete' })
       await loadStatus()
       await loadLog()
     } catch (error) {
+      swalCloseLoading()
       setSyncResult({ ok: false, message: error.message })
       notify(error.message, { icon: 'error', title: 'Sync failed' })
     } finally {
@@ -176,16 +180,20 @@ export default function SettingsPage() {
   }
 
   async function flushQueue() {
+    if (syncing) return
     setSyncing(true)
     setSyncResult(null)
+    swalShowLoading('Flushing sync queue…', 'Retrying pending Firebase synchronization records.')
     try {
       const result = await apiRequest('/api/sync/flush', { method: 'POST' })
+      swalCloseLoading()
       const msg = `Flushed ${result.flushed} pending record(s) to Firebase.`
       setSyncResult({ ok: true, message: msg })
       notify(msg, { icon: 'success', title: 'Queue flushed' })
       await loadStatus()
       await loadLog()
     } catch (error) {
+      swalCloseLoading()
       setSyncResult({ ok: false, message: error.message })
       notify(error.message, { icon: 'error', title: 'Flush failed' })
     } finally {
@@ -538,18 +546,23 @@ export default function SettingsPage() {
         <div className="panel-heading">
           <div>
             <h2>Account access</h2>
-            <p>Role access is validated against Firebase and the database.</p>
+            <p>Role access is validated against Firebase Authentication, Cloud Firestore, and MySQL.</p>
           </div>
+          <button
+            type="button"
+            className="button button-dark"
+            onClick={() => setDialog({ type: 'account', mode: 'register' })}
+          >
+            ＋ Provision Admin / Staff Account
+          </button>
         </div>
         <p style={{ fontSize: 12.5, color: '#637068', margin: '0 0 12px', lineHeight: 1.6 }}>
-          Customer passwords are stored as one-way hashes in MySQL. Staff and Admin accounts
-          are created by an Admin using the privileged setup code. Firebase Auth is used for
-          session management on both localhost and the live domain.
+          Passwords are stored as one-way bcrypt hashes in MySQL and verified via Firebase Authentication.
+          Only an authenticated Administrator can create additional Staff or Admin accounts.
         </p>
         <p style={{ fontSize: 12.5, color: '#637068', margin: 0, lineHeight: 1.6 }}>
-          To create or manage accounts: use the <strong>Staff</strong> page (staff) or the
-          <strong> Register</strong> flow (customers). Role changes must be made in MySQL
-          and re-synced to Firebase using <strong>Sync MySQL → Firebase</strong> above.
+          User profiles and roles are automatically synchronized across Firebase Authentication custom claims,
+          Cloud Firestore (<code>users/&#123;uid&#125;</code>), Firebase Realtime Database, and MySQL.
         </p>
       </section>
 

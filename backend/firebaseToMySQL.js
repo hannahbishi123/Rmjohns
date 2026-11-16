@@ -193,8 +193,7 @@ async function handleRewards(snapshot) {
        VALUES (?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
          name=VALUES(name), description=VALUES(description),
-         points_required=VALUES(points_required), available=VALUES(available),
-         firebase_sync_status='synced', firebase_synced_at=NOW()`,
+         points_required=VALUES(points_required), available=VALUES(available)`,
       [r.id, r.name, r.description || '', r.points || 0, r.available ? 1 : 0],
       'handleRewards',
     )

@@ -26,8 +26,8 @@ export default function AttendancePage() {
     recordStaffScan(person.id, action)
   }
 
-  const history = [...scanEvents].slice(0, 6)
-  const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination(staff, 6)
+  const historyPagination = usePagination(scanEvents, 10)
+  const staffPagination = usePagination(staff, 10)
 
   return <>
     <section className="attendance-tracker panel">
@@ -84,7 +84,7 @@ export default function AttendancePage() {
             </tr>
           </thead>
           <tbody>
-            {paginatedItems.map((person) => (
+            {staffPagination.paginatedItems.map((person) => (
               <tr key={person.id}>
                 <td>
                   <div className="staff-name">
@@ -107,7 +107,7 @@ export default function AttendancePage() {
           </tbody>
         </table>
       </div>
-      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={(page) => setCurrentPage(page)} />
+      <Pagination {...staffPagination} />
     </section>
 
     <section className="panel attendance-history-panel">
@@ -119,7 +119,7 @@ export default function AttendancePage() {
       </div>
 
       <div className="attendance-history-list">
-        {history.map((entry) => (
+        {historyPagination.paginatedItems.map((entry) => (
           <div className="history-item" key={entry.id}>
             <div className="history-bullet" />
             <div className="history-copy">
@@ -130,6 +130,7 @@ export default function AttendancePage() {
           </div>
         ))}
       </div>
+      <Pagination {...historyPagination} />
     </section>
   </>
 }

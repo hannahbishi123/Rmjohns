@@ -15,7 +15,7 @@
  */
 
 import { pool } from './database.js'
-import { firebaseReady, getFirebaseStatus } from './firebase.js'
+import { firebaseReady, getFirebaseStatus, writeFirestoreUserRecord } from './firebase.js'
 import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
@@ -330,6 +330,7 @@ export async function syncUserAccount(uid, accountData) {
   if (!uid) return false
   // user_accounts in Firebase are keyed by uid, not a MySQL integer PK,
   // so we bypass the MySQL sync-status columns (they don't exist on this path).
+  await writeFirestoreUserRecord(uid, accountData).catch(() => {})
   return pushToFirebase('user_accounts', uid, accountData, 'upsert')
 }
 
@@ -353,7 +354,7 @@ export async function syncUserAccountByEmail(email, uid) {
     )
     const account = rows[0]
     if (!account) return false
-    return pushToFirebase('user_accounts', uid, {
+    const record = {
       uid,
       username:  account.username,
       email:     account.email,
@@ -361,7 +362,9 @@ export async function syncUserAccountByEmail(email, uid) {
       phone:     account.contact || '',
       role:      account.role,
       updatedAt: now(),
-    }, 'upsert')
+    }
+    await writeFirestoreUserRecord(uid, record).catch(() => {})
+    return pushToFirebase('user_accounts', uid, record, 'upsert')
   } catch (error) {
     console.error(`[sync] syncUserAccountByEmail(${email}) failed:`, error.message)
     return false

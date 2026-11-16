@@ -123,7 +123,7 @@ function ReservationPanel() {
 
 // ── Main checkout page ────────────────────────────────────────────────────────
 export default function CheckoutPage() {
-  const { cart, cartTotal, paymentMethod, setPaymentMethod, placeOrder, navigate, checkoutInfo, setCheckoutInfo, notify } = useApp()
+  const { cart, cartTotal, paymentMethod, setPaymentMethod, placeOrder, navigate, checkoutInfo, setCheckoutInfo } = useApp()
   const [activeSection, setActiveSection] = useState('pickup')
 
   // ── Live-validated fields ─────────────────────────────────────────────────

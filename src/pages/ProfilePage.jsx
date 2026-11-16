@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useApp } from '../context/AppContext'
-import { useField, useForm, FieldError, fieldClass, rules, compose } from '../lib/validation'
+import { useField, useForm, FieldError, fieldClass, rules } from '../lib/validation'
 
 export default function ProfilePage() {
   const { role, notify, logout, setDialog, profile, setProfile, setCheckoutInfo } = useApp()

@@ -1,0 +1,671 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   rmjohns Kitchen & Bar — Admin Order Management Page Styles
+   Strictly scoped to .adm-orders-mgmt so no other module is affected.
+   Official Theme Palette:
+   - Forest Green : #1B3B2B
+   - Lime Green   : #D4E157
+   - Cream        : #F9F9F6
+   - White        : #FFFFFF
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.page-content.adm-orders-page-content > .page-heading,
+.page-content:has(.adm-orders-mgmt) > .page-heading {
+  display: none;
+}
+
+.adm-orders-mgmt {
+  --ord-forest: #1B3B2B;
+  --ord-forest-deep: #132C1F;
+  --ord-forest-mid: #234F36;
+  --ord-lime: #D4E157;
+  --ord-thead: #DCE8B5;
+  --ord-cream: #F9F9F6;
+  --ord-white: #FFFFFF;
+  --ord-text: #162B20;
+  --ord-text-body: #2A3E33;
+  --ord-text-muted: #6A7B70;
+  --ord-border: #EBEFE5;
+
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--ord-text);
+  position: relative;
+  padding-bottom: 24px;
+}
+
+.adm-orders-mgmt *,
+.adm-orders-mgmt *::before,
+.adm-orders-mgmt *::after {
+  box-sizing: border-box;
+}
+
+/* ────────────────────── 1. ORDERS HEADER BANNER ────────────────────── */
+.adm-ord-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  min-height: 112px;
+  border-radius: 20px;
+  background: linear-gradient(115deg, #133320 0%, #1B442B 52%, #295D38 100%);
+  color: var(--ord-white);
+  box-shadow: 0 12px 30px rgba(19, 44, 31, 0.16);
+  overflow: hidden;
+}
+
+.adm-ord-banner-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.adm-ord-banner-leaves {
+  position: absolute;
+  right: 10px;
+  bottom: -6px;
+  width: 195px;
+  height: 132px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.adm-ord-banner-left {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.adm-ord-icon-circle {
+  width: 58px;
+  height: 58px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+
+.adm-ord-icon-circle svg {
+  width: 56px;
+  height: 56px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.18));
+}
+
+.adm-ord-banner-divider {
+  width: 1.5px;
+  height: 52px;
+  background-color: rgba(255, 255, 255, 0.32);
+  flex-shrink: 0;
+}
+
+.adm-ord-banner-titles h1 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(28px, 2.6vw, 38px);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+  color: var(--ord-white);
+}
+
+.adm-ord-banner-titles p {
+  margin: 5px 0 0;
+  font-size: 14.5px;
+  font-weight: 400;
+  color: rgba(249, 249, 246, 0.88);
+}
+
+/* ────────────────────── 2. STATUS FILTERS & SEARCH BAR ────────────────────── */
+.adm-ord-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.adm-ord-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.adm-ord-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 16px 0 18px;
+  border-radius: 999px;
+  border: 1px solid #E3E8DC;
+  background-color: var(--ord-white);
+  color: #1F3528;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(20, 42, 30, 0.03);
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.adm-ord-filter-pill:hover {
+  border-color: #BCC9B2;
+  background-color: #FAFBF7;
+}
+
+.adm-ord-filter-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background-color: #EAECE4;
+  color: #2A3E33;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.adm-ord-filter-pill.is-selected {
+  background-color: var(--ord-forest);
+  border-color: var(--ord-forest);
+  color: var(--ord-white);
+  box-shadow: 0 4px 12px rgba(27, 59, 43, 0.22);
+}
+
+.adm-ord-filter-pill.is-selected .adm-ord-filter-count {
+  background-color: #2D5A3F;
+  color: #D4E157;
+}
+
+/* Search Bar */
+.adm-ord-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 310px;
+  min-width: 230px;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background-color: var(--ord-white);
+  border: 1px solid #E2E7DB;
+  box-shadow: 0 2px 8px rgba(20, 42, 30, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.adm-ord-search:focus-within {
+  border-color: var(--ord-forest);
+  box-shadow: 0 0 0 3px rgba(212, 225, 87, 0.30);
+}
+
+.adm-ord-search-icon {
+  width: 17px;
+  height: 17px;
+  color: var(--ord-forest);
+  flex-shrink: 0;
+}
+
+.adm-ord-search input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ord-text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.adm-ord-search input::placeholder {
+  color: #8C9990;
+}
+
+.adm-ord-search-clear {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 0;
+  background-color: #EDF1E6;
+  color: var(--ord-forest);
+  font-size: 13px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ────────────────────── 3. ORDERS TABLE CARD ────────────────────── */
+.adm-ord-card {
+  background-color: var(--ord-white);
+  border-radius: 22px;
+  border: 1px solid #E4E9DD;
+  box-shadow: 0 12px 32px rgba(20, 42, 30, 0.05);
+  overflow: hidden;
+}
+
+.adm-ord-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.adm-ord-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 860px;
+}
+
+.adm-ord-table thead tr {
+  background-color: var(--ord-thead);
+}
+
+.adm-ord-table th {
+  padding: 16px 20px;
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #163722;
+  text-transform: uppercase;
+  border-bottom: 1px solid #D0DEA3;
+  white-space: nowrap;
+}
+
+.adm-ord-th {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.adm-ord-th svg {
+  width: 15px;
+  height: 15px;
+  color: #183E26;
+  flex-shrink: 0;
+}
+
+.adm-ord-peso-icon {
+  display: inline-grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 900;
+  color: #183E26;
+  line-height: 1;
+}
+
+.adm-ord-table th.col-action,
+.adm-ord-table td.col-action {
+  text-align: center;
+}
+
+.adm-ord-row {
+  border-bottom: 1px solid var(--ord-border);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.adm-ord-row:hover {
+  background-color: #FAFBF7;
+}
+
+.adm-ord-table td {
+  padding: 15px 20px;
+  vertical-align: middle;
+  font-size: 14px;
+  color: var(--ord-text-body);
+}
+
+.adm-ord-id {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #14281D;
+  white-space: nowrap;
+}
+
+.adm-ord-customer {
+  font-weight: 500;
+  color: #26382E;
+}
+
+.adm-ord-items {
+  color: #2B3D32;
+  line-height: 1.45;
+}
+
+.adm-ord-total {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #182C20;
+  white-space: nowrap;
+}
+
+.adm-ord-time {
+  color: #34473B;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ────────────────────── ORDER STATUS BADGE SELECT ────────────────────── */
+.adm-ord-status-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 138px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  transition: filter 0.15s ease;
+}
+
+.adm-ord-status-wrap:hover {
+  filter: brightness(0.97);
+}
+
+.adm-ord-status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-right: 8px;
+  pointer-events: none;
+}
+
+.adm-ord-status-select {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0 22px 0 0;
+  width: 100%;
+  cursor: pointer;
+}
+
+.adm-ord-status-chevron {
+  position: absolute;
+  right: 11px;
+  width: 13px;
+  height: 13px;
+  pointer-events: none;
+  color: currentColor;
+  opacity: 0.8;
+}
+
+/* Status Color Variants */
+/* Pending – Soft amber */
+.adm-ord-status-wrap.status-pending {
+  background-color: #FDF2DA;
+  color: #B4690E;
+  border-color: #F7DFB2;
+}
+.adm-ord-status-wrap.status-pending .adm-ord-status-dot {
+  background-color: #E0820B;
+}
+
+/* Preparing – Soft green */
+.adm-ord-status-wrap.status-preparing {
+  background-color: #DFF2E6;
+  color: #155B34;
+  border-color: #C4E6D1;
+}
+.adm-ord-status-wrap.status-preparing .adm-ord-status-dot {
+  background-color: #196F3D;
+}
+
+/* Ready – Light lime */
+.adm-ord-status-wrap.status-ready {
+  background-color: #ECF4C6;
+  color: #4D6713;
+  border-color: #D8E89E;
+}
+.adm-ord-status-wrap.status-ready .adm-ord-status-dot {
+  background-color: #658817;
+}
+
+/* Completed – Light green */
+.adm-ord-status-wrap.status-completed {
+  background-color: #E2F5E1;
+  color: #1D6830;
+  border-color: #C7E9C5;
+}
+.adm-ord-status-wrap.status-completed .adm-ord-status-dot {
+  background-color: #218338;
+}
+
+/* Confirmed – Pale green */
+.adm-ord-status-wrap.status-confirmed {
+  background-color: #E6F6E4;
+  color: #1B692D;
+  border-color: #CBEAC8;
+}
+.adm-ord-status-wrap.status-confirmed .adm-ord-status-dot {
+  background-color: #25853A;
+}
+
+/* Cancelled – Soft red */
+.adm-ord-status-wrap.status-cancelled {
+  background-color: #FDE8E8;
+  color: #B42318;
+  border-color: #F8C9C9;
+}
+.adm-ord-status-wrap.status-cancelled .adm-ord-status-dot {
+  background-color: #D32F2F;
+}
+
+/* ────────────────────── REFUND ACTION BUTTON ────────────────────── */
+.adm-ord-refund-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1.5px solid #52825D;
+  background-color: var(--ord-white);
+  color: var(--ord-forest);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+}
+
+.adm-ord-refund-btn:hover {
+  background-color: var(--ord-forest);
+  border-color: var(--ord-forest);
+  color: var(--ord-white);
+  transform: translateY(-1px);
+}
+
+.adm-ord-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--ord-text-muted);
+  font-size: 14.5px;
+}
+
+/* ────────────────────── 4. PAGINATION FOOTER ────────────────────── */
+.adm-ord-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 24px 18px;
+  background-color: var(--ord-white);
+  flex-wrap: wrap;
+}
+
+.adm-ord-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  font-size: 13.5px;
+  color: #2E4035;
+}
+
+.adm-ord-showing strong {
+  font-weight: 800;
+  color: #14281D;
+}
+
+.adm-ord-rows-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #4A5B50;
+  font-weight: 500;
+}
+
+.adm-ord-rows-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.adm-ord-rows-select-wrap select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 34px;
+  padding: 0 32px 0 14px;
+  border-radius: 999px;
+  border: 1px solid #DDE3D5;
+  background-color: #FAFBF8;
+  color: #182C20;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+}
+
+.adm-ord-rows-select-wrap svg {
+  position: absolute;
+  right: 11px;
+  width: 13px;
+  height: 13px;
+  color: #3B4E42;
+  pointer-events: none;
+}
+
+.adm-ord-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adm-ord-page-nav {
+  height: 34px;
+  padding: 0 15px;
+  border-radius: 999px;
+  border: 1px solid #E3E7DC;
+  background-color: #F2F4ED;
+  color: #24382C;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.adm-ord-page-nav:hover:not(:disabled) {
+  background-color: #E5E9DD;
+}
+
+.adm-ord-page-nav:disabled {
+  color: #9CA69F;
+  background-color: #F4F5F0;
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.adm-ord-page-numbers {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.adm-ord-page-num {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid #E2E7DB;
+  background-color: var(--ord-white);
+  color: #1F3528;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.adm-ord-page-num:hover {
+  border-color: var(--ord-forest);
+}
+
+.adm-ord-page-num.is-active {
+  background-color: var(--ord-forest);
+  border-color: var(--ord-forest);
+  color: var(--ord-white);
+}
+
+/* Subtle bottom decorative wave */
+.adm-ord-bottom-decor {
+  margin-top: 4px;
+  border-radius: 16px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.adm-ord-bottom-wave {
+  width: 100%;
+  height: 38px;
+  display: block;
+}
+
+/* ────────────────────── RESPONSIVE BREAKPOINTS ────────────────────── */
+@media (max-width: 960px) {
+  .adm-ord-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .adm-ord-search {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .adm-ord-banner {
+    padding: 20px 22px;
+  }
+
+  .adm-ord-banner-leaves {
+    opacity: 0.35;
+  }
+
+  .adm-ord-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .adm-ord-footer-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

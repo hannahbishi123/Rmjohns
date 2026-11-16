@@ -1,9 +1,10 @@
-﻿import { useState, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { money } from '../data/mockData'
 import { useApp } from '../context/AppContext'
 import { Modal, getCategoryIcon } from './shared'
 import { uploadMenuImage, deleteMenuImage } from '../lib/firebase'
 import { useField, useForm, FieldError, fieldClass, rules } from '../lib/validation'
+import { swalShowLoading, swalCloseLoading } from '../lib/swal'
 
 export default function DialogHost({ dialog, onClose, menu, payments, setMenu, setStaff, setCart, setRewards, setPromotions, refundOrder, notify }) {
   if (dialog.type === 'account') return <AccountDialog dialog={dialog} onClose={onClose} notify={notify} />
@@ -250,14 +251,14 @@ function getPasswordStrength(password) {
 const strengthColors = ['', '#e53935', '#fb8c00', '#f9a825', '#43a047', '#1b5e20']
 
 // ── Account Dialog ─────────────────────────────────────────────────────────
-// Customer self-registration is open. Staff / Admin require the setup code.
-const ADMIN_SETUP_CODE = 'rmjohns2026'
+// Customer self-registration is open. Additional Staff / Admin accounts can
+// only be created by an authenticated Administrator (verified server-side).
 
 function AccountDialog({ dialog, onClose, notify }) {
-  const { registerAccount, navigate } = useApp()
+  const { registerAccount, navigate, role: currentRole } = useApp()
+  const isAuthorizedAdmin = currentRole === 'Admin' && localStorage.getItem('auth_session_active') === 'true'
   const [mode,      setMode]      = useState(dialog.mode || 'register')
   const [role,      setRole]      = useState('Customer')
-  const [setupCode, setSetupCode] = useState('')
   const [loading,   setLoading]   = useState(false)
   const [shake,     setShake]     = useState(false)
 
@@ -273,8 +274,14 @@ function AccountDialog({ dialog, onClose, notify }) {
   const strength = getPasswordStrength(passF.value)
 
   function handleRoleChange(r) {
+    if (r !== 'Customer' && !isAuthorizedAdmin) {
+      notify('Only an authenticated Administrator can create additional Staff or Admin accounts.', {
+        icon: 'warning',
+        title: 'Administrator authorization required',
+      })
+      return
+    }
     setRole(r)
-    setSetupCode('')
   }
 
   function triggerShake() {
@@ -300,14 +307,18 @@ function AccountDialog({ dialog, onClose, notify }) {
       return
     }
 
-    if (role !== 'Customer' && setupCode !== ADMIN_SETUP_CODE) {
-      notify('Invalid setup code. Contact your system administrator.', { icon: 'error', title: 'Setup code required' })
+    if (role !== 'Customer' && !isAuthorizedAdmin) {
+      notify('Only an authenticated Administrator can create Staff or Admin accounts.', {
+        icon: 'error',
+        title: 'Unauthorized',
+      })
       triggerShake()
       return
     }
 
     try {
       setLoading(true)
+      swalShowLoading('Creating account…', 'Registering your credentials in Firebase and the database.')
       const normalizedPhone = phoneF.value.trim().replace(/[ -]/g, '')
       const result = await registerAccount({
         name:     nameF.value.trim(),
@@ -316,6 +327,7 @@ function AccountDialog({ dialog, onClose, notify }) {
         password: passF.value,
         role,
       })
+      swalCloseLoading()
 
       // Show success then close the dialog — loginAs() inside registerAccount
       // already set the page, but we explicitly navigate to make it reliable
@@ -328,6 +340,7 @@ function AccountDialog({ dialog, onClose, notify }) {
       onClose()
       navigate(destination)
     } catch (err) {
+      swalCloseLoading()
       notify(err.message || 'Could not create account. Please try again.', {
         icon: 'error', title: 'Registration failed',
       })
@@ -357,7 +370,7 @@ function AccountDialog({ dialog, onClose, notify }) {
 
             {/* Role selector */}
             <div className="role-selector" role="group" aria-label="Account role">
-              {['Customer', 'Staff', 'Admin'].map((r) => (
+              {(isAuthorizedAdmin ? ['Customer', 'Staff', 'Admin'] : ['Customer']).map((r) => (
                 <button key={r} type="button"
                   className={`role-option${role === r ? ' role-option-active' : ''}`}
                   onClick={() => handleRoleChange(r)} aria-pressed={role === r}>
@@ -367,36 +380,6 @@ function AccountDialog({ dialog, onClose, notify }) {
                 </button>
               ))}
             </div>
-
-            {/* Setup code — Staff / Admin only */}
-            {role !== 'Customer' && (
-              <label>
-                System setup code <span className="optional-label">(required for {role})</span>
-                <input
-                  name="setupCode"
-                  type="password"
-                  required
-                  maxLength={64}
-                  autoComplete="off"
-                  placeholder="Enter the privileged setup code"
-                  value={setupCode}
-                  onChange={(e) => setSetupCode(e.target.value)}
-                  className={setupCode && setupCode !== ADMIN_SETUP_CODE ? 'v-invalid' : setupCode === ADMIN_SETUP_CODE ? 'v-valid' : ''}
-                />
-                {setupCode && setupCode !== ADMIN_SETUP_CODE && (
-                  <span className="v-error">
-                    <span className="v-icon v-icon-error">✕</span>
-                    Invalid setup code.
-                  </span>
-                )}
-                {setupCode === ADMIN_SETUP_CODE && (
-                  <span className="v-success">
-                    <span className="v-icon v-icon-success">✓</span>
-                    Setup code accepted.
-                  </span>
-                )}
-              </label>
-            )}
 
             {/* Full name */}
             <label>
@@ -629,7 +612,7 @@ function FoodDetailsDialog({ item, onClose, setCart, notify }) {
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_IMAGE_BYTES      = 4 * 1024 * 1024 // 4 MB
 
-function MenuForm({ dialog, onClose, setMenu, notify }) {
+function MenuForm({ dialog, onClose, notify }) {
   const { role, updateMenuItem, addMenuItem } = useApp()
   const isAdmin = role === 'Admin'
 
@@ -739,24 +722,34 @@ function MenuForm({ dialog, onClose, setMenu, notify }) {
       image: finalImageUrl || null,
     }
 
-    if (dialog.item) {
-      // Edit existing — updateMenuItem writes local state + Firebase RTDB + MySQL
-      updateMenuItem(item.id, values)
-    } else {
-      // Add new — addMenuItem writes local state + Firebase RTDB + MySQL
-      const newId = Date.now() // unique numeric ID
-      addMenuItem({
-        ...values,
-        id:        newId,
-        emoji:     '\uD83C\uDF7D\uFE0F',
-        tone:      'moss',
-        available: true,
-      })
+    try {
+      swalShowLoading(
+        dialog.item ? 'Updating menu item…' : 'Adding menu item…',
+        'Synchronizing dish details with MySQL and Firebase.',
+      )
+      if (dialog.item) {
+        // Edit existing — updateMenuItem writes local state + Firebase RTDB + MySQL
+        await updateMenuItem(item.id, values)
+      } else {
+        // Add new — addMenuItem writes local state + Firebase RTDB + MySQL
+        const newId = Date.now() // unique numeric ID
+        await addMenuItem({
+          ...values,
+          id:        newId,
+          emoji:     '\uD83C\uDF7D\uFE0F',
+          tone:      'moss',
+          available: true,
+        })
+      }
+      swalCloseLoading()
+      setSaving(false)
+      notify(dialog.item ? 'Menu item updated' : 'Menu item added', { icon: 'success', title: 'Saved' })
+      onClose()
+    } catch (err) {
+      swalCloseLoading()
+      setSaving(false)
+      notify(err.message || 'Could not save menu item.', { icon: 'error', title: 'Save failed' })
     }
-
-    setSaving(false)
-    notify(dialog.item ? 'Menu item updated' : 'Menu item added', { icon: 'success', title: 'Saved' })
-    onClose()
   }
 
   const isBusy = uploading || saving || compressing

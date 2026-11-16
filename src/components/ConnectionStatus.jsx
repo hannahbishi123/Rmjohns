@@ -61,7 +61,7 @@ export default function ConnectionStatus() {
       unsub()
       if (pollRef.current) clearInterval(pollRef.current)
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── Derive display mode ───────────────────────────────────────────────────
   let label, icon, className, titleText

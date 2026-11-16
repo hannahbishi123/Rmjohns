@@ -1,17 +1,56 @@
-import Swal from 'sweetalert2'
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { initialCustomers, initialMenu, initialOrders, initialPayments, initialPromotions, initialRewards, initialStaff } from '../data/mockData'
 import { apiRequest } from '../lib/api'
-import { firebaseSignIn, firebaseSignOut, firebaseRegister, onAuthChange, firebaseListen, firebaseListenConnection, firebaseGet, firebaseUpdate, auth } from '../lib/firebase'
+import { firebaseSignIn, firebaseSignOut, firebaseRegister, onAuthChange, firebaseListen, firebaseListenConnection, firebaseGet, firebaseUpdate, firestoreGetUserProfile, firestoreSetUserProfile, auth } from '../lib/firebase'
+import { swalNotify, swalConfirm, swalError, swalSuccess, swalWarning, swalInfo, swalShowLoading, swalCloseLoading, withDatabaseAlert } from '../lib/swal'
+import {
+  ROLE_HOME,
+  SESSION_ACTIVE_KEY,
+  getPathForPage,
+  parsePageFromPath,
+  isPageAllowedForRole,
+  readPersistedSession,
+  writePersistedSession,
+  clearPersistedSession,
+} from '../lib/router'
 
 const AppContext = createContext(null)
 const initialPreferences = { orders: true, attendance: true, loyalty: false, receipts: true }
 
+function normalizeRoleName(rawRole) {
+  if (!rawRole || typeof rawRole !== 'string') return null
+  const lower = rawRole.trim().toLowerCase()
+  if (lower === 'admin' || lower === 'manager') return 'Admin'
+  if (lower === 'staff') return 'Staff'
+  if (lower === 'customer') return 'Customer'
+  return null
+}
+
 export function AppProvider({ children }) {
-  const initialRole = 'Customer'
-  const roleLandingPage = { Admin: 'Overview', Staff: 'Staff Dashboard', Customer: 'Home' }
-  const [role, setRole] = useState(initialRole)
-  const [page, setPage] = useState('Landing')
+  const roleLandingPage = ROLE_HOME
+  const initialSession = useMemo(() => readPersistedSession(), [])
+  const initialUrlInfo = useMemo(
+    () => parsePageFromPath(window.location.pathname, initialSession?.role),
+    [initialSession],
+  )
+
+  const [role, setRole] = useState(() => initialSession?.role || 'Customer')
+  const [page, setPage] = useState(() => {
+    if (initialSession?.active) {
+      if (initialUrlInfo.requestedPage && !['Landing', 'Login'].includes(initialUrlInfo.requestedPage)) {
+        return initialUrlInfo.requestedPage
+      }
+      if (initialSession.page && !['Landing', 'Login'].includes(initialSession.page)) {
+        return initialSession.page
+      }
+      return ROLE_HOME[initialSession.role || 'Customer'] || 'Home'
+    }
+    if (initialUrlInfo.requestedPage && initialUrlInfo.requestedPage !== 'Landing') {
+      return initialUrlInfo.requestedPage
+    }
+    return 'Landing'
+  })
+  const [urlRequestedRole, setUrlRequestedRole] = useState(() => initialUrlInfo.requestedRole || null)
   const [menu, setMenu] = useState(initialMenu)
   const [orders, setOrders] = useState(initialOrders)
   const [cart, setCart] = useState([])
@@ -41,9 +80,16 @@ export function AppProvider({ children }) {
     { id: 2, title: 'Attendance recorded', detail: 'Ava Mendoza checked in using the demo RFID reader.', time: '10:18 AM', read: false },
     { id: 3, title: 'Low availability', detail: 'Ube panna cotta is running low. 4 portions remain.', time: 'Yesterday', read: false },
   ])
-  const [checkoutInfo, setCheckoutInfo] = useState({ customer: 'Maureen Santos', orderType: 'Pickup', pickupLocation: 'RM John’s Eatery • Main Branch', notes: '' })
+  const [checkoutInfo, setCheckoutInfo] = useState(() => ({
+    customer: initialSession?.profile?.name || 'Maureen Santos',
+    orderType: 'Pickup',
+    pickupLocation: 'RM John’s Eatery • Main Branch',
+    notes: '',
+  }))
   const [reservation, setReservation] = useState(null)
-  const [profile, setProfile] = useState({ name: 'Maureen Santos', email: 'maureen.santos@email.com', phone: '+63 917 555 0142' })
+  const [profile, setProfile] = useState(() =>
+    initialSession?.profile || { name: 'Maureen Santos', email: 'maureen.santos@email.com', phone: '+63 917 555 0142' },
+  )
   const [databaseReady, setDatabaseReady] = useState(false)
   const [databaseError, setDatabaseError] = useState('')
   const [databaseSaveError, setDatabaseSaveError] = useState('')
@@ -79,7 +125,9 @@ export function AppProvider({ children }) {
         setLoyaltyHistory(data.loyaltyHistory || [])
         setNotifications(data.notifications || [])
         setScanEvents(data.scanEvents || [])
-        setProfile(data.profile || { name: 'Maureen Santos', email: 'maureen.santos@email.com', phone: '' })
+        if (!readPersistedSession()?.profile && !auth.currentUser) {
+          setProfile(data.profile || { name: 'Maureen Santos', email: 'maureen.santos@email.com', phone: '' })
+        }
         setPoints(data.points ?? 0)
         setReservation(data.reservation ?? null)
         setCustomerAccounts(data.customerAccounts || [])
@@ -111,7 +159,7 @@ export function AppProvider({ children }) {
         if (fbMenu)       setMenu(toArr(fbMenu).map(item => ({ ...item, available: Boolean(item.available) })))
         if (fbRewards)    setRewards(toArr(fbRewards).map(r => ({ ...r, available: Boolean(r.available) })))
         if (fbPromotions) setPromotions(toArr(fbPromotions))
-        if (fbProfile)    setProfile(fbProfile)
+        if (fbProfile && !readPersistedSession()?.profile && !auth.currentUser) setProfile(fbProfile)
         if (fbPoints != null) setPoints(Number(fbPoints))
 
         setDatabaseError('')
@@ -131,96 +179,172 @@ export function AppProvider({ children }) {
     return () => { active = false }
   }, [])
 
-  // ── Firebase Auth session restore ─────────────────────────────────────────
-  // SECURITY: Only restore a session if the user explicitly signed in during
-  // THIS browser session (tracked via localStorage flag 'auth_session_active').
-  // This prevents auto-login when:
-  //   - Opening a new tab
-  //   - Opening a new browser window
-  //   - Typing the URL directly
-  //   - Refreshing after logging out
-  // The flag is set by signIn() and cleared by logout().
+  // ── Firebase Auth & Persistent Session Restore ────────────────────────────
   useEffect(() => {
     const unsubscribe = onAuthChange(async (user) => {
-      setFirebaseAuthReady(true)
+      const persisted = readPersistedSession()
+      const urlInfo   = parsePageFromPath(window.location.pathname, persisted?.role)
 
-      if (!user) return // No Firebase session at all — stay on Landing/Login
+      if (!user) {
+        // Only preserve a local session when Firebase Auth was explicitly unavailable
+        // at sign-in time ('mysql-only'). If the session was a normal Firebase session
+        // and `user` is now null, the session has expired or been logged out.
+        if (persisted?.active && persisted?.role && persisted?.authSource === 'mysql-only') {
+          const savedRole = normalizeRoleName(persisted.role) || 'Customer'
+          const candidatePage =
+            (urlInfo.requestedPage && !['Landing', 'Login'].includes(urlInfo.requestedPage))
+              ? urlInfo.requestedPage
+              : (persisted.page && !['Landing', 'Login'].includes(persisted.page))
+                ? persisted.page
+                : ROLE_HOME[savedRole]
+          setRole(savedRole)
+          setUrlRequestedRole(urlInfo.requestedRole || null)
+          setPage(candidatePage)
+          if (persisted.profile) {
+            setProfile((curr) => ({ ...curr, ...persisted.profile }))
+          }
+          if (!urlInfo.requestedRole || urlInfo.requestedRole === savedRole) {
+            const targetPath = getPathForPage(candidatePage, savedRole)
+            if (window.location.pathname !== targetPath) {
+              window.history.replaceState({ page: candidatePage, role: savedRole }, '', targetPath)
+            }
+          }
+          setFirebaseAuthReady(true)
+          return
+        }
 
-      // Only restore session if the user explicitly signed in this session
-      const sessionActive = localStorage.getItem('auth_session_active') === 'true'
-      if (!sessionActive) {
-        // Firebase has a remembered token but the user hasn't signed in during
-        // this browser session. Sign them out of Firebase silently so they see
-        // the login page. This enforces: every new visit = must log in.
-        await firebaseSignOut().catch(() => {})
+        // Session expired or user is not authenticated — clear stale session state
+        if (persisted?.active) {
+          clearPersistedSession()
+        }
+        const unauthTarget =
+          urlInfo.requestedPage && urlInfo.requestedPage !== 'Landing' ? 'Login' : 'Landing'
+        setRole('Customer')
+        setUrlRequestedRole(null)
+        setPage(unauthTarget)
+        const unauthPath = unauthTarget === 'Login' ? '/login' : '/'
+        if (window.location.pathname !== unauthPath) {
+          window.history.replaceState({ page: unauthTarget }, '', unauthPath)
+        }
+        setFirebaseAuthReady(true)
         return
       }
 
       try {
         const idToken = await user.getIdToken(/* forceRefresh */ true)
 
-        // ── Try MySQL-backed verify first ─────────────────────────────────────
-        let role = null
+        // ── 1. Resolve authoritative role ─────────────────────────────────────
+        let resolvedRole = null
         try {
           const { account } = await apiRequest('/api/auth/verify', {
             method: 'POST',
             headers: { Authorization: `Bearer ${idToken}` },
           })
-          role = account.role
+          resolvedRole = normalizeRoleName(account.role)
         } catch {
-          // Backend unavailable — read role from Firebase Realtime DB (source of truth)
+          // Fallback 1: Cloud Firestore (users/{uid})
           try {
-            const dbRecord = await firebaseGet(`eateries/user_accounts/${user.uid}`)
-            if (dbRecord?.role) role = dbRecord.role
+            const fsRecord = await firestoreGetUserProfile(user.uid)
+            if (fsRecord?.role) resolvedRole = normalizeRoleName(fsRecord.role)
           } catch { /* ignore */ }
 
-          // Second fallback: JWT custom claim
-          if (!role) {
+          // Fallback 2: Firebase Realtime DB (eateries/user_accounts/{uid})
+          if (!resolvedRole) {
             try {
-              const payload = JSON.parse(atob(idToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
-              role = payload.role || null
+              const dbRecord = await firebaseGet(`eateries/user_accounts/${user.uid}`)
+              if (dbRecord?.role) resolvedRole = normalizeRoleName(dbRecord.role)
             } catch { /* ignore */ }
           }
 
-          // Last resort: only for the three well-known seed accounts
-          if (!role) {
+          // Fallback 3: JWT custom claim
+          if (!resolvedRole) {
+            try {
+              const payload = JSON.parse(atob(idToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
+              resolvedRole = normalizeRoleName(payload.role)
+            } catch { /* ignore */ }
+          }
+
+          // Fallback 4: Well-known seed accounts
+          if (!resolvedRole) {
             const email = (user.email || '').toLowerCase()
-            if (email === 'admin@rmjohns.com') role = 'Admin'
-            else if (email === 'staff@rmjohns.com') role = 'Staff'
-            else role = 'Customer'
+            if (email === 'manager@rmjohns.com' || email === 'admin@rmjohns.com') resolvedRole = 'Admin'
+            else if (email === 'staff@rmjohns.com') resolvedRole = 'Staff'
+            else resolvedRole = 'Customer'
           }
         }
 
-        if (!role || !['Admin', 'Staff', 'Customer'].includes(role)) {
-          firebaseSignOut().catch(() => {})
-          localStorage.removeItem('auth_session_active')
+        if (!resolvedRole || !['Admin', 'Staff', 'Customer'].includes(resolvedRole)) {
+          await firebaseSignOut().catch(() => {})
+          clearPersistedSession()
+          setFirebaseAuthReady(true)
           return
         }
 
-        setRole(role)
-        setPage((currentPage) => {
-          if (['Landing', 'Login'].includes(currentPage)) {
-            return roleLandingPage[role] || currentPage
+        // ── 2. Resolve profile details ────────────────────────────────────────
+        let resolvedProfile = persisted?.profile || null
+        try {
+          const [fsRecord, userRecord] = await Promise.all([
+            firestoreGetUserProfile(user.uid).catch(() => null),
+            firebaseGet(`eateries/user_accounts/${user.uid}`).catch(() => null),
+          ])
+          const resolvedName =
+            fsRecord?.name ||
+            userRecord?.name ||
+            persisted?.profile?.name ||
+            user.displayName ||
+            (user.email || '').split('@')[0]
+          resolvedProfile = {
+            name:  resolvedName,
+            email: user.email || fsRecord?.email || userRecord?.email || '',
+            phone: fsRecord?.phone || userRecord?.phone || persisted?.profile?.phone || '',
           }
-          return currentPage
+          setProfile(resolvedProfile)
+          setCheckoutInfo((current) => ({ ...current, customer: resolvedName }))
+        } catch { /* non-critical */ }
+
+        // ── 3. Resolve exact dashboard page to stay on after refresh ──────────
+        const currentUrlInfo = parsePageFromPath(window.location.pathname, resolvedRole)
+        let targetPage = ROLE_HOME[resolvedRole]
+
+        if (currentUrlInfo.requestedPage && !['Landing', 'Login'].includes(currentUrlInfo.requestedPage)) {
+          // User refreshed or opened a specific URL (e.g. /admin/menu, /staff/kitchen)
+          targetPage = currentUrlInfo.requestedPage
+        } else if (persisted?.page && isPageAllowedForRole(persisted.page, resolvedRole)) {
+          // Restore the exact page they were on before refreshing
+          targetPage = persisted.page
+        }
+
+        setRole(resolvedRole)
+        setUrlRequestedRole(currentUrlInfo.requestedRole || null)
+        setPage(targetPage)
+
+        // Only persist valid pages for this role
+        const pageToSave =
+          (!currentUrlInfo.requestedRole || currentUrlInfo.requestedRole === resolvedRole) &&
+          isPageAllowedForRole(targetPage, resolvedRole)
+            ? targetPage
+            : (persisted?.page && isPageAllowedForRole(persisted.page, resolvedRole)
+                ? persisted.page
+                : ROLE_HOME[resolvedRole])
+
+        writePersistedSession({
+          role:    resolvedRole,
+          page:    pageToSave,
+          profile: resolvedProfile,
         })
 
-        // ── Update profile with the real user's name from the DB record ───────
-        // This ensures the greeting shows the actual user name, not the default.
-        try {
-          const userRecord = await firebaseGet(`eateries/user_accounts/${user.uid}`)
-          const resolvedName = userRecord?.name || user.displayName || (user.email || '').split('@')[0]
-          setProfile((current) => ({
-            ...current,
-            name:  resolvedName,
-            email: user.email || current.email,
-            phone: userRecord?.phone || current.phone || '',
-          }))
-          setCheckoutInfo((current) => ({ ...current, customer: resolvedName }))
-        } catch { /* non-critical — keep existing profile */ }
+        // Keep URL synchronized if the user is on an allowed route for their role
+        if ((!currentUrlInfo.requestedRole || currentUrlInfo.requestedRole === resolvedRole) &&
+            isPageAllowedForRole(targetPage, resolvedRole)) {
+          const canonicalPath = getPathForPage(targetPage, resolvedRole)
+          if (window.location.pathname !== canonicalPath) {
+            window.history.replaceState({ page: targetPage, role: resolvedRole }, '', canonicalPath)
+          }
+        }
 
-        // ── Load auth-protected Firebase data now that we have a valid user ──
-        // These reads were skipped during bootstrap because they require auth.
+        setFirebaseAuthReady(true)
+
+        // ── 4. Load auth-protected Firebase data in background ────────────────
         try {
           const toArr = (obj) => obj && typeof obj === 'object' ? Object.values(obj) : []
           const [fbOrders, fbCustomers, fbStaff, fbPayments, fbNotifications, fbLoyalty, fbAttendance] = await Promise.all([
@@ -240,16 +364,47 @@ export function AppProvider({ children }) {
           if (fbLoyalty)      setLoyaltyHistory(toArr(fbLoyalty))
           if (fbAttendance)   setScanEvents(toArr(fbAttendance).map(e => ({ id: e.id ?? e.event_id, name: e.staff_name ?? e.name, staffId: e.staff_id ?? e.staffId, time: e.event_time ?? e.time, action: e.action })))
         } catch {
-          // Non-critical — demo data is already loaded from bootstrap
+          // Non-critical — bootstrap data is already loaded
         }
       } catch {
-        // Token invalid or account not found — sign out silently
-        firebaseSignOut().catch(() => {})
-        localStorage.removeItem('auth_session_active')
+        // Token invalid or expired — clear session and require login
+        await firebaseSignOut().catch(() => {})
+        clearPersistedSession()
+        setFirebaseAuthReady(true)
       }
     })
     return unsubscribe
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── Browser Back / Forward navigation listener (popstate) ─────────────────
+  useEffect(() => {
+    function handlePopState() {
+      const persisted = readPersistedSession()
+      const activeRole = persisted?.role || role
+      const parsed = parsePageFromPath(window.location.pathname, activeRole)
+      setUrlRequestedRole(parsed.requestedRole || null)
+
+      if (persisted?.active) {
+        if (!parsed.requestedPage || ['Landing', 'Login'].includes(parsed.requestedPage)) {
+          const fallbackPage = persisted.page || ROLE_HOME[activeRole] || 'Home'
+          setPage(fallbackPage)
+          const canonical = getPathForPage(fallbackPage, activeRole)
+          window.history.replaceState({ page: fallbackPage, role: activeRole }, '', canonical)
+          return
+        }
+        setPage(parsed.requestedPage)
+        if ((!parsed.requestedRole || parsed.requestedRole === activeRole) &&
+            isPageAllowedForRole(parsed.requestedPage, activeRole)) {
+          writePersistedSession({ role: activeRole, page: parsed.requestedPage })
+        }
+      } else {
+        setPage(parsed.requestedPage || 'Landing')
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [role])
 
   // ── Firebase connection state listener ────────────────────────────────────
   // Tracks whether the browser has a live Firebase Realtime DB connection.
@@ -436,14 +591,7 @@ export function AppProvider({ children }) {
           setDatabaseSaveError(errorMsg)
           if (!saveErrorShown.current) {
             saveErrorShown.current = true
-            Swal.fire({
-              icon: 'error',
-              title: 'Changes were not saved',
-              text: errorMsg,
-              confirmButtonText: 'Okay',
-              confirmButtonColor: '#1B3B2B',
-              customClass: { popup: 'app-swal-confirm' },
-            })
+            swalError(errorMsg, 'Changes were not saved')
           }
         }
       })
@@ -461,49 +609,15 @@ export function AppProvider({ children }) {
   const categories = ['All', ...new Set(menu.map((item) => item.category))]
 
   function notify(message, options = {}) {
-    const { icon = 'success', title = 'Success', text = message, timer = 2200, showConfirmButton = false } = options
-    Swal.fire({
-      icon,
-      title: title || message,
-      text,
-      toast: true,
-      position: 'top',
-      timer,
-      showConfirmButton,
-      timerProgressBar: true,
-      customClass: { popup: 'app-swal-toast' },
-      didOpen: (toast) => {
-        toast.addEventListener('mouseenter', Swal.stopTimer)
-        toast.addEventListener('mouseleave', Swal.resumeTimer)
-      },
-    })
+    return swalNotify(message, options)
   }
 
-  function confirmAction({ title, text, confirmButtonText = 'Continue', cancelButtonText = 'Cancel', icon = 'warning' } = {}) {
-    return Swal.fire({
-      icon,
-      title,
-      text,
-      showCancelButton: true,
-      confirmButtonText,
-      cancelButtonText,
-      confirmButtonColor: '#1B3B2B',
-      cancelButtonColor: '#C0503D',
-      reverseButtons: true,
-      customClass: { popup: 'app-swal-confirm' },
-      zIndex: 99999,
-    })
+  function confirmAction(options = {}) {
+    return swalConfirm(options)
   }
 
   function showError(message, title = 'Something went wrong') {
-    return Swal.fire({
-      icon: 'error',
-      title,
-      text: message,
-      confirmButtonText: 'Okay',
-      confirmButtonColor: '#1B3B2B',
-      customClass: { popup: 'app-swal-confirm' },
-    })
+    return swalError(message, title)
   }
 
   function addNotification(title, detail, audience = 'all') {
@@ -512,7 +626,18 @@ export function AppProvider({ children }) {
 
   function navigate(nextPage) {
     setPage(nextPage)
+    setUrlRequestedRole(null)
     setQuery('')
+
+    const sessionActive = localStorage.getItem(SESSION_ACTIVE_KEY) === 'true'
+    if (sessionActive && !['Landing', 'Login'].includes(nextPage) && isPageAllowedForRole(nextPage, role)) {
+      writePersistedSession({ role, page: nextPage, profile })
+    }
+
+    const nextPath = getPathForPage(nextPage, role)
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState({ page: nextPage, role }, '', nextPath)
+    }
   }
 
   function setSearchQuery(value) {
@@ -523,19 +648,29 @@ export function AppProvider({ children }) {
   // updates the profile with the real signed-in user's name and email.
   function loginAs(nextRole, accountInfo = null) {
     if (!Object.hasOwn(roleLandingPage, nextRole)) throw new Error('This account role is not available.')
+    const homePage = roleLandingPage[nextRole]
     setRole(nextRole)
-    setPage(roleLandingPage[nextRole])
+    setUrlRequestedRole(null)
+    setPage(homePage)
+
+    let nextProfile = profile
     if (accountInfo?.name || accountInfo?.email) {
-      setProfile((current) => ({
-        ...current,
-        name:  accountInfo.name  || current.name,
-        email: accountInfo.email || current.email,
-        phone: accountInfo.phone || current.phone || '',
-      }))
-      // Also update checkout info so orders show the correct customer name
+      nextProfile = {
+        ...profile,
+        name:  accountInfo.name  || profile.name,
+        email: accountInfo.email || profile.email,
+        phone: accountInfo.phone || profile.phone || '',
+      }
+      setProfile(nextProfile)
       if (accountInfo.name) {
         setCheckoutInfo((current) => ({ ...current, customer: accountInfo.name }))
       }
+    }
+
+    writePersistedSession({ role: nextRole, page: homePage, profile: nextProfile })
+    const nextPath = getPathForPage(homePage, nextRole)
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState({ page: homePage, role: nextRole }, '', nextPath)
     }
   }
 
@@ -550,25 +685,42 @@ export function AppProvider({ children }) {
       // Also sign into Firebase Auth so the browser has a valid session.
       // This is required for saveToFirebase (checks auth.currentUser before writing).
       const usernameEmailMap = {
+        manager: 'manager@rmjohns.com',
         admin:   'admin@rmjohns.com',
         staff:   'staff@rmjohns.com',
         maureen: 'maureen.santos@email.com',
       }
       const emailForFirebase = account.email ||
         (identifier.includes('@') ? identifier : (usernameEmailMap[identifier.toLowerCase()] || `${identifier}@rmjohns.com`))
+
+      // Persist session before firebaseSignIn so onAuthChange sees the active session immediately
+      writePersistedSession({
+        role:       account.role,
+        page:       ROLE_HOME[account.role],
+        profile:    { name: account.name || account.username, email: account.email },
+        authSource: 'firebase',
+      })
+
+      let fbSignedIn = false
       try {
         await firebaseSignIn(emailForFirebase, password)
+        fbSignedIn = true
       } catch {
         console.warn('[signIn] Firebase Auth sign-in failed for', emailForFirebase, '— MySQL session active, Firebase direct-write disabled.')
       }
 
-      // Mark this browser session as intentionally authenticated
-      localStorage.setItem('auth_session_active', 'true')
+      if (!fbSignedIn) {
+        writePersistedSession({
+          role:       account.role,
+          page:       ROLE_HOME[account.role],
+          profile:    { name: account.name || account.username, email: account.email },
+          authSource: 'mysql-only',
+        })
+      }
+
       loginAs(account.role, { name: account.name || account.username, email: account.email })
 
       // ── Fire-and-forget: notify the backend of the Firebase UID ─────────────
-      // This ensures firebase_uid is linked in MySQL even if the post-login
-      // Firebase sync in the backend runs slightly later.
       try {
         const currentUser = auth.currentUser
         if (currentUser) {
@@ -596,9 +748,8 @@ export function AppProvider({ children }) {
     }
 
     // ── Fallback: Firebase Auth direct sign-in ────────────────────────────────
-    // Used on Firebase Hosting where there is no local MySQL backend.
-    // Map well-known usernames to their real email addresses.
     const usernameEmailMap = {
+      manager: 'manager@rmjohns.com',
       admin:   'admin@rmjohns.com',
       staff:   'staff@rmjohns.com',
       maureen: 'maureen.santos@email.com',
@@ -618,34 +769,35 @@ export function AppProvider({ children }) {
       throw new Error(msg, { cause: fbError })
     }
 
-    // ── SECURITY: Resolve role from Firebase Realtime DB (source of truth) ───
-    // Never trust an email address pattern to determine admin/staff access.
-    // The role is read from eateries/user_accounts/{uid} — the same record
-    // written at registration time. A customer cannot manipulate this from
-    // the browser because the Firebase DB rules only allow authenticated
-    // users to read their own record, and only backend/Admin can write it.
+    // ── SECURITY: Resolve role from Firestore / Realtime DB (source of truth) ──
     let role = null
 
-    // 1. Try Realtime DB user record (most authoritative)
+    // 1. Try Cloud Firestore user record (users/{uid})
     try {
-      const dbRecord = await firebaseGet(`eateries/user_accounts/${fbUser.uid}`)
-      if (dbRecord?.role) role = dbRecord.role
-    } catch { /* ignore — fall through to JWT claim */ }
+      const fsRecord = await firestoreGetUserProfile(fbUser.uid)
+      if (fsRecord?.role) role = normalizeRoleName(fsRecord.role)
+    } catch { /* ignore */ }
 
-    // 2. Try JWT custom claim (set by Admin SDK at registration)
+    // 2. Try Realtime DB user record (eateries/user_accounts/{uid})
+    if (!role) {
+      try {
+        const dbRecord = await firebaseGet(`eateries/user_accounts/${fbUser.uid}`)
+        if (dbRecord?.role) role = normalizeRoleName(dbRecord.role)
+      } catch { /* ignore — fall through to JWT claim */ }
+    }
+
+    // 3. Try JWT custom claim (set by Admin SDK at registration)
     if (!role) {
       try {
         const idToken = await fbUser.getIdToken(true)
         const payload = JSON.parse(atob(idToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
-        if (payload.role) role = payload.role
+        if (payload.role) role = normalizeRoleName(payload.role)
       } catch { /* ignore decode errors */ }
     }
 
-    // 3. Only as a last resort for the three well-known seed accounts:
-    //    map their canonical emails. For ALL other accounts default to Customer
-    //    so an unknown account never gets elevated access.
+    // 4. Only as a last resort for the well-known seed accounts:
     if (!role) {
-      const knownAdmins = ['admin@rmjohns.com']
+      const knownAdmins = ['manager@rmjohns.com', 'admin@rmjohns.com']
       const knownStaff  = ['staff@rmjohns.com']
       if (knownAdmins.includes(emailToTry)) role = 'Admin'
       else if (knownStaff.includes(emailToTry)) role = 'Staff'
@@ -658,18 +810,24 @@ export function AppProvider({ children }) {
       throw new Error('Your account does not have a recognized role. Contact the system administrator.')
     }
 
+    // Enforce role match when signing in through a role-specific login form
+    if (expectedRole && role.toLowerCase() !== String(expectedRole).toLowerCase()) {
+      await firebaseSignOut().catch(() => {})
+      throw new Error(`This account is registered as ${role} and cannot sign in as ${expectedRole}.`)
+    }
+
     // Mark this browser session as intentionally authenticated
     localStorage.setItem('auth_session_active', 'true')
-    // Pull the best name we have: DB record → Firebase displayName → email prefix
-    const dbRecord = await firebaseGet(`eateries/user_accounts/${fbUser.uid}`).catch(() => null)
-    const resolvedName = dbRecord?.name || fbUser.displayName || emailToTry.split('@')[0]
+    // Pull the best name we have: Firestore → RTDB → Firebase displayName → email prefix
+    const [fsRecord, dbRecord] = await Promise.all([
+      firestoreGetUserProfile(fbUser.uid).catch(() => null),
+      firebaseGet(`eateries/user_accounts/${fbUser.uid}`).catch(() => null),
+    ])
+    const resolvedName = fsRecord?.name || dbRecord?.name || fbUser.displayName || emailToTry.split('@')[0]
     const account = { username: emailToTry.split('@')[0], email: emailToTry, role, name: resolvedName }
     loginAs(account.role, { name: resolvedName, email: emailToTry })
 
     // ── Notify the MySQL backend about the Firebase UID (fire-and-forget) ────
-    // When the backend (XAMPP) is running, this links the uid column in MySQL
-    // and refreshes the eateries/user_accounts/{uid} record with the canonical role.
-    // On the live domain where there is no backend, this silently no-ops.
     try {
       const idToken = await fbUser.getIdToken()
       await apiRequest('/api/auth/update-uid', {
@@ -692,16 +850,20 @@ export function AppProvider({ children }) {
     })
     if (!result.isConfirmed) return
 
-    // Clear the intentional-session flag so auto-restore is blocked on next load
-    localStorage.removeItem('auth_session_active')
+    // Clear the intentional-session flag and persisted page state
+    clearPersistedSession()
 
     // Sign out of Firebase Auth — this invalidates the token in the browser
     await firebaseSignOut().catch(() => {})
 
-    // Reset all local auth state
+    // Reset all local auth state and URL
     setRole('Customer')
+    setUrlRequestedRole(null)
     setPage('Login')
     setCart([])
+    if (window.location.pathname !== '/login') {
+      window.history.pushState({ page: 'Login' }, '', '/login')
+    }
     notify('Logged out successfully', { icon: 'success', title: 'Signed out' })
   }
 
@@ -811,49 +973,46 @@ export function AppProvider({ children }) {
     notify(`${id} moved to ${status.toLowerCase()}`)
   }
 
-  function updateMenuItem(id, updates) {
-    // 1. Update local React state immediately (instant UI feedback)
+  async function updateMenuItem(id, updates) {
+    let mergedItem = null
     setMenu((current) => {
       const next = current.map((item) => item.id === id ? { ...item, ...updates } : item)
-
-      // 2. Persist full merged item to Firebase RTDB so domain sees the change
-      const merged = next.find((item) => item.id === id)
-      if (merged) {
-        const key = String(id)
-        firebaseUpdate({
-          [`eateries/menu_items/${key}`]: { ...merged, _syncedAt: new Date().toISOString() },
-        }).catch((err) => console.warn('[menu] Firebase RTDB write failed:', err.message))
-      }
-
+      mergedItem = next.find((item) => item.id === id) || null
       return next
     })
 
-    // 3. Persist to MySQL via backend API (when localhost backend is running)
-    apiRequest('/api/menu-items/update', {
-      method: 'POST',
-      body: JSON.stringify({ id, updates }),
-    }).catch(() => { /* backend offline — Firebase write above is sufficient */ })
+    const key = String(id)
+    const tasks = []
+    if (mergedItem) {
+      tasks.push(
+        firebaseUpdate({
+          [`eateries/menu_items/${key}`]: { ...mergedItem, _syncedAt: new Date().toISOString() },
+        }),
+      )
+    }
+    tasks.push(
+      apiRequest('/api/menu-items/update', {
+        method: 'POST',
+        body: JSON.stringify({ id, updates }),
+      }),
+    )
+
+    await Promise.allSettled(tasks)
   }
 
-  function addMenuItem(newItem) {
-    // 1. Update local state and write all items to Firebase
-    setMenu((current) => {
-      const withNew = [...current, newItem]
+  async function addMenuItem(newItem) {
+    setMenu((current) => [...current, newItem])
 
-      // 2. Write the new item to Firebase RTDB immediately
-      const key = String(newItem.id)
+    const key = String(newItem.id)
+    await Promise.allSettled([
       firebaseUpdate({
         [`eateries/menu_items/${key}`]: { ...newItem, _syncedAt: new Date().toISOString() },
-      }).catch((err) => console.warn('[menu] Firebase add failed:', err.message))
-
-      return withNew
-    })
-
-    // 3. Persist to MySQL via backend
-    apiRequest('/api/menu-items/add', {
-      method: 'POST',
-      body: JSON.stringify(newItem),
-    }).catch(() => {})
+      }),
+      apiRequest('/api/menu-items/add', {
+        method: 'POST',
+        body: JSON.stringify(newItem),
+      }),
+    ])
   }
 
   function recordStaffScan(staffId, action) {
@@ -936,9 +1095,9 @@ export function AppProvider({ children }) {
         fbUser = await firebaseRegister(normalizedEmail, password)
       } catch (fbError) {
         if (fbError.code === 'auth/email-already-in-use') {
-          throw new Error('An account with this email already exists. Try signing in instead.')
+          throw new Error('An account with this email already exists. Try signing in instead.', { cause: fbError })
         }
-        throw new Error(fbError.message || 'Could not create account. Check your details and try again.')
+        throw new Error(fbError.message || 'Could not create account. Check your details and try again.', { cause: fbError })
       }
 
       const uid = fbUser.uid
@@ -958,28 +1117,41 @@ export function AppProvider({ children }) {
         }
       }
 
-      // STEP 4: Write to Firebase Realtime DB
+      // STEP 4: Write to Firebase Realtime DB & Cloud Firestore
       try {
-        await firebaseUpdate({
-          [`eateries/user_accounts/${uid}`]: {
+        await Promise.all([
+          firebaseUpdate({
+            [`eateries/user_accounts/${uid}`]: {
+              uid,
+              username: normalizedEmail.split('@')[0],
+              email: normalizedEmail,
+              name: cleanName,
+              phone: cleanPhone,
+              role: 'Customer',
+              createdAt: ts,
+            },
+            [`eateries/customers/${customerId}`]: {
+              id: customerId, name: cleanName, email: normalizedEmail, contact: cleanPhone,
+              orders: 0, spend: 0, points: 0, status: 'Active', _syncedAt: ts,
+            },
+          }),
+          firestoreSetUserProfile(uid, {
+            id: uid,
             uid,
             username: normalizedEmail.split('@')[0],
             email: normalizedEmail,
             name: cleanName,
             phone: cleanPhone,
             role: 'Customer',
+            status: 'Active',
             createdAt: ts,
-          },
-          [`eateries/customers/${customerId}`]: {
-            id: customerId, name: cleanName, email: normalizedEmail, contact: cleanPhone,
-            orders: 0, spend: 0, points: 0, status: 'Active', _syncedAt: ts,
-          },
-        })
-        console.log('[register] Customer saved to Firebase Realtime DB')
+          }),
+        ])
+        console.log('[register] Customer saved to Firebase Realtime DB & Firestore')
       } catch (fbDbErr) {
         console.warn('[register] Firebase DB write failed:', fbDbErr.message)
         // Non-critical if MySQL saved successfully
-        if (!mysqlSaved) throw new Error('Could not save account. Check your connection and try again.')
+        if (!mysqlSaved) throw new Error('Could not save account. Check your connection and try again.', { cause: fbDbErr })
       }
 
       // STEP 5: Update local React state
@@ -1005,9 +1177,9 @@ export function AppProvider({ children }) {
       fbUser = await firebaseRegister(normalizedEmail, password)
     } catch (fbError) {
       if (fbError.code === 'auth/email-already-in-use') {
-        throw new Error('An account with this email already exists. Try signing in instead.')
+        throw new Error('An account with this email already exists. Try signing in instead.', { cause: fbError })
       }
-      throw new Error(fbError.message || 'Could not create account. Check your details and try again.')
+      throw new Error(fbError.message || 'Could not create account. Check your details and try again.', { cause: fbError })
     }
 
     const uid = fbUser.uid
@@ -1038,29 +1210,43 @@ export function AppProvider({ children }) {
       console.warn(`[register] MySQL ${normalizedRole} save failed (network):`, err.message)
     }
 
-    // STEP 3: Write to Firebase Realtime DB
+    // STEP 3: Write to Firebase Realtime DB & Cloud Firestore
     try {
-      await firebaseUpdate({
-        [`eateries/user_accounts/${uid}`]: {
+      await Promise.all([
+        firebaseUpdate({
+          [`eateries/user_accounts/${uid}`]: {
+            uid,
+            username: normalizedEmail.split('@')[0],
+            email: normalizedEmail,
+            name: cleanName,
+            phone: cleanPhone,
+            role: normalizedRole,
+            createdAt: ts,
+          },
+          ...(normalizedRole === 'Staff' ? {
+            [`eateries/staff/${uid}`]: {
+              id: uid, name: cleanName, role: 'Service crew', contact: normalizedEmail,
+              status: 'Offline', time: '—', timeOut: null, _syncedAt: ts,
+            },
+          } : {}),
+        }),
+        firestoreSetUserProfile(uid, {
+          id: uid,
           uid,
           username: normalizedEmail.split('@')[0],
           email: normalizedEmail,
           name: cleanName,
           phone: cleanPhone,
           role: normalizedRole,
+          title: normalizedRole === 'Admin' ? 'Manager' : normalizedRole,
+          status: 'Active',
           createdAt: ts,
-        },
-        ...(normalizedRole === 'Staff' ? {
-          [`eateries/staff/${uid}`]: {
-            id: uid, name: cleanName, role: 'Service crew', contact: normalizedEmail,
-            status: 'Offline', time: '—', timeOut: null, _syncedAt: ts,
-          },
-        } : {}),
-      })
-      console.log(`[register] ${normalizedRole} saved to Firebase Realtime DB`)
+        }),
+      ])
+      console.log(`[register] ${normalizedRole} saved to Firebase Realtime DB & Firestore`)
     } catch (fbDbErr) {
       console.warn('[register] Firebase DB write failed:', fbDbErr.message)
-      if (!mysqlSaved) throw new Error('Could not save account. Check your connection and try again.')
+      if (!mysqlSaved) throw new Error('Could not save account. Check your connection and try again.', { cause: fbDbErr })
     }
 
     // STEP 4: Update local React state
@@ -1094,7 +1280,7 @@ export function AppProvider({ children }) {
   }
 
   const value = {
-    role, setRole, page, setPage, menu, setMenu, orders, setOrders, cart, setCart,
+    role, setRole, page, setPage, urlRequestedRole, menu, setMenu, orders, setOrders, cart, setCart,
     query, setQuery: setSearchQuery, category, setCategory, dialog, setDialog,
     points, setPoints, loyaltyHistory, paymentMethod, setPaymentMethod, orderFilter, setOrderFilter,
     staff, setStaff, deviceConnected, setDeviceConnected, scanEvents, recordStaffScan, customers, setCustomers, customerAccounts, payments, setPayments, rewards, setRewards,
@@ -1103,7 +1289,8 @@ export function AppProvider({ children }) {
     cartCount, cartTotal, filteredMenu, filteredOrders, categories,
     databaseReady, databaseError, databaseSaveError,
     firebaseConnected, firebaseAuthReady,
-    notify, confirmAction, showError, navigate, loginAs, signIn, logout, addToCart, changeQuantity, clearCart, placeOrder,
+    notify, confirmAction, showError, swalSuccess, swalWarning, swalInfo, swalShowLoading, swalCloseLoading, withDatabaseAlert,
+    navigate, loginAs, signIn, logout, addToCart, changeQuantity, clearCart, placeOrder,
     completeSale, cancelSale, recordPayment, refundOrder, updateOrder, updateMenuItem, addMenuItem, reorder, addCustomer, registerAccount, registerCustomerAccount, addNotification, redeemReward,
   }
 

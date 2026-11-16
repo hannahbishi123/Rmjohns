@@ -1,0 +1,593 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   rmjohns Kitchen & Bar — Kitchen Management Page Styles
+   Strictly scoped to .adm-kitchen-mgmt so no other module is affected.
+   Official Theme Palette:
+   - Forest Green : #1B3B2B
+   - Lime Green   : #D4E157
+   - Cream        : #F9F9F6
+   - White        : #FFFFFF
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.page-content.adm-kitchen-page-content > .page-heading,
+.page-content:has(.adm-kitchen-mgmt) > .page-heading {
+  display: none;
+}
+
+.adm-kitchen-mgmt {
+  --kit-forest: #1B3B2B;
+  --kit-forest-deep: #132C1F;
+  --kit-forest-mid: #234F36;
+  --kit-lime: #D4E157;
+  --kit-lime-hover: #DFEC66;
+  --kit-col-head: #E2EEBD;
+  --kit-cream: #F9F9F6;
+  --kit-white: #FFFFFF;
+  --kit-text: #162B20;
+  --kit-text-body: #283C31;
+  --kit-text-muted: #6C7D72;
+  --kit-border: #E5EADF;
+
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--kit-text);
+  padding-bottom: 24px;
+}
+
+.adm-kitchen-mgmt *,
+.adm-kitchen-mgmt *::before,
+.adm-kitchen-mgmt *::after {
+  box-sizing: border-box;
+}
+
+/* ────────────────────── 1. KITCHEN HEADER BANNER ────────────────────── */
+.adm-kit-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 32px;
+  min-height: 118px;
+  border-radius: 20px;
+  background: linear-gradient(115deg, #133320 0%, #1B442B 52%, #295D38 100%);
+  color: var(--kit-white);
+  box-shadow: 0 12px 30px rgba(19, 44, 31, 0.16);
+  overflow: hidden;
+}
+
+.adm-kit-banner-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.adm-kit-banner-leaves {
+  position: absolute;
+  right: 170px;
+  bottom: -6px;
+  width: 200px;
+  height: 120px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.adm-kit-banner-left {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-kit-date {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--kit-lime);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.adm-kit-banner-left h1 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(30px, 2.8vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.08;
+  color: var(--kit-white);
+}
+
+.adm-kit-banner-left p {
+  margin: 5px 0 0;
+  font-size: 14.5px;
+  font-weight: 400;
+  color: rgba(249, 249, 246, 0.90);
+}
+
+.adm-kit-banner-btn {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 24px;
+  border-radius: 999px;
+  border: 0;
+  background-color: var(--kit-lime);
+  color: #163320;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  transition: transform 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+  flex-shrink: 0;
+}
+
+.adm-kit-banner-btn:hover {
+  background-color: var(--kit-lime-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+}
+
+.adm-kit-plus {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ────────────────────── 2. KITCHEN QUEUE SUMMARY CARD ────────────────────── */
+.adm-kit-summary-card {
+  display: grid;
+  grid-template-columns: 1.15fr 0.65fr 1.6fr auto;
+  align-items: center;
+  background-color: var(--kit-white);
+  border-radius: 20px;
+  border: 1px solid var(--kit-border);
+  box-shadow: 0 8px 24px rgba(20, 42, 30, 0.04);
+  padding: 18px 26px;
+  gap: 24px;
+}
+
+.adm-kit-summary-brand {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.adm-kit-chef-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background-color: #E7F1CE;
+  color: var(--kit-forest);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.adm-kit-chef-circle svg {
+  width: 26px;
+  height: 26px;
+}
+
+.adm-kit-summary-brand h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--kit-forest);
+  line-height: 1.2;
+}
+
+.adm-kit-summary-brand p {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--kit-text-muted);
+}
+
+.adm-kit-summary-tickets {
+  border-left: 1px solid #EAEFE3;
+  border-right: 1px solid #EAEFE3;
+  padding: 0 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.adm-kit-summary-tickets strong {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--kit-forest);
+  line-height: 1.05;
+}
+
+.adm-kit-summary-tickets span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--kit-text-muted);
+  margin-top: 2px;
+}
+
+.adm-kit-summary-status {
+  display: flex;
+  align-items: center;
+}
+
+.adm-kit-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background-color: #E5F0CA;
+  color: #1A5C2B;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.adm-kit-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #1F6E32;
+  display: inline-block;
+}
+
+.adm-kit-summary-actions {
+  border-left: 1px solid #EAEFE3;
+  padding-left: 24px;
+  display: flex;
+  align-items: center;
+}
+
+.adm-kit-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid #DCE2D4;
+  background-color: var(--kit-white);
+  color: var(--kit-forest);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.adm-kit-refresh-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.adm-kit-refresh-btn:hover {
+  background-color: var(--kit-forest);
+  border-color: var(--kit-forest);
+  color: var(--kit-white);
+}
+
+/* ────────────────────── 3. KITCHEN ORDER BOARD (3 COLUMNS) ────────────────────── */
+.adm-kit-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+
+.adm-kit-column {
+  display: flex;
+  flex-direction: column;
+  background-color: #FAFBF7;
+  border-radius: 20px;
+  border: 1px solid var(--kit-border);
+  box-shadow: 0 8px 24px rgba(20, 42, 30, 0.04);
+  overflow: hidden;
+  min-height: 520px;
+}
+
+/* Column Header */
+.adm-kit-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  background-color: var(--kit-col-head);
+  border-bottom: 1px solid #D3E2A6;
+}
+
+.adm-kit-col-head-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.adm-kit-col-icon {
+  width: 30px;
+  height: 30px;
+  color: var(--kit-forest);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.adm-kit-col-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.adm-kit-col-head-left h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--kit-forest);
+  line-height: 1.15;
+}
+
+.adm-kit-col-head-left p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #4E604A;
+}
+
+.adm-kit-col-count {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 50%;
+  background-color: var(--kit-white);
+  color: var(--kit-forest);
+  font-size: 14px;
+  font-weight: 800;
+  display: inline-grid;
+  place-items: center;
+  box-shadow: 0 2px 6px rgba(20, 42, 30, 0.06);
+  flex-shrink: 0;
+}
+
+/* Column Body & Order Cards */
+.adm-kit-col-body {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.adm-kit-ticket {
+  background-color: var(--kit-white);
+  border-radius: 16px;
+  border: 1px solid #EAEFE3;
+  box-shadow: 0 4px 14px rgba(20, 42, 30, 0.04);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.adm-kit-ticket:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(20, 42, 30, 0.08);
+}
+
+.adm-kit-ticket-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.adm-kit-ticket-id-badge {
+  min-width: 56px;
+  min-height: 56px;
+  padding: 6px 10px;
+  border-radius: 50%;
+  background-color: #EBF2D8;
+  color: var(--kit-forest);
+  display: inline-grid;
+  place-items: center;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.adm-kit-ticket-id-badge strong {
+  font-size: 12.5px;
+  font-weight: 800;
+  line-height: 1.15;
+  word-break: break-word;
+}
+
+.adm-kit-ticket-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.adm-kit-ticket-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.adm-kit-ticket-time {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #24372C;
+}
+
+.adm-kit-ticket-total {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1A5C2E;
+  white-space: nowrap;
+}
+
+.adm-kit-ticket-items {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #26382E;
+  line-height: 1.45;
+}
+
+.adm-kit-ticket-tags {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.adm-kit-type-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background-color: #EFECE0;
+  color: #2B3E31;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.adm-kit-type-pill svg {
+  width: 13px;
+  height: 13px;
+  color: var(--kit-forest);
+  flex-shrink: 0;
+}
+
+/* Full-width Forest Green Action Button */
+.adm-kit-action-btn {
+  width: 100%;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 0;
+  background-color: var(--kit-forest);
+  color: var(--kit-white);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.18s ease;
+}
+
+.adm-kit-action-btn:hover {
+  background-color: var(--kit-forest-mid);
+}
+
+.adm-kit-action-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.adm-kit-btn-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.adm-kit-action-arrow {
+  font-size: 16px;
+  line-height: 1;
+  transition: transform 0.18s ease;
+}
+
+.adm-kit-action-btn:hover .adm-kit-action-arrow {
+  transform: translateX(3px);
+}
+
+.adm-kit-col-empty {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 36px 18px;
+  text-align: center;
+  color: var(--kit-text-muted);
+  font-size: 13.5px;
+}
+
+.adm-kit-col-empty p {
+  margin: 0;
+}
+
+/* ────────────────────── RESPONSIVE BREAKPOINTS ────────────────────── */
+@media (max-width: 1120px) {
+  .adm-kit-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .adm-kit-summary-card {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .adm-kit-summary-tickets {
+    border-right: 0;
+  }
+
+  .adm-kit-summary-actions {
+    justify-content: flex-end;
+  }
+
+  .adm-kit-board {
+    grid-template-columns: 1fr;
+  }
+
+  .adm-kit-column {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .adm-kit-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px 22px;
+  }
+
+  .adm-kit-banner-btn {
+    width: 100%;
+  }
+
+  .adm-kit-banner-leaves {
+    right: 12px;
+    opacity: 0.35;
+  }
+
+  .adm-kit-summary-card {
+    grid-template-columns: 1fr;
+  }
+
+  .adm-kit-summary-tickets,
+  .adm-kit-summary-actions {
+    border-left: 0;
+    border-top: 1px solid #EAEFE3;
+    padding: 12px 0 0;
+    justify-content: flex-start;
+    align-items: flex-start;
+  }
+}

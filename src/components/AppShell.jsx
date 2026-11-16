@@ -20,7 +20,7 @@ const PROTECTED_PAGES = {
   Orders: ['Admin', 'Staff'], Kitchen: ['Admin', 'Staff'],
   'Staff Dashboard': ['Staff'], Attendance: ['Staff'],
   Home: ['Customer'], Cart: ['Customer'], Checkout: ['Customer'],
-  'My orders': ['Customer'], Loyalty: ['Customer'],
+  'My orders': ['Customer'], Loyalty: ['Admin', 'Customer'],
   Menu: ['Admin', 'Staff', 'Customer'],
   Notifications: ['Admin', 'Staff', 'Customer'],
   Profile: ['Admin', 'Staff', 'Customer'],
@@ -127,35 +127,175 @@ function IconBell() {
   )
 }
 
-function IconSearch() {
+// ── Admin Sidebar Custom SVG Icons (Reference Design) ─────────────────────────
+const adminNavIcons = {
+  Overview: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 3.2 3 10.5V20a1 1 0 0 0 1 1h5.5v-6h5v6H20a1 1 0 0 0 1-1v-9.5L12 3.2Z" />
+    </svg>
+  ),
+  Menu: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 5a2 2 0 0 1 2 2H10a2 2 0 0 1 2-2Z" />
+      <path d="M4 15a8 8 0 0 1 16 0H4Z" fill="currentColor" fillOpacity="0.2" />
+      <path d="M4 15a8 8 0 0 1 16 0" />
+      <line x1="2" y1="18" x2="22" y2="18" />
+    </svg>
+  ),
+  Orders: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="9" cy="20" r="1.5" fill="currentColor" />
+      <circle cx="18" cy="20" r="1.5" fill="currentColor" />
+      <path d="M2.5 4h2.5l2.2 11.2a1.5 1.5 0 0 0 1.5 1.3h9.6a1.5 1.5 0 0 0 1.4-1.1L21.5 7H6" />
+    </svg>
+  ),
+  Sales: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <rect x="4" y="13" width="3.5" height="7" rx="1" />
+      <rect x="10.25" y="6" width="3.5" height="14" rx="1" />
+      <rect x="16.5" y="10" width="3.5" height="10" rx="1" />
+    </svg>
+  ),
+  Staff: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="9" cy="8" r="3.2" />
+      <circle cx="16.5" cy="9" r="2.5" opacity="0.85" />
+      <path d="M3 19c0-3 2.7-5.2 6-5.2s6 2.2 6 5.2H3Z" />
+      <path d="M15.5 19c0-2.1-1-3.9-2.5-4.8.9-.3 1.9-.5 3-.5 2.8 0 5 1.8 5 4.3V19h-5.5Z" opacity="0.85" />
+    </svg>
+  ),
+  Loyalty: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="m12 2.5 2.9 6 6.6.9-4.8 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5-4.8-4.6 6.6-.9L12 2.5Z" />
+    </svg>
+  ),
+  Settings: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.77 1.02 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+    </svg>
+  ),
+  Notifications: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2Z" />
+    </svg>
+  ),
+  Kitchen: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 2c1.5 3.5 4 5.5 4 9a4 4 0 1 1-8 0c0-3.5 2.5-5.5 4-9Z" />
+      <path d="M5 20h14" />
+    </svg>
+  ),
+  POS: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <line x1="7" y1="8" x2="17" y2="8" />
+      <line x1="7" y1="12" x2="11" y2="12" />
+      <line x1="14" y1="12" x2="17" y2="12" />
+      <line x1="7" y1="16" x2="17" y2="16" />
+    </svg>
+  ),
+  Customers: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
+  Monitoring: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="12" rx="2" />
+      <line x1="8" y1="20" x2="16" y2="20" />
+      <line x1="12" y1="16" x2="12" y2="20" />
+    </svg>
+  ),
+  Reports: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="16" y2="17" />
+    </svg>
+  ),
+}
+
+// Primary ordered Admin navigation matching the reference image + all existing Admin modules
+const ADMIN_NAV_ITEMS = [
+  { page: 'Overview',      label: 'Dashboard',        hasChevron: false },
+  { page: 'Menu',          label: 'Menu Management',  hasChevron: true  },
+  { page: 'Orders',        label: 'Order Management', hasChevron: true  },
+  { page: 'Sales',         label: 'Sales Reports',    hasChevron: false },
+  { page: 'Staff',         label: 'Staff Monitoring', hasChevron: false },
+  { page: 'Loyalty',       label: 'Loyalty Program',  hasChevron: false },
+  { page: 'Kitchen',       label: 'Kitchen Queue',    hasChevron: false },
+  { page: 'POS',           label: 'Point of Sale',    hasChevron: false },
+  { page: 'Customers',     label: 'Customers',        hasChevron: false },
+  { page: 'Monitoring',    label: 'RFID Attendance',  hasChevron: false },
+  { page: 'Reports',       label: 'Analytics',        hasChevron: false },
+  { page: 'Settings',      label: 'Settings',         hasChevron: false },
+  { page: 'Notifications', label: 'Notifications',    hasChevron: false },
+]
+
+function AdminChefCrest() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
-      aria-hidden="true">
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    <svg className="adm-chef-crest" viewBox="0 0 100 84" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      {/* Chef Hat */}
+      <path
+        d="M28 42C20 40 16 32 19 24C22 17 30 15 36 18C39 10 46 6 53 7C61 8 66 13 68 18C74 16 82 19 84 26C86 33 81 40 73 42V52H28V42Z"
+        stroke="#D4E157"
+        strokeWidth="3.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="rgba(212, 225, 87, 0.14)"
+      />
+      <path d="M28 46H73" stroke="#D4E157" strokeWidth="2.4" />
+      <path d="M38 34V42M50 31V42M62 34V42" stroke="#D4E157" strokeWidth="2" strokeLinecap="round" opacity="0.75" />
+      {/* Crossed Fork & Spoon */}
+      <path d="M34 59L68 75" stroke="#F9F9F6" strokeWidth="2.8" strokeLinecap="round" />
+      <path d="M68 59L34 75" stroke="#F9F9F6" strokeWidth="2.8" strokeLinecap="round" />
+      <ellipse cx="31" cy="57" rx="5" ry="3.5" transform="rotate(25 31 57)" fill="#D4E157" />
+      <path d="M66 56L72 53M68 59L74 56M70 62L75 59" stroke="#D4E157" strokeWidth="2" strokeLinecap="round" />
     </svg>
   )
 }
 
 export default function AppShell() {
   const {
-    role, page, navigate, logout, cartCount, orders,
+    role, page, urlRequestedRole, navigate, logout, cartCount, orders,
     dialog, setDialog, menu, setMenu, setCart, setStaff,
     profile, payments, rewards, setRewards, promotions, setPromotions,
     refundOrder, notify, databaseSaveError,
-    firebaseAuthReady,
+    firebaseAuthReady, notifications = [],
   } = useApp()
 
   // Start open on wide screens
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 900)
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
 
   // Escape to collapse
   useEffect(() => {
-    function onKey(e) { if (e.key === 'Escape') setSidebarOpen(false) }
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        setSidebarOpen(false)
+        setProfileMenuOpen(false)
+      }
+    }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [])
+
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    if (!profileMenuOpen) return
+    function onDocClick(e) {
+      if (!e.target.closest('.adm-profile-dropdown-wrap')) {
+        setProfileMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [profileMenuOpen])
 
   const dialogProps = {
     dialog, onClose: () => setDialog(null),
@@ -164,46 +304,63 @@ export default function AppShell() {
     refundOrder, notify,
   }
 
-  if (page === 'Landing') return <><LandingPage />{dialog && <DialogHost {...dialogProps} />}</>
+  const sessionActive = localStorage.getItem('auth_session_active') === 'true'
 
-  if (!firebaseAuthReady) {
+  // Wait for Firebase Auth / session verification before rendering protected routes
+  // or redirecting an active session back to Landing/Login.
+  if (!firebaseAuthReady && (sessionActive || !PUBLIC_PAGES.includes(page))) {
     return (
       <main className="database-startup" role="status">
         <img src="/rmjohns-logo.jpg" alt="RMJohn's" className="brand-logo" />
-        <h1>Loading RMJohn\u2019s\u2026</h1>
-        <p>Checking your session.</p>
+        <h1>Loading RMJohn&apos;s&hellip;</h1>
+        <p>Restoring your session.</p>
       </main>
     )
   }
 
-  const sessionActive = localStorage.getItem('auth_session_active') === 'true'
-  if (!PUBLIC_PAGES.includes(page) && !sessionActive) {
+  // Only show Landing or Login when the user is NOT in an active session
+  if (!sessionActive) {
+    if (page === 'Landing') return <><LandingPage />{dialog && <DialogHost {...dialogProps} />}</>
     return <><LoginPage />{dialog && <DialogHost {...dialogProps} />}</>
   }
 
-  const allowedRoles = PROTECTED_PAGES[page]
-  if (allowedRoles && sessionActive && !allowedRoles.includes(role)) {
+  // If an authenticated user is on Landing or Login, render their dashboard home
+  const activePage = PUBLIC_PAGES.includes(page) ? (ROLE_HOME[role] || 'Home') : page
+
+  // Role-based route protection: block access if page is not allowed for role
+  // OR if the URL explicitly requested another role's namespace (e.g. /customer/* while Admin)
+  const allowedRoles = PROTECTED_PAGES[activePage]
+  const roleMismatch =
+    (allowedRoles && !allowedRoles.includes(role)) ||
+    (urlRequestedRole && urlRequestedRole !== role)
+
+  if (roleMismatch) {
     const homePage = ROLE_HOME[role] || 'Login'
     return (
       <>
-        <AccessDenied role={role} requestedPage={page} onRedirect={() => navigate(homePage)} />
+        <AccessDenied
+          role={role}
+          requestedPage={urlRequestedRole ? `${urlRequestedRole} — ${activePage}` : activePage}
+          onRedirect={() => navigate(homePage)}
+        />
         {dialog && <DialogHost {...dialogProps} />}
       </>
     )
   }
 
-  if (page === 'Login') return <><LoginPage />{dialog && <DialogHost {...dialogProps} />}</>
-
-  const title = page === 'Staff Dashboard'
+  const title = activePage === 'Staff Dashboard'
     ? 'Your shift, at a glance.'
-    : ['Overview', 'Home'].includes(page)
+    : ['Overview', 'Home'].includes(activePage)
       ? `Good morning, ${profile.name.split(' ')[0]}`
-      : page
+      : activePage
 
   const initials = profile.name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()
+  const isAdmin = role === 'Admin'
+  const unreadNotifCount = notifications.filter((n) => !n.read).length || notifications.length
+  const firstName = profile.name ? profile.name.split(' ')[0] : 'Maureen'
 
   return (
-    <div className={`app-shell${sidebarOpen ? ' sidebar-is-open' : ' sidebar-is-closed'}`}>
+    <div className={`app-shell${sidebarOpen ? ' sidebar-is-open' : ' sidebar-is-closed'}${isAdmin ? ' admin-role-shell' : ''}${isAdmin && activePage === 'Overview' ? ' admin-overview-shell' : ''}`}>
 
       {/* Overlay — mobile only, tap outside to close */}
       {sidebarOpen && (
@@ -215,118 +372,305 @@ export default function AppShell() {
       )}
 
       {/* ══════════════ SIDEBAR ══════════════ */}
-      <aside className={`sidebar${sidebarOpen ? ' sidebar-open' : ''}`} id="sidebar">
+      {isAdmin ? (
+        <aside className={`sidebar adm-sidebar${sidebarOpen ? ' sidebar-open' : ''}`} id="sidebar">
+          {/* Decorative top-left botanical leaf accent */}
+          <svg className="adm-sidebar-leaf-top" viewBox="0 0 120 90" fill="none" aria-hidden="true">
+            <path d="M-10 80 C20 55 55 25 95 -10 C55 5 20 25 -10 55 Z" fill="#A3B18A" fillOpacity="0.22" />
+            <path d="M-5 45 C25 30 50 15 75 -5 C45 5 15 18 -5 35 Z" fill="#D4E157" fillOpacity="0.18" />
+          </svg>
 
-        {/* Brand / logo */}
-        <div className="sidebar-brand">
-          <button
-            className="brand"
-            onClick={() => navigate(navByRole[role][0][0])}
-            aria-label="RMJohn's home"
-          >
-            <img src="/rmjohns-logo.jpg" alt="RMJohn's" className="brand-logo" />
-            <span className="brand-copy">
-              <strong>RMJohn&apos;s</strong>
-              <small>EATERY</small>
-            </span>
-          </button>
-        </div>
-
-        {/* Nav section label */}
-        <div className="nav-label">{role === 'Customer' ? 'YOUR ACCOUNT' : 'OPERATIONS'}</div>
-
-        {/* Navigation */}
-        <nav className="side-nav">
-          {navByRole[role].map(([label, icon]) => (
+          {/* Brand / Logo Block */}
+          <div className="adm-sidebar-brand">
             <button
-              key={label}
-              className={`nav-item${page === label ? ' active' : ''}`}
-              onClick={() => navigate(label)}
+              type="button"
+              className="adm-brand-btn"
+              onClick={() => navigate('Overview')}
+              aria-label="rmjohns Kitchen & Bar Dashboard"
             >
-              <span className="nav-icon">{icon}</span>
-              <span className="nav-label-text">{label}</span>
-              {label === 'Cart' && cartCount > 0 && (
-                <span className="nav-count">{cartCount}</span>
-              )}
-              {label === 'Orders' && role === 'Admin' && (
-                <span className="nav-count">{orders.length}</span>
-              )}
+              <div className="adm-brand-emblem-row">
+                <img src="/rmjohns-logo.jpg" alt="rmjohns logo" className="adm-brand-logo-img" />
+                <AdminChefCrest />
+              </div>
+              <span className="adm-brand-title">rmjohns</span>
+              <span className="adm-brand-subtitle">Kitchen &amp; Bar</span>
+              <span className="adm-brand-flourish" aria-hidden="true">
+                <i />
+                <span>◆</span>
+                <i />
+              </span>
             </button>
-          ))}
-        </nav>
+          </div>
 
-        {/* Spacer */}
-        <div className="sidebar-spacer" />
+          {/* Admin Navigation Links */}
+          <nav className="adm-side-nav" aria-label="Admin navigation">
+            {ADMIN_NAV_ITEMS.map(({ page: navPage, label, hasChevron }) => {
+              const isActive = activePage === navPage
+              return (
+                <button
+                  key={navPage}
+                  type="button"
+                  className={`adm-nav-item${isActive ? ' active' : ''}`}
+                  onClick={() => navigate(navPage)}
+                >
+                  <span className="adm-nav-icon">
+                    {adminNavIcons[navPage] || '◫'}
+                  </span>
+                  <span className="adm-nav-text">{label}</span>
+                  {navPage === 'Notifications' && unreadNotifCount > 0 && (
+                    <span className="adm-nav-badge">{unreadNotifCount}</span>
+                  )}
+                  {navPage === 'Orders' && orders.length > 0 && (
+                    <span className="adm-nav-count-subtle">{orders.length}</span>
+                  )}
+                  {hasChevron && (
+                    <span className="adm-nav-chevron" aria-hidden="true">›</span>
+                  )}
+                </button>
+              )
+            })}
 
-        {/* ── User profile row ── */}
-        <div className="sidebar-user" onClick={() => navigate('Profile')} role="button" tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && navigate('Profile')}>
-          <span className="avatar">{initials}</span>
-          <span className="user-copy">
-            <strong>{profile.name}</strong>
-            <small>{role}</small>
-          </span>
-        </div>
+            {/* Logout Item inside navigation flow matching reference image */}
+            <button
+              type="button"
+              className="adm-nav-item adm-nav-logout"
+              onClick={(e) => { e.stopPropagation(); logout() }}
+            >
+              <span className="adm-nav-icon">
+                <IconLogout />
+              </span>
+              <span className="adm-nav-text">Logout</span>
+            </button>
+          </nav>
 
-        {/* ── SIGN OUT BUTTON — full width, prominent, at bottom ── */}
-        <button
-          type="button"
-          className="sidebar-signout-btn"
-          onClick={(e) => { e.stopPropagation(); logout() }}
-        >
-          <IconLogout />
-          <span>Sign out</span>
-        </button>
+          {/* Bottom Script Quote & Botanical Garnish */}
+          <div className="adm-sidebar-footer">
+            <div className="adm-sidebar-motto" aria-hidden="true">
+              <span>Good Food.</span>
+              <span>Good Mood.</span>
+              <svg className="adm-motto-swish" viewBox="0 0 140 16" fill="none">
+                <path d="M12 12 Q70 2 128 10" stroke="#D4E157" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </div>
+            <svg className="adm-sidebar-leaf-bottom" viewBox="0 0 160 110" fill="none" aria-hidden="true">
+              <path d="M90 115 C105 75 130 45 165 20 C145 55 130 85 115 115 Z" fill="#A3B18A" fillOpacity="0.28" />
+              <path d="M60 115 C85 82 115 58 155 40 C125 70 100 95 80 115 Z" fill="#D4E157" fillOpacity="0.2" />
+            </svg>
+          </div>
+        </aside>
+      ) : (
+        <aside className={`sidebar${sidebarOpen ? ' sidebar-open' : ''}`} id="sidebar">
 
-      </aside>
+          {/* Brand / logo */}
+          <div className="sidebar-brand">
+            <button
+              className="brand"
+              onClick={() => navigate(navByRole[role][0][0])}
+              aria-label="RMJohn's home"
+            >
+              <img src="/rmjohns-logo.jpg" alt="RMJohn's" className="brand-logo" />
+              <span className="brand-copy">
+                <strong>RMJohn&apos;s</strong>
+                <small>EATERY</small>
+              </span>
+            </button>
+          </div>
+
+          {/* Nav section label */}
+          <div className="nav-label">{role === 'Customer' ? 'YOUR ACCOUNT' : 'OPERATIONS'}</div>
+
+          {/* Navigation */}
+          <nav className="side-nav">
+            {navByRole[role].map(([label, icon]) => (
+              <button
+                key={label}
+                className={`nav-item${activePage === label ? ' active' : ''}`}
+                onClick={() => navigate(label)}
+              >
+                <span className="nav-icon">{icon}</span>
+                <span className="nav-label-text">{label}</span>
+                {label === 'Cart' && cartCount > 0 && (
+                  <span className="nav-count">{cartCount}</span>
+                )}
+                {label === 'Orders' && role === 'Admin' && (
+                  <span className="nav-count">{orders.length}</span>
+                )}
+              </button>
+            ))}
+          </nav>
+
+          {/* Spacer */}
+          <div className="sidebar-spacer" />
+
+          {/* ── User profile row ── */}
+          <div className="sidebar-user" onClick={() => navigate('Profile')} role="button" tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && navigate('Profile')}>
+            <span className="avatar">{initials}</span>
+            <span className="user-copy">
+              <strong>{profile.name}</strong>
+              <small>{role}</small>
+            </span>
+          </div>
+
+          {/* ── SIGN OUT BUTTON — full width, prominent, at bottom ── */}
+          <button
+            type="button"
+            className="sidebar-signout-btn"
+            onClick={(e) => { e.stopPropagation(); logout() }}
+          >
+            <IconLogout />
+            <span>Sign out</span>
+          </button>
+
+        </aside>
+      )}
 
       {/* ══════════════ MAIN AREA ══════════════ */}
       <main className="main-area">
-        <header className="topbar">
-
-          {/* Hamburger button */}
-          <button
-            className="hamburger-btn"
-            onClick={() => setSidebarOpen((prev) => !prev)}
-            aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-            aria-expanded={sidebarOpen}
-            aria-controls="sidebar"
-          >
-            <HamburgerIcon open={sidebarOpen} />
-          </button>
-
-          {/* Welcome text — only on wide screens */}
-          <div className="topbar-welcome">
-            <span className="topbar-greeting">Welcome back,</span>
-            <strong className="topbar-name">{profile.name.split(' ')[0]}</strong>
-          </div>
-
-          {/* ── Live search bar ── */}
-          <SearchBar />
-
-          <div className="topbar-actions">
-            <ConnectionStatus />
-
-            {/* Notifications */}
+        {isAdmin ? (
+          <header className="topbar adm-topbar">
+            {/* Hamburger button */}
             <button
-              className="icon-button notification-button"
-              aria-label="Notifications"
-              onClick={() => navigate('Notifications')}
+              className="hamburger-btn adm-hamburger-btn"
+              onClick={() => setSidebarOpen((prev) => !prev)}
+              aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+              aria-expanded={sidebarOpen}
+              aria-controls="sidebar"
             >
-              <IconBell />
-              <i />
+              <HamburgerIcon open={sidebarOpen} />
             </button>
 
-            {/* Avatar / profile shortcut */}
+            {/* Live search bar */}
+            <div className="adm-search-slot">
+              <SearchBar />
+            </div>
+
+            {/* Decorative botanical sprig in top header inspired by reference */}
+            <div className="adm-topbar-botanical" aria-hidden="true">
+              <svg viewBox="0 0 180 64" fill="none">
+                <path d="M110 -4 C90 18 65 36 32 54" stroke="#4A6B49" strokeWidth="2" strokeLinecap="round" />
+                <path d="M88 14 C68 8 48 16 38 32 C56 32 74 26 88 14 Z" fill="#6E8F5E" fillOpacity="0.85" />
+                <path d="M105 6 C102 24 88 42 68 50 C68 32 82 14 105 6 Z" fill="#89A874" fillOpacity="0.85" />
+                <path d="M126 0 C130 18 120 36 102 46 C98 28 108 10 126 0 Z" fill="#A3B18A" fillOpacity="0.75" />
+              </svg>
+            </div>
+
+            <div className="topbar-actions adm-topbar-actions">
+              <ConnectionStatus />
+
+              {/* Notifications Bell with Lime Dot */}
+              <button
+                type="button"
+                className="adm-notif-btn"
+                aria-label="Notifications"
+                onClick={() => navigate('Notifications')}
+              >
+                <IconBell />
+                {unreadNotifCount > 0 && <span className="adm-notif-dot" />}
+              </button>
+
+              <span className="adm-topbar-divider" aria-hidden="true" />
+
+              {/* Logged-in Admin/Manager Profile + Dropdown */}
+              <div className="adm-profile-dropdown-wrap">
+                <button
+                  type="button"
+                  className="adm-profile-trigger"
+                  onClick={() => setProfileMenuOpen((prev) => !prev)}
+                  aria-expanded={profileMenuOpen}
+                  aria-haspopup="menu"
+                >
+                  <span className="adm-profile-avatar">
+                    <img
+                      src="/rmjohns-logo.jpg"
+                      alt={profile.name}
+                      onError={(e) => { e.currentTarget.style.display = 'none' }}
+                    />
+                    <span>{initials}</span>
+                  </span>
+                  <span className="adm-profile-text">
+                    <strong>{firstName}</strong>
+                    <small>Manager</small>
+                  </span>
+                  <svg className={`adm-profile-chevron${profileMenuOpen ? ' open' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                {profileMenuOpen && (
+                  <div className="adm-profile-menu" role="menu">
+                    <div className="adm-profile-menu-head">
+                      <strong>{profile.name}</strong>
+                      <small>{profile.email || 'admin@rmjohns.com'}</small>
+                    </div>
+                    <button type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); navigate('Profile') }}>
+                      <IconUser /> My Profile
+                    </button>
+                    <button type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); navigate('Billing') }}>
+                      <span>▧</span> Billing &amp; Receipts
+                    </button>
+                    <button type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); navigate('Payments') }}>
+                      <span>⇄</span> Payment Records
+                    </button>
+                    <button type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); navigate('Settings') }}>
+                      <span>⚙</span> System Settings
+                    </button>
+                    <div className="adm-profile-menu-sep" />
+                    <button type="button" role="menuitem" className="adm-profile-menu-logout" onClick={() => { setProfileMenuOpen(false); logout() }}>
+                      <IconLogout /> Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </header>
+        ) : (
+          <header className="topbar">
+
+            {/* Hamburger button */}
             <button
-              className="top-avatar"
-              aria-label={`Profile — ${profile.name}`}
-              onClick={() => navigate('Profile')}
+              className="hamburger-btn"
+              onClick={() => setSidebarOpen((prev) => !prev)}
+              aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+              aria-expanded={sidebarOpen}
+              aria-controls="sidebar"
             >
-              {initials}
+              <HamburgerIcon open={sidebarOpen} />
             </button>
-          </div>
-        </header>
+
+            {/* Welcome text — only on wide screens */}
+            <div className="topbar-welcome">
+              <span className="topbar-greeting">Welcome back,</span>
+              <strong className="topbar-name">{profile.name.split(' ')[0]}</strong>
+            </div>
+
+            {/* ── Live search bar ── */}
+            <SearchBar />
+
+            <div className="topbar-actions">
+              <ConnectionStatus />
+
+              {/* Notifications */}
+              <button
+                className="icon-button notification-button"
+                aria-label="Notifications"
+                onClick={() => navigate('Notifications')}
+              >
+                <IconBell />
+                <i />
+              </button>
+
+              {/* Avatar / profile shortcut */}
+              <button
+                className="top-avatar"
+                aria-label={`Profile — ${profile.name}`}
+                onClick={() => navigate('Profile')}
+              >
+                {initials}
+              </button>
+            </div>
+          </header>
+        )}
 
         {databaseSaveError && (
           <div className="database-save-warning" role="alert">
@@ -334,45 +678,47 @@ export default function AppShell() {
           </div>
         )}
 
-        <div className="page-content">
-          <div className="page-heading">
-            <div>
-              <div className="eyebrow">
-                {role === 'Customer' ? 'RMJOHN\u2019S EATERY' : 'TUESDAY \u00B7 SEPTEMBER 29, 2026'}
+        <div className={`page-content${isAdmin && activePage === 'Overview' ? ' adm-overview-content' : ''}`}>
+          {!(isAdmin && activePage === 'Overview') && (
+            <div className="page-heading">
+              <div>
+                <div className="eyebrow">
+                  {role === 'Customer' ? 'RMJOHN\u2019S EATERY' : 'TUESDAY \u00B7 SEPTEMBER 29, 2026'}
+                </div>
+                <h1>{title}</h1>
+                <p className="page-subtitle">{subtitleFor(activePage, role)}</p>
               </div>
-              <h1>{title}</h1>
-              <p className="page-subtitle">{subtitleFor(page, role)}</p>
+              <div className="heading-actions">
+                {activePage === 'Overview' && role === 'Admin' && (
+                  <button className="button button-outline" onClick={() => navigate('Reports')}>
+                    ↧ <span>Export report</span>
+                  </button>
+                )}
+                {['Menu', 'Staff'].includes(activePage) && role === 'Admin' && (
+                  <button className="button button-dark"
+                    onClick={() => setDialog({ type: 'add', entity: activePage === 'Menu' ? 'menu' : 'staff' })}>
+                    ＋ <span>Add {activePage === 'Menu' ? 'item' : 'staff'}</span>
+                  </button>
+                )}
+                {activePage === 'Loyalty' && role === 'Admin' && (
+                  <button className="button button-dark" onClick={() => setDialog({ type: 'add-reward' })}>
+                    ＋ <span>Add reward</span>
+                  </button>
+                )}
+                {activePage === 'Home' && (
+                  <button className="button button-dark" onClick={() => navigate('Menu')}>
+                    Browse menu <span>↗</span>
+                  </button>
+                )}
+                {activePage === 'Menu' && role === 'Customer' && (
+                  <button className="button button-dark" onClick={() => navigate('Cart')}>
+                    Cart <span>({cartCount})</span>
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="heading-actions">
-              {page === 'Overview' && role === 'Admin' && (
-                <button className="button button-outline" onClick={() => navigate('Reports')}>
-                  ↧ <span>Export report</span>
-                </button>
-              )}
-              {['Menu', 'Staff'].includes(page) && role === 'Admin' && (
-                <button className="button button-dark"
-                  onClick={() => setDialog({ type: 'add', entity: page === 'Menu' ? 'menu' : 'staff' })}>
-                  ＋ <span>Add {page === 'Menu' ? 'item' : 'staff'}</span>
-                </button>
-              )}
-              {page === 'Loyalty' && role === 'Admin' && (
-                <button className="button button-dark" onClick={() => setDialog({ type: 'add-reward' })}>
-                  ＋ <span>Add reward</span>
-                </button>
-              )}
-              {page === 'Home' && (
-                <button className="button button-dark" onClick={() => navigate('Menu')}>
-                  Browse menu <span>↗</span>
-                </button>
-              )}
-              {page === 'Menu' && role === 'Customer' && (
-                <button className="button button-dark" onClick={() => navigate('Cart')}>
-                  Cart <span>({cartCount})</span>
-                </button>
-              )}
-            </div>
-          </div>
-          <RolePage role={role} page={page} />
+          )}
+          <RolePage role={role} page={activePage} />
         </div>
       </main>
 

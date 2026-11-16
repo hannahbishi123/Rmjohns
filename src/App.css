@@ -6018,3 +6018,1780 @@ h1 {
   80%       { transform: translateX(4px); }
 }
 .v-shake { animation: v-shake 0.35s ease; }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   RMJOHNS KITCHEN & BAR — PREMIUM ADMIN DASHBOARD REDESIGN
+   Scoped strictly to .admin-role-shell & .adm-* components.
+   Official Palette:
+   - Forest Green: #1B3B2B
+   - Lime Green:   #D4E157
+   - Cream:        #F9F9F6
+   - Sage Green:   #A3B18A
+   - White:        #FFFFFF
+   ═══════════════════════════════════════════════════════════════════ */
+
+.admin-role-shell {
+  --adm-forest:      #1B3B2B;
+  --adm-forest-deep: #132C20;
+  --adm-forest-mid:  #234B37;
+  --adm-lime:        #D4E157;
+  --adm-lime-soft:   #E2EBB4;
+  --adm-lime-pale:   #ECF2CE;
+  --adm-cream:       #F9F9F6;
+  --adm-cream-warm:  #F2F2EA;
+  --adm-sage:        #A3B18A;
+  --adm-sage-soft:   #DCE5C8;
+  --adm-white:       #FFFFFF;
+  --adm-font-serif:  'Playfair Display', Georgia, serif;
+  --adm-font-sans:   'Plus Jakarta Sans', 'DM Sans', sans-serif;
+  --adm-font-script: 'Dancing Script', cursive;
+  font-family: var(--adm-font-sans);
+  background: var(--adm-cream);
+}
+
+.admin-role-shell .main-area {
+  background: #F3F3EC;
+}
+
+/* ── 1. ADMIN SIDEBAR (Deep Forest Green) ──────────────────────── */
+.admin-role-shell .adm-sidebar {
+  background: linear-gradient(180deg, #1B3B2B 0%, #163324 65%, #122A1E 100%);
+  border-right: 1px solid rgba(212, 225, 87, 0.14);
+  padding: 20px 14px 18px;
+  color: #F9F9F6;
+  width: 260px;
+  box-shadow: 4px 0 24px rgba(18, 42, 30, 0.16);
+}
+
+.adm-sidebar-leaf-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 110px;
+  height: 82px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.adm-sidebar-brand {
+  position: relative;
+  z-index: 1;
+  padding: 4px 6px 14px;
+  text-align: center;
+}
+
+.adm-brand-btn {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: inherit;
+  border-radius: 14px;
+  transition: background 0.2s ease;
+}
+
+.adm-brand-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.adm-brand-emblem-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.adm-brand-logo-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #D4E157;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28);
+}
+
+.adm-chef-crest {
+  width: 58px;
+  height: 48px;
+  display: block;
+}
+
+.adm-brand-title {
+  font-family: var(--adm-font-serif);
+  font-size: 31px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.4px;
+  color: #DCE775;
+  margin-top: 2px;
+}
+
+.adm-brand-subtitle {
+  font-family: var(--adm-font-serif);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #F9F9F6;
+  letter-spacing: 0.6px;
+  margin-top: 3px;
+  opacity: 0.94;
+}
+
+.adm-brand-flourish {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 78%;
+  margin-top: 8px;
+  color: #A3B18A;
+  font-size: 8px;
+}
+
+.adm-brand-flourish i {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 225, 87, 0.55), transparent);
+}
+
+/* Admin Navigation Items */
+.adm-side-nav {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 4px;
+  flex: 1;
+}
+
+.adm-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 41px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: rgba(249, 249, 246, 0.86);
+  font-family: var(--adm-font-sans);
+  font-size: 13.2px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease;
+}
+
+.adm-nav-item:hover {
+  background: rgba(212, 225, 87, 0.13);
+  color: #FFFFFF;
+}
+
+.adm-nav-item.active {
+  background: linear-gradient(135deg, #D4E157 0%, #C8D855 100%);
+  color: #1B3B2B;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.adm-nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: rgba(249, 249, 246, 0.9);
+  transition: color 0.18s ease;
+}
+
+.adm-nav-item:hover .adm-nav-icon {
+  color: #D4E157;
+}
+
+.adm-nav-item.active .adm-nav-icon {
+  color: #1B3B2B;
+}
+
+.adm-nav-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm-nav-chevron {
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.65;
+  margin-left: auto;
+}
+
+.adm-nav-badge {
+  margin-left: auto;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #D4E157;
+  color: #1B3B2B;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adm-nav-item.active .adm-nav-badge {
+  background: #1B3B2B;
+  color: #D4E157;
+}
+
+.adm-nav-count-subtle {
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #DCE775;
+  font-weight: 600;
+}
+
+.adm-nav-item.active .adm-nav-count-subtle {
+  background: rgba(27, 59, 43, 0.15);
+  color: #1B3B2B;
+}
+
+.adm-nav-logout {
+  margin-top: 4px;
+  color: rgba(249, 249, 246, 0.85);
+}
+
+.adm-nav-logout:hover {
+  background: rgba(229, 115, 115, 0.16);
+  color: #FFCDD2;
+}
+
+.adm-nav-logout:hover .adm-nav-icon {
+  color: #FFCDD2;
+}
+
+/* Sidebar Footer Motto & Leaves */
+.adm-sidebar-footer {
+  position: relative;
+  padding: 14px 10px 6px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.adm-sidebar-motto {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--adm-font-script);
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: #DCE775;
+  text-align: center;
+}
+
+.adm-motto-swish {
+  width: 120px;
+  height: 14px;
+  margin-top: 3px;
+}
+
+.adm-sidebar-leaf-bottom {
+  position: absolute;
+  right: -14px;
+  bottom: -18px;
+  width: 120px;
+  height: 85px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── 2. ADMIN TOP HEADER (Clean Cream Header) ──────────────────── */
+.admin-role-shell .adm-topbar {
+  background: #F9F9F6;
+  border-bottom: 1px solid #E6E8DE;
+  height: 70px;
+  padding: 0 28px 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.adm-hamburger-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.adm-hamburger-btn:hover {
+  background: #EAECE0;
+}
+
+.adm-search-slot {
+  flex: 1;
+  max-width: 420px;
+}
+
+.admin-role-shell .sb-wrap {
+  max-width: 420px;
+}
+
+.admin-role-shell .sb-input-row {
+  background: #EFEFE7;
+  border: 1px solid #E0E2D5;
+  height: 42px;
+  border-radius: 999px;
+  padding: 0 16px;
+}
+
+.admin-role-shell .sb-input-row.focused {
+  background: #FFFFFF;
+  border-color: #1B3B2B;
+  box-shadow: 0 0 0 3px rgba(27, 59, 43, 0.1);
+}
+
+.admin-role-shell .sb-search-icon {
+  color: #1B3B2B;
+}
+
+.adm-topbar-botanical {
+  margin-left: auto;
+  margin-right: 16px;
+  width: 135px;
+  height: 54px;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+.adm-topbar-botanical svg {
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 900px) {
+  .adm-topbar-botanical {
+    display: none;
+  }
+}
+
+.adm-topbar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.adm-notif-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: #1B3B2B;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.16s ease;
+}
+
+.adm-notif-btn:hover {
+  background: #EAECE0;
+}
+
+.adm-notif-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #B8C93A;
+  border: 2px solid #F9F9F6;
+}
+
+.adm-topbar-divider {
+  width: 1px;
+  height: 28px;
+  background: #D5D8CA;
+}
+
+/* Admin Profile Trigger & Dropdown */
+.adm-profile-dropdown-wrap {
+  position: relative;
+}
+
+.adm-profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  padding: 4px 8px 4px 4px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.16s ease;
+}
+
+.adm-profile-trigger:hover {
+  background: #ECEEE3;
+}
+
+.adm-profile-avatar {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #1B3B2B;
+  color: #D4E157;
+  font-size: 13px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid #D4E157;
+  flex-shrink: 0;
+}
+
+.adm-profile-avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.adm-profile-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.adm-profile-text strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1B3B2B;
+}
+
+.adm-profile-text small {
+  font-size: 11.5px;
+  color: #637068;
+}
+
+.adm-profile-chevron {
+  color: #1B3B2B;
+  transition: transform 0.18s ease;
+}
+
+.adm-profile-chevron.open {
+  transform: rotate(180deg);
+}
+
+.adm-profile-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 215px;
+  background: #FFFFFF;
+  border: 1px solid #E2E6D8;
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(27, 59, 43, 0.14);
+  padding: 8px;
+  z-index: 250;
+}
+
+.adm-profile-menu-head {
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid #EEF0E6;
+  margin-bottom: 4px;
+}
+
+.adm-profile-menu-head strong {
+  display: block;
+  font-size: 13px;
+  color: #1B3B2B;
+}
+
+.adm-profile-menu-head small {
+  font-size: 11px;
+  color: #7A867E;
+}
+
+.adm-profile-menu button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 0;
+  background: transparent;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2C3E33;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.14s ease;
+}
+
+.adm-profile-menu button:hover {
+  background: #F4F6EC;
+  color: #1B3B2B;
+}
+
+.adm-profile-menu-sep {
+  height: 1px;
+  background: #EEF0E6;
+  margin: 4px 0;
+}
+
+.adm-profile-menu-logout {
+  color: #C0503D !important;
+}
+
+.adm-profile-menu-logout:hover {
+  background: #FDF2F0 !important;
+}
+
+/* ── 3. ADMIN OVERVIEW CONTAINER & WELCOME BANNER ──────────────── */
+.adm-overview-content {
+  max-width: 1320px;
+  padding: 20px 26px 48px;
+}
+
+.adm-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.adm-welcome-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(110deg, #173425 0%, #1B3B2B 52%, #234935 100%);
+  border-radius: 20px;
+  min-height: 132px;
+  padding: 24px 32px;
+  color: #FFFFFF;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(27, 59, 43, 0.14);
+}
+
+.adm-banner-waves {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.adm-welcome-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 460px;
+}
+
+.adm-welcome-copy h1 {
+  font-family: var(--adm-font-serif);
+  font-size: 32px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0 0 8px;
+  line-height: 1.15;
+  letter-spacing: -0.3px;
+}
+
+.adm-welcome-highlight {
+  color: #D4E157;
+}
+
+.adm-welcome-copy p {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(249, 249, 246, 0.88);
+  font-weight: 400;
+}
+
+.adm-welcome-tagline {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--adm-font-script);
+  font-size: 27px;
+  font-weight: 600;
+  color: #DCE775;
+  transform: rotate(-4deg);
+  margin: 0 16px;
+  white-space: nowrap;
+}
+
+.adm-welcome-tagline svg {
+  width: 155px;
+  height: 15px;
+  margin-top: 2px;
+}
+
+.adm-welcome-visual {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 340px;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 12px 16px;
+}
+
+.adm-welcome-visual::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #1B3B2B 0%, rgba(27, 59, 43, 0.45) 32%, transparent 65%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.adm-welcome-dish-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center right;
+}
+
+.adm-banner-export-btn {
+  position: relative;
+  z-index: 2;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 225, 87, 0.6);
+  background: rgba(27, 59, 43, 0.82);
+  color: #D4E157;
+  font-size: 11.5px;
+  font-weight: 600;
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.adm-banner-export-btn:hover {
+  background: #D4E157;
+  color: #1B3B2B;
+}
+
+/* ── 4. DASHBOARD STATISTIC CARDS (4-Card Row) ─────────────────── */
+.adm-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.adm-stat-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 20px 24px;
+  border-radius: 18px;
+  min-height: 122px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.adm-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(27, 59, 43, 0.13);
+}
+
+.adm-stat-forest {
+  background: linear-gradient(135deg, #1B3B2B 0%, #244B37 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(27, 59, 43, 0.9);
+  box-shadow: 0 6px 18px rgba(27, 59, 43, 0.12);
+}
+
+.adm-stat-cream {
+  background: #F9F9F6;
+  color: #1B3B2B;
+  border: 1px solid #E2E6D6;
+  box-shadow: 0 4px 16px rgba(27, 59, 43, 0.06);
+}
+
+.adm-stat-wave {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 46px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.adm-stat-icon-wrap {
+  position: relative;
+  z-index: 1;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.adm-icon-lime {
+  color: #D4E157;
+  background: rgba(212, 225, 87, 0.12);
+}
+
+.adm-icon-lime svg {
+  width: 34px;
+  height: 34px;
+}
+
+.adm-icon-forest {
+  color: #1B3B2B;
+  background: rgba(212, 225, 87, 0.32);
+}
+
+.adm-icon-forest svg {
+  width: 30px;
+  height: 30px;
+}
+
+.adm-icon-star-badge {
+  color: #1B3B2B;
+  background: #DCE785;
+  border-radius: 50%;
+}
+
+.adm-icon-star-badge svg {
+  width: 28px;
+  height: 28px;
+}
+
+.adm-stat-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.adm-stat-value {
+  font-family: var(--adm-font-sans);
+  font-size: 27px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+.adm-stat-label {
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 3px;
+  opacity: 0.9;
+}
+
+.adm-stat-trend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.adm-stat-forest .adm-stat-trend {
+  color: #D4E157;
+}
+
+.adm-stat-cream .adm-stat-trend {
+  color: #1B3B2B;
+}
+
+.adm-loyalty-leaves {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 78px;
+  height: 106px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── 5. MAIN 2-COLUMN DASHBOARD LAYOUT ─────────────────────────── */
+.adm-main-grid {
+  display: grid;
+  grid-template-columns: 1.85fr 1fr;
+  gap: 18px;
+  align-items: stretch;
+}
+
+.adm-col-left,
+.adm-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.adm-card {
+  background: #F9F9F6;
+  border: 1px solid #E4E7DA;
+  border-radius: 18px;
+  padding: 20px 22px;
+  box-shadow: 0 4px 18px rgba(27, 59, 43, 0.05);
+}
+
+.adm-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.adm-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-card-head h2 {
+  font-family: var(--adm-font-serif);
+  font-size: 20px;
+  font-weight: 700;
+  color: #1B3B2B;
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+.adm-card-sub {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: #6E7B72;
+}
+
+.adm-section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adm-period-select {
+  border: 1px solid #DCDFD0;
+  background: #F2F3EA;
+  color: #1B3B2B;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* ── 6. SALES OVERVIEW SMOOTH LINE/AREA CHART ──────────────────── */
+.adm-chart-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.adm-chart-y {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 0 28px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #5C6B61;
+  min-width: 34px;
+}
+
+.adm-chart-stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.adm-chart-svg {
+  width: 100%;
+  height: 175px;
+  display: block;
+  overflow: visible;
+}
+
+.adm-chart-node {
+  cursor: pointer;
+}
+
+.adm-chart-tooltip {
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+  background: #1B3B2B;
+  color: #FFFFFF;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  display: flex;
+  gap: 6px;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  white-space: nowrap;
+}
+
+.adm-chart-tooltip strong {
+  color: #D4E157;
+}
+
+.adm-chart-x {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 14px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3A4A3F;
+}
+
+/* ── 7. RECENT ORDERS TABLE (Lime Header + Clean Rows) ─────────── */
+.adm-view-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: #1B3B2B;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.adm-view-all-btn:hover {
+  background: #E8EED2;
+}
+
+.adm-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.adm-orders-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+
+.adm-orders-table thead th {
+  background: #E1EAB5;
+  color: #1B3B2B;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 11px 14px;
+  border: 0;
+}
+
+.adm-orders-table thead th:first-child {
+  border-radius: 10px 0 0 10px;
+}
+
+.adm-orders-table thead th:last-child {
+  border-radius: 0 10px 10px 0;
+}
+
+.adm-orders-table tbody tr {
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+
+.adm-orders-table tbody tr:hover {
+  background: #F1F4E4;
+}
+
+.adm-orders-table tbody td {
+  padding: 11px 14px;
+  border-bottom: 1px solid #EAECE0;
+  font-size: 13px;
+  color: #2C3E33;
+  vertical-align: middle;
+}
+
+.adm-orders-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.adm-td-order-id strong {
+  color: #1B3B2B;
+  font-weight: 700;
+}
+
+.adm-customer-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-order-dish-avatar .food-thumb.small {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+.adm-customer-name {
+  font-weight: 600;
+  color: #1B3B2B;
+}
+
+.adm-td-total strong {
+  color: #1B3B2B;
+  font-weight: 700;
+}
+
+.adm-td-time {
+  color: #4A5A50;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Status Pills matching Reference Image */
+.adm-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 13px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.adm-status-pill.completed {
+  background: #C4DDA0;
+  color: #1B3B2B;
+}
+
+.adm-status-pill.preparing,
+.adm-status-pill.pending,
+.adm-status-pill.confirmed {
+  background: #F3E695;
+  color: #3D3511;
+}
+
+.adm-status-pill.ready {
+  background: #1B3B2B;
+  color: #FFFFFF;
+}
+
+.adm-status-pill.cancelled,
+.adm-status-pill.refunded {
+  background: #F7D6D0;
+  color: #8E281C;
+}
+
+/* ── 8. QUICK ACTIONS CARD (Right Column Top) ──────────────────── */
+.adm-quick-card {
+  background: #F9F9F6;
+  border: 1px solid #E2E6D6;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(27, 59, 43, 0.06);
+}
+
+.adm-quick-header {
+  background: #1B3B2B;
+  color: #FFFFFF;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-quick-header h2 {
+  font-family: var(--adm-font-serif);
+  font-size: 19px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.adm-bolt-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.adm-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 16px;
+}
+
+.adm-quick-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 88px;
+  padding: 14px 10px;
+  border-radius: 14px;
+  border: 1px solid #D5E0B5;
+  background: #E2EAC7;
+  color: #1B3B2B;
+  cursor: pointer;
+  transition: background 0.16s ease, transform 0.15s ease, box-shadow 0.16s ease;
+}
+
+.adm-quick-btn:hover {
+  background: #D4E157;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(27, 59, 43, 0.12);
+}
+
+.adm-quick-btn strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1B3B2B;
+}
+
+/* ── 9. TASTE THE DIFFERENCE PROMO CARD (Right Column Bottom) ──── */
+.adm-taste-card {
+  position: relative;
+  flex: 1;
+  min-height: 210px;
+  border-radius: 18px;
+  background: linear-gradient(125deg, #163123 0%, #1B3B2B 60%, #244B37 100%);
+  color: #FFFFFF;
+  padding: 24px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+  box-shadow: 0 8px 22px rgba(27, 59, 43, 0.14);
+}
+
+.adm-taste-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 58%;
+}
+
+.adm-taste-copy h3 {
+  font-family: var(--adm-font-serif);
+  font-style: italic;
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 1.12;
+  color: #FFFFFF;
+  margin: 0 0 8px;
+}
+
+.adm-taste-copy p {
+  font-size: 13px;
+  color: rgba(249, 249, 246, 0.85);
+  margin: 0 0 18px;
+}
+
+.adm-taste-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 0;
+  background: linear-gradient(135deg, #DCE775 0%, #C6D856 100%);
+  color: #1B3B2B;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.adm-taste-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+
+.adm-taste-visual {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 52%;
+  z-index: 1;
+}
+
+.adm-taste-visual::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #1B3B2B 0%, rgba(27, 59, 43, 0.25) 38%, transparent 75%);
+  z-index: 1;
+}
+
+.adm-taste-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* ── 10. SECONDARY INSIGHTS ROW (Order Channels & Guest Favorites) */
+.adm-insights-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.adm-loyalty-note {
+  cursor: pointer;
+  background: linear-gradient(135deg, #EEF3DA, #F5F7EC);
+  border-color: #DCE4C2;
+}
+
+/* ── 11. RESPONSIVE BREAKPOINTS (Desktop, Tablet, Mobile) ──────── */
+@media (max-width: 1120px) {
+  .adm-stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .adm-main-grid {
+    grid-template-columns: 1fr;
+  }
+  .adm-welcome-tagline {
+    display: none;
+  }
+}
+
+@media (max-width: 780px) {
+  .adm-overview-content {
+    padding: 16px 14px 40px;
+  }
+  .adm-welcome-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 22px 20px;
+    min-height: 160px;
+  }
+  .adm-welcome-visual {
+    width: 55%;
+    opacity: 0.45;
+  }
+  .adm-insights-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 540px) {
+  .adm-stats-row {
+    grid-template-columns: 1fr;
+  }
+  .adm-welcome-copy h1 {
+    font-size: 24px;
+  }
+  .adm-profile-text {
+    display: none;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   ADMIN WORKSPACE COHESION (.admin-role-shell sub-modules)
+   Applies the Forest Green (#1B3B2B) + Lime (#D4E157) + Cream (#F9F9F6)
+   aesthetic consistently across Admin tables, panels, buttons, pills,
+   tabs, and modals without affecting Customer or Staff roles.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Page Headings on Admin sub-pages */
+.admin-role-shell .page-heading {
+  background: linear-gradient(115deg, #173425 0%, #1B3B2B 60%, #244B37 100%);
+  color: #FFFFFF;
+  padding: 22px 28px;
+  border-radius: 18px;
+  margin-bottom: 22px;
+  box-shadow: 0 6px 20px rgba(27, 59, 43, 0.12);
+  align-items: center;
+}
+
+.admin-role-shell .page-heading .eyebrow {
+  color: #D4E157;
+  font-size: 10px;
+  letter-spacing: 1.6px;
+}
+
+.admin-role-shell .page-heading h1 {
+  font-family: var(--adm-font-serif);
+  color: #FFFFFF;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 4px 0 4px;
+}
+
+.admin-role-shell .page-heading .page-subtitle {
+  color: rgba(249, 249, 246, 0.84);
+  font-size: 13px;
+}
+
+.admin-role-shell .page-heading .button-dark {
+  background: #D4E157;
+  border-color: #D4E157;
+  color: #1B3B2B;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0 20px;
+  min-height: 40px;
+}
+
+.admin-role-shell .page-heading .button-dark:hover {
+  background: #E2EE6B;
+  border-color: #E2EE6B;
+  color: #1B3B2B;
+}
+
+.admin-role-shell .page-heading .button-outline {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(212, 225, 87, 0.5);
+  color: #D4E157;
+  border-radius: 999px;
+  padding: 0 18px;
+  min-height: 38px;
+}
+
+.admin-role-shell .page-heading .button-outline:hover {
+  background: #D4E157;
+  color: #1B3B2B;
+}
+
+/* Panels & Cards inside Admin Role */
+.admin-role-shell .panel {
+  background: #F9F9F6;
+  border: 1px solid #E2E6D6;
+  border-radius: 18px;
+  box-shadow: 0 4px 18px rgba(27, 59, 43, 0.05);
+}
+
+.admin-role-shell .panel-heading h2 {
+  font-family: var(--adm-font-serif);
+  font-size: 19px;
+  font-weight: 700;
+  color: #1B3B2B;
+}
+
+/* Stat Cards on Sales / Monitoring Admin pages */
+.admin-role-shell .stat-card {
+  background: #F9F9F6;
+  border: 1px solid #E2E6D6;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(27, 59, 43, 0.05);
+}
+
+.admin-role-shell .stat-card:nth-child(odd) {
+  background: linear-gradient(135deg, #1B3B2B 0%, #244B37 100%);
+  border-color: #1B3B2B;
+  color: #FFFFFF;
+}
+
+.admin-role-shell .stat-card:nth-child(odd) .stat-top,
+.admin-role-shell .stat-card:nth-child(odd) .stat-meta {
+  color: rgba(249, 249, 246, 0.8);
+}
+
+.admin-role-shell .stat-card:nth-child(odd) .stat-value {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.admin-role-shell .stat-card:nth-child(odd) .stat-meta strong {
+  color: #D4E157;
+}
+
+.admin-role-shell .stat-card:nth-child(odd) .stat-icon {
+  background: rgba(212, 225, 87, 0.16);
+  color: #D4E157;
+}
+
+.admin-role-shell .stat-card:nth-child(even) .stat-value {
+  color: #1B3B2B;
+  font-weight: 700;
+}
+
+.admin-role-shell .stat-card:nth-child(even) .stat-meta strong {
+  color: #1B3B2B;
+}
+
+.admin-role-shell .stat-card:nth-child(even) .stat-icon {
+  background: #E2EAB8;
+  color: #1B3B2B;
+}
+
+/* Admin Buttons */
+.admin-role-shell .button-dark {
+  background: #1B3B2B;
+  border-color: #1B3B2B;
+  color: #FFFFFF;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.admin-role-shell .button-dark:hover {
+  background: #254F3A;
+  border-color: #254F3A;
+}
+
+.admin-role-shell .button-outline {
+  border-color: #CFD8C0;
+  color: #1B3B2B;
+  background: #FFFFFF;
+  border-radius: 10px;
+}
+
+.admin-role-shell .button-outline:hover {
+  background: #ECF1D8;
+  border-color: #1B3B2B;
+  color: #1B3B2B;
+}
+
+/* Admin Category Pills & Tabs */
+.admin-role-shell .category-pill {
+  background: #F9F9F6;
+  border: 1.5px solid #DCE2CE;
+  color: #2C3E33;
+  font-weight: 600;
+}
+
+.admin-role-shell .category-pill:hover {
+  background: #ECF2D0;
+  border-color: #A3B18A;
+  color: #1B3B2B;
+}
+
+.admin-role-shell .category-pill.selected {
+  background: #1B3B2B;
+  border-color: #1B3B2B;
+  color: #D4E157;
+}
+
+.admin-role-shell .tab.active {
+  color: #1B3B2B;
+  font-weight: 700;
+}
+
+.admin-role-shell .tab.active::after {
+  background: #1B3B2B;
+  height: 2.5px;
+}
+
+.admin-role-shell .tab.active span {
+  background: #D4E157;
+  color: #1B3B2B;
+  font-weight: 700;
+}
+
+/* Admin Data Tables (Lime-tinted header like Reference Image) */
+.admin-role-shell .data-table th {
+  background: #E1EAB5;
+  color: #1B3B2B;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  border-bottom: 1px solid #D4DF9E;
+}
+
+.admin-role-shell .data-table tbody tr:hover {
+  background: #F1F4E4;
+}
+
+/* Admin Status Badges & Availability */
+.admin-role-shell .status-badge.completed,
+.admin-role-shell .status-badge.present,
+.admin-role-shell .status-badge.active,
+.admin-role-shell .status-badge.paid {
+  background: #C4DDA0;
+  color: #1B3B2B;
+  font-weight: 700;
+}
+
+.admin-role-shell .status-badge.preparing,
+.admin-role-shell .status-badge.pending,
+.admin-role-shell .status-badge.confirmed {
+  background: #F3E695;
+  color: #3D3511;
+  font-weight: 700;
+}
+
+.admin-role-shell .status-badge.ready {
+  background: #1B3B2B;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.admin-role-shell .availability.is-available {
+  color: #1B3B2B;
+  font-weight: 700;
+}
+
+.admin-role-shell .availability.is-available i {
+  background: #1B3B2B;
+}
+
+/* Admin Pagination */
+.admin-role-shell .pagination-page.active {
+  background: #1B3B2B;
+  border-color: #1B3B2B;
+  color: #D4E157;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   PROFESSIONAL WEBSITE PAGINATION & SWEETALERT2 (SWAL) THEME
+   Forest Green (#1B3B2B) + Lime (#D4E157) + Cream (#F9F9F6) + Sage (#A3B18A)
+   Applies across Admin, Staff, and Customer Web Dashboards.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Website Pagination Bar ─────────────────────────────────── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 14px 20px;
+  border-top: 1px solid #E4E8DC;
+  background: #F9F9F6;
+  border-radius: 0 0 16px 16px;
+}
+
+.food-grid + .pagination {
+  margin-top: 18px;
+  border: 1px solid #E4E8DC;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(27, 59, 43, 0.05);
+}
+
+.pagination-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12.5px;
+  color: #4A5A50;
+}
+
+.pagination-info strong {
+  color: #1B3B2B;
+  font-weight: 700;
+}
+
+.pagination-size-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4A5A50;
+}
+
+.pagination-size-select {
+  border: 1.5px solid #D5DEC8;
+  background: #FFFFFF;
+  color: #1B3B2B;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.pagination-size-select:hover,
+.pagination-size-select:focus {
+  border-color: #1B3B2B;
+  box-shadow: 0 0 0 3px rgba(27, 59, 43, 0.1);
+  outline: none;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pagination-button,
+.pagination-page {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 11px;
+  border-radius: 9px;
+  border: 1px solid #DCE3CE;
+  background: #FFFFFF;
+  color: #1B3B2B;
+  font-size: 12.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.12s ease;
+}
+
+.pagination-button:hover:not(:disabled),
+.pagination-page:hover:not(.active) {
+  background: #ECF2D0;
+  border-color: #A3B18A;
+  color: #1B3B2B;
+}
+
+.pagination-page.active {
+  background: linear-gradient(135deg, #1B3B2B 0%, #244B37 100%);
+  border-color: #1B3B2B;
+  color: #D4E157;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(27, 59, 43, 0.18);
+}
+
+.pagination-button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  background: #F3F4EE;
+}
+
+.pagination-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 34px;
+  color: #6E7B72;
+  font-size: 14px;
+  font-weight: 700;
+  user-select: none;
+}
+
+@media (max-width: 680px) {
+  .pagination {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 14px;
+  }
+  .pagination-meta,
+  .pagination-controls {
+    justify-content: center;
+  }
+}
+
+/* ── 2. Standardized SweetAlert2 (Swal) Modals & Toasts ────────── */
+.rmj-swal-popup.swal2-popup {
+  background: #F9F9F6 !important;
+  border: 1.5px solid #DCE3CE !important;
+  border-radius: 20px !important;
+  padding: 26px 24px 22px !important;
+  box-shadow: 0 18px 48px rgba(27, 59, 43, 0.18) !important;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', sans-serif !important;
+}
+
+.rmj-swal-title.swal2-title {
+  font-family: 'Playfair Display', Georgia, serif !important;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  color: #1B3B2B !important;
+}
+
+.rmj-swal-html.swal2-html-container {
+  font-size: 13.5px !important;
+  color: #4A5A50 !important;
+  line-height: 1.55 !important;
+}
+
+.rmj-swal-confirm-btn.swal2-confirm {
+  background: #1B3B2B !important;
+  color: #D4E157 !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  padding: 10px 22px !important;
+  box-shadow: 0 4px 12px rgba(27, 59, 43, 0.16) !important;
+}
+
+.rmj-swal-confirm-btn.swal2-confirm:hover {
+  background: #244B37 !important;
+}
+
+.rmj-swal-cancel-btn.swal2-cancel {
+  background: #EFEFE7 !important;
+  color: #2C3E33 !important;
+  border: 1px solid #D5DEC8 !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 10px 20px !important;
+}
+
+.rmj-swal-cancel-btn.swal2-cancel:hover {
+  background: #E4E7DA !important;
+}
+
+/* Toast Notification Styling */
+.rmj-swal-toast.swal2-popup.swal2-toast {
+  background: #1B3B2B !important;
+  color: #F9F9F6 !important;
+  border: 1px solid rgba(212, 225, 87, 0.35) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 10px 28px rgba(18, 42, 30, 0.22) !important;
+  padding: 12px 16px !important;
+}
+
+.rmj-swal-toast .swal2-title {
+  color: #FFFFFF !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+}
+
+.rmj-swal-toast .swal2-html-container {
+  color: rgba(249, 249, 246, 0.85) !important;
+  font-size: 12px !important;
+}
+
+.rmj-swal-toast .swal2-timer-progress-bar {
+  background: #D4E157 !important;
+}

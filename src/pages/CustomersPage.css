@@ -1,0 +1,577 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   rmjohns Kitchen & Bar — Admin Customer Management Page Styles
+   Strictly scoped to .adm-customers-mgmt so no other module is affected.
+   Official Theme Palette:
+   - Forest Green : #1B3B2B
+   - Lime Green   : #D4E157
+   - Cream        : #F9F9F6
+   - White        : #FFFFFF
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.page-content.adm-customers-page-content > .page-heading,
+.page-content:has(.adm-customers-mgmt) > .page-heading {
+  display: none;
+}
+
+.adm-customers-mgmt {
+  --cst-forest: #1B3B2B;
+  --cst-forest-deep: #132C1F;
+  --cst-forest-mid: #234F36;
+  --cst-lime: #D4E157;
+  --cst-thead: #E0EEBD;
+  --cst-cream: #F9F9F6;
+  --cst-white: #FFFFFF;
+  --cst-text: #162B20;
+  --cst-text-body: #2A3E33;
+  --cst-text-muted: #6E7E74;
+  --cst-border: #ECEFE6;
+
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--cst-text);
+  padding-bottom: 24px;
+}
+
+.adm-customers-mgmt *,
+.adm-customers-mgmt *::before,
+.adm-customers-mgmt *::after {
+  box-sizing: border-box;
+}
+
+/* ────────────────────── 1. CUSTOMERS HEADER BANNER ────────────────────── */
+.adm-cst-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 32px;
+  min-height: 118px;
+  border-radius: 20px;
+  background: linear-gradient(115deg, #133320 0%, #1B442B 52%, #295D38 100%);
+  color: var(--cst-white);
+  box-shadow: 0 12px 30px rgba(19, 44, 31, 0.16);
+  overflow: hidden;
+}
+
+.adm-cst-banner-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.adm-cst-banner-leaves {
+  position: absolute;
+  right: 8px;
+  bottom: -6px;
+  width: 225px;
+  height: 128px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.adm-cst-banner-left {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-cst-date {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--cst-lime);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.adm-cst-banner-left h1 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(30px, 2.8vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.08;
+  color: var(--cst-white);
+}
+
+.adm-cst-banner-left p {
+  margin: 5px 0 0;
+  font-size: 14.5px;
+  font-weight: 400;
+  color: rgba(249, 249, 246, 0.90);
+}
+
+/* ────────────────────── 2. SEARCH AND STATUS FILTER ────────────────────── */
+.adm-cst-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.adm-cst-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  height: 46px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background-color: var(--cst-white);
+  border: 1px solid #E2E7DB;
+  box-shadow: 0 2px 8px rgba(20, 42, 30, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.adm-cst-search:focus-within {
+  border-color: var(--cst-forest);
+  box-shadow: 0 0 0 3px rgba(212, 225, 87, 0.30);
+}
+
+.adm-cst-search-icon {
+  width: 17px;
+  height: 17px;
+  color: var(--cst-forest);
+  flex-shrink: 0;
+}
+
+.adm-cst-search input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--cst-text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.adm-cst-search input::placeholder {
+  color: #88968D;
+}
+
+.adm-cst-search-clear {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 0;
+  background-color: #EDF1E6;
+  color: var(--cst-forest);
+  font-size: 13px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.adm-cst-filter-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.adm-cst-filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 46px;
+  min-width: 156px;
+  padding: 0 38px 0 20px;
+  border-radius: 999px;
+  border: 1px solid #E2E7DB;
+  background-color: var(--cst-white);
+  color: #1A3023;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(20, 42, 30, 0.04);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.adm-cst-filter-select:hover,
+.adm-cst-filter-select:focus {
+  border-color: var(--cst-forest);
+}
+
+.adm-cst-filter-chevron {
+  position: absolute;
+  right: 15px;
+  width: 15px;
+  height: 15px;
+  color: #1F3528;
+  pointer-events: none;
+}
+
+/* ────────────────────── 3. CUSTOMER TABLE CONTAINER ────────────────────── */
+.adm-cst-card {
+  background-color: var(--cst-white);
+  border-radius: 22px;
+  border: 1px solid #E4E9DD;
+  box-shadow: 0 12px 32px rgba(20, 42, 30, 0.05);
+  overflow: hidden;
+}
+
+.adm-cst-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.adm-cst-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 820px;
+}
+
+.adm-cst-table thead tr {
+  background-color: var(--cst-thead);
+}
+
+.adm-cst-table th {
+  padding: 16px 24px;
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #163722;
+  text-transform: uppercase;
+  border-bottom: 1px solid #D1E1A6;
+  white-space: nowrap;
+}
+
+.adm-cst-table th.col-orders,
+.adm-cst-table th.col-spend,
+.adm-cst-table th.col-points,
+.adm-cst-table th.col-status,
+.adm-cst-table th.col-actions,
+.adm-cst-table td.col-orders,
+.adm-cst-table td.col-spend,
+.adm-cst-table td.col-points,
+.adm-cst-table td.col-status,
+.adm-cst-table td.col-actions {
+  text-align: center;
+}
+
+.adm-cst-row {
+  border-bottom: 1px solid var(--cst-border);
+  transition: background-color 0.15s ease;
+}
+
+.adm-cst-row:hover {
+  background-color: #FAFBF7;
+}
+
+.adm-cst-table td {
+  padding: 14px 24px;
+  vertical-align: middle;
+  font-size: 14px;
+  color: var(--cst-text-body);
+}
+
+/* Column 1: Customer Avatar, Name & Email */
+.adm-cst-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.adm-cst-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background-color: #DCE8BE;
+  color: var(--cst-forest);
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.adm-cst-person-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.adm-cst-person-copy strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: #14281D;
+  line-height: 1.25;
+}
+
+.adm-cst-person-copy small {
+  font-size: 13px;
+  color: var(--cst-text-muted);
+  line-height: 1.3;
+}
+
+/* Columns 2–5: ID, Orders, Spend, Points */
+.adm-cst-id {
+  font-size: 14px;
+  font-weight: 500;
+  color: #2B3D32;
+}
+
+.adm-cst-orders,
+.adm-cst-spend {
+  font-size: 14px;
+  font-weight: 500;
+  color: #26382E;
+}
+
+.adm-cst-points {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #14281D;
+}
+
+/* Column 6: Status Badge */
+.adm-cst-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 92px;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.adm-cst-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Active: soft lime-green badge with dark-green indicator */
+.adm-cst-status-badge.is-active {
+  background-color: #DDECBF;
+  color: #184D23;
+}
+
+.adm-cst-status-badge.is-active .adm-cst-status-dot {
+  background-color: #1E6B31;
+}
+
+/* Inactive: soft gray badge */
+.adm-cst-status-badge.is-inactive {
+  background-color: #EBECE9;
+  color: #2C3830;
+}
+
+.adm-cst-status-badge.is-inactive .adm-cst-status-dot {
+  background-color: #2C3830;
+}
+
+/* Column 7: Three-dot action button */
+.adm-cst-more-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: #1B3B2B;
+  font-size: 16px;
+  letter-spacing: 1px;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.adm-cst-more-btn:hover {
+  background-color: #EFF3E8;
+}
+
+.adm-cst-empty {
+  padding: 46px 24px;
+  text-align: center;
+  color: var(--cst-text-muted);
+  font-size: 14.5px;
+}
+
+/* ────────────────────── 4. PAGINATION FOOTER (BOTTOM RIGHT ALIGNED) ────────────────────── */
+.adm-cst-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 24px 20px;
+  background-color: var(--cst-white);
+  flex-wrap: wrap;
+}
+
+.adm-cst-footer-left {
+  display: flex;
+  align-items: center;
+}
+
+.adm-cst-showing {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1D3124;
+}
+
+.adm-cst-showing strong {
+  font-weight: 700;
+  color: #14281D;
+}
+
+/* Right side holds BOTH Rows per page and Pagination buttons */
+.adm-cst-footer-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+
+.adm-cst-rows-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #2B3D32;
+}
+
+.adm-cst-rows-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.adm-cst-rows-select-wrap select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 36px;
+  padding: 0 34px 0 16px;
+  border-radius: 999px;
+  border: 1px solid #E1E6DA;
+  background-color: var(--cst-white);
+  color: #182C20;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 2px 6px rgba(20, 42, 30, 0.03);
+}
+
+.adm-cst-rows-select-wrap select:hover,
+.adm-cst-rows-select-wrap select:focus {
+  border-color: var(--cst-forest);
+}
+
+.adm-cst-rows-select-wrap svg {
+  position: absolute;
+  right: 12px;
+  width: 13px;
+  height: 13px;
+  color: #283C31;
+  pointer-events: none;
+}
+
+.adm-cst-pagination-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adm-cst-page-btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid #E3E8DC;
+  background-color: var(--cst-white);
+  color: #1F3528;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(20, 42, 30, 0.04);
+  transition: all 0.16s ease;
+}
+
+.adm-cst-page-btn:hover:not(:disabled) {
+  border-color: var(--cst-forest);
+  background-color: #F4F7EE;
+}
+
+.adm-cst-page-btn:disabled {
+  color: #8E9B92;
+  background-color: var(--cst-white);
+  border-color: #EAEFE4;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.adm-cst-page-num.is-active {
+  background-color: var(--cst-forest);
+  border-color: var(--cst-forest);
+  color: var(--cst-white);
+  box-shadow: 0 4px 10px rgba(27, 59, 43, 0.22);
+}
+
+.adm-cst-page-num.is-active:hover {
+  background-color: var(--cst-forest-mid);
+  border-color: var(--cst-forest-mid);
+  color: var(--cst-white);
+}
+
+.adm-cst-page-ellipsis {
+  padding: 0 4px;
+  color: var(--cst-text-muted);
+  font-weight: 700;
+}
+
+/* ────────────────────── RESPONSIVE BREAKPOINTS ────────────────────── */
+@media (max-width: 780px) {
+  .adm-cst-banner {
+    padding: 20px 22px;
+  }
+
+  .adm-cst-banner-leaves {
+    opacity: 0.35;
+  }
+
+  .adm-cst-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .adm-cst-filter-wrap,
+  .adm-cst-filter-select {
+    width: 100%;
+  }
+
+  .adm-cst-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .adm-cst-footer-right {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
+  }
+}

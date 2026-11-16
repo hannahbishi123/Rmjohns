@@ -1,0 +1,919 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   rmjohns Kitchen & Bar — Admin Loyalty Management Page Styles
+   Strictly scoped to .adm-loyalty-mgmt so no other module is affected.
+   Official Theme Palette:
+   - Forest Green : #1B3B2B
+   - Lime Green   : #D4E157
+   - Cream        : #F9F9F6
+   - White        : #FFFFFF
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.page-content.adm-loyalty-page-content > .page-heading,
+.page-content:has(.adm-loyalty-mgmt) > .page-heading {
+  display: none;
+}
+
+.adm-loyalty-mgmt {
+  --loy-forest: #1B3B2B;
+  --loy-forest-deep: #132C1F;
+  --loy-forest-mid: #234F36;
+  --loy-lime: #D4E157;
+  --loy-lime-hover: #DFEC66;
+  --loy-thead: #DCE8B5;
+  --loy-cream: #F9F9F6;
+  --loy-white: #FFFFFF;
+  --loy-text: #162B20;
+  --loy-text-body: #263A2F;
+  --loy-text-muted: #6C7D72;
+  --loy-border: #ECEFE6;
+
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--loy-text);
+  padding-bottom: 24px;
+}
+
+.adm-loyalty-mgmt *,
+.adm-loyalty-mgmt *::before,
+.adm-loyalty-mgmt *::after {
+  box-sizing: border-box;
+}
+
+/* ────────────────────── 1. LOYALTY HEADER BANNER ────────────────────── */
+.adm-loy-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 32px;
+  min-height: 118px;
+  border-radius: 20px;
+  background: linear-gradient(115deg, #133320 0%, #1B442B 52%, #295D38 100%);
+  color: var(--loy-white);
+  box-shadow: 0 12px 30px rgba(19, 44, 31, 0.16);
+  overflow: hidden;
+}
+
+.adm-loy-banner-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.adm-loy-banner-leaves {
+  position: absolute;
+  right: 170px;
+  bottom: -6px;
+  width: 200px;
+  height: 120px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.adm-loy-banner-left {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-loy-date {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--loy-lime);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.adm-loy-banner-left h1 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(30px, 2.8vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.08;
+  color: var(--loy-white);
+}
+
+.adm-loy-banner-left p {
+  margin: 5px 0 0;
+  font-size: 14.5px;
+  font-weight: 400;
+  color: rgba(249, 249, 246, 0.90);
+}
+
+.adm-loy-add-btn {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 24px;
+  border-radius: 999px;
+  border: 0;
+  background-color: var(--loy-lime);
+  color: #163320;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  transition: transform 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+  flex-shrink: 0;
+}
+
+.adm-loy-add-btn:hover {
+  background-color: var(--loy-lime-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+}
+
+.adm-loy-plus {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ────────────────────── 2. LOYALTY AT A GLANCE ────────────────────── */
+.adm-loy-glance-card {
+  display: grid;
+  grid-template-columns: 1.35fr 0.75fr 0.85fr 1.25fr;
+  align-items: center;
+  background-color: var(--loy-white);
+  border-radius: 20px;
+  border: 1px solid #E4E9DD;
+  box-shadow: 0 8px 24px rgba(20, 42, 30, 0.04);
+  padding: 20px 28px;
+  gap: 24px;
+}
+
+.adm-loy-glance-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.adm-loy-gift-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #E5F0CA;
+  color: var(--loy-forest);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.adm-loy-gift-circle svg {
+  width: 28px;
+  height: 28px;
+}
+
+.adm-loy-glance-brand h2 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--loy-forest);
+  line-height: 1.15;
+}
+
+.adm-loy-glance-brand p {
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: var(--loy-text-muted);
+}
+
+.adm-loy-glance-metric,
+.adm-loy-glance-progress {
+  border-left: 1px solid #EAEFE3;
+  padding-left: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.adm-loy-metric-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #4A5B50;
+}
+
+.adm-loy-metric-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-loy-star-svg {
+  width: 24px;
+  height: 24px;
+  color: var(--loy-forest);
+}
+
+.adm-loy-gift-svg {
+  width: 22px;
+  height: 22px;
+  color: var(--loy-forest);
+}
+
+.adm-loy-metric-value strong {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--loy-forest);
+  line-height: 1;
+}
+
+.adm-loy-metric-next strong {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.adm-loy-progress-inline {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.adm-loy-bar-track {
+  flex: 1;
+  height: 13px;
+  border-radius: 999px;
+  background-color: #E8ECE2;
+  overflow: hidden;
+}
+
+.adm-loy-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1F5E30 0%, #3E8E41 100%);
+  transition: width 0.3s ease;
+}
+
+.adm-loy-progress-inline strong {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--loy-forest);
+}
+
+/* ────────────────────── 3. TWO-COLUMN CARDS (TREAT & REWARDS) ────────────────────── */
+.adm-loy-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.adm-loy-card {
+  background-color: var(--loy-white);
+  border-radius: 20px;
+  border: 1px solid #E4E9DD;
+  box-shadow: 0 8px 24px rgba(20, 42, 30, 0.04);
+  padding: 22px 26px;
+}
+
+.adm-loy-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.adm-loy-head-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.adm-loy-head-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--loy-forest);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.adm-loy-head-left h2 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--loy-forest);
+  line-height: 1.18;
+}
+
+.adm-loy-head-left p {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: var(--loy-text-muted);
+}
+
+.adm-loy-soft-star-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #E7F1CE;
+  color: #557C3E;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.adm-loy-soft-star-circle svg {
+  width: 19px;
+  height: 19px;
+}
+
+/* Your next treat progress */
+.adm-loy-treat-progress {
+  margin: 22px 0 14px;
+}
+
+.adm-loy-treat-track {
+  width: 100%;
+  height: 9px;
+  border-radius: 999px;
+  background-color: #E8ECE2;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.adm-loy-treat-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2E7D32 0%, #52A447 100%);
+  transition: width 0.3s ease;
+}
+
+.adm-loy-treat-scale {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13.5px;
+}
+
+.adm-loy-treat-scale strong {
+  font-weight: 800;
+  color: var(--loy-forest);
+}
+
+.adm-loy-treat-scale span {
+  font-weight: 600;
+  color: #4A5B50;
+}
+
+.adm-loy-treat-note {
+  margin: 0;
+  font-size: 13.5px;
+  color: #4F6156;
+}
+
+/* Little rewards list */
+.adm-loy-reward-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-loy-reward-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--loy-border);
+}
+
+.adm-loy-reward-row:first-child {
+  padding-top: 4px;
+  border-top: 0;
+}
+
+.adm-loy-reward-row:last-child {
+  padding-bottom: 0;
+}
+
+.adm-loy-reward-copy {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.adm-loy-reward-copy strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #162B20;
+}
+
+.adm-loy-reward-copy small {
+  font-size: 12.5px;
+  color: var(--loy-text-muted);
+}
+
+.adm-loy-redeem-btn {
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid #DCE2D4;
+  background-color: #FAFBF8;
+  color: #263A2F;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  white-space: nowrap;
+}
+
+.adm-loy-redeem-btn:hover:not(:disabled) {
+  background-color: var(--loy-forest);
+  border-color: var(--loy-forest);
+  color: var(--loy-white);
+}
+
+.adm-loy-redeem-btn:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.adm-loy-empty-inline {
+  margin: 8px 0 0;
+  font-size: 13.5px;
+  color: var(--loy-text-muted);
+}
+
+/* ────────────────────── 4. SHARED TABLE CONTAINER STYLING ────────────────────── */
+.adm-loy-table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.adm-loy-table-card-head {
+  padding: 20px 24px 16px;
+  margin-bottom: 0;
+}
+
+.adm-loy-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  padding: 0 14px;
+}
+
+.adm-loy-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.adm-loy-table thead tr {
+  background-color: var(--loy-thead);
+}
+
+.adm-loy-table th {
+  padding: 13px 18px;
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #163722;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.adm-loy-table th:first-child {
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
+
+.adm-loy-table th:last-child {
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+.adm-loy-table tbody tr {
+  border-bottom: 1px solid var(--loy-border);
+  transition: background-color 0.15s ease;
+}
+
+.adm-loy-table tbody tr:hover {
+  background-color: #FAFBF7;
+}
+
+.adm-loy-table td {
+  padding: 13px 18px;
+  vertical-align: middle;
+  font-size: 13.5px;
+  color: var(--loy-text-body);
+}
+
+.adm-loy-table th.col-points-right,
+.adm-loy-table td.col-points-right {
+  text-align: left;
+  width: 150px;
+}
+
+.adm-loy-table th.col-center,
+.adm-loy-table td.col-center {
+  text-align: center;
+}
+
+/* Points History cells */
+.adm-loy-td-date {
+  width: 240px;
+  color: #2B3D32;
+  font-weight: 500;
+}
+
+.adm-loy-td-desc {
+  font-weight: 600;
+  color: #182C20;
+}
+
+.adm-loy-pts-earned {
+  color: #1E6B31;
+  font-weight: 700;
+}
+
+.adm-loy-pts-redeemed {
+  color: #C86D14;
+  font-weight: 700;
+}
+
+/* ────────────────────── 5. BOTTOM TWO-COLUMN GRID (CATALOG & CUSTOMER POINTS) ────────────────────── */
+.adm-loy-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.adm-loy-reward-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.adm-loy-reward-cell strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #14281D;
+}
+
+.adm-loy-reward-cell small {
+  font-size: 12px;
+  color: var(--loy-text-muted);
+}
+
+.adm-loy-td-cost {
+  font-weight: 600;
+  color: #283C31;
+  white-space: nowrap;
+}
+
+/* Reward Status Pill */
+.adm-loy-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 0;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter 0.15s ease;
+}
+
+.adm-loy-status-pill:hover {
+  filter: brightness(0.96);
+}
+
+.adm-loy-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.adm-loy-status-pill.is-available {
+  background-color: #DFEFCE;
+  color: #1D632E;
+}
+.adm-loy-status-pill.is-available .adm-loy-status-dot {
+  background-color: #1E6B31;
+}
+
+.adm-loy-status-pill.is-hidden {
+  background-color: #FCE8E8;
+  color: #B42318;
+}
+.adm-loy-status-pill.is-hidden .adm-loy-status-dot {
+  background-color: #D32F2F;
+}
+
+/* Reward Catalog Edit & Delete buttons */
+.adm-loy-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.adm-loy-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 0;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.adm-loy-action-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.adm-loy-action-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.95);
+}
+
+.adm-loy-edit-btn {
+  background-color: #E7F0D3;
+  color: #1B432B;
+}
+
+.adm-loy-delete-btn {
+  background-color: #FBE9E9;
+  color: #C62828;
+}
+
+/* Customer Points Header & Search */
+.adm-loy-cust-head {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.adm-loy-cust-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background-color: #FAFBF8;
+  border: 1px solid #E1E6DA;
+  min-width: 195px;
+}
+
+.adm-loy-cust-search svg {
+  width: 14px;
+  height: 14px;
+  color: var(--loy-forest);
+  flex-shrink: 0;
+}
+
+.adm-loy-cust-search input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--loy-text);
+  font-family: inherit;
+  font-size: 12.5px;
+}
+
+.adm-loy-td-cust {
+  font-weight: 600;
+  color: #182C20;
+}
+
+.adm-loy-td-cust-pts {
+  font-weight: 700;
+  color: #182C20;
+}
+
+.adm-loy-adjust-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.adm-loy-adjust-btn {
+  height: 30px;
+  min-width: 48px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #DDE3D5;
+  background-color: #FAFBF8;
+  color: #1F3528;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.adm-loy-adjust-btn:hover {
+  background-color: var(--loy-forest);
+  border-color: var(--loy-forest);
+  color: var(--loy-white);
+}
+
+.adm-loy-empty {
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--loy-text-muted);
+  font-size: 13.5px;
+}
+
+/* ────────────────────── 6. PAGINATION FOOTERS ────────────────────── */
+.adm-loy-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px 18px;
+  background-color: var(--loy-white);
+  flex-wrap: wrap;
+}
+
+.adm-loy-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #2E4035;
+}
+
+.adm-loy-showing strong {
+  font-weight: 800;
+  color: #14281D;
+}
+
+.adm-loy-rows-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #4A5B50;
+  font-weight: 500;
+}
+
+.adm-loy-rows-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.adm-loy-rows-select-wrap select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 32px;
+  padding: 0 28px 0 12px;
+  border-radius: 999px;
+  border: 1px solid #DDE3D5;
+  background-color: #FAFBF8;
+  color: #182C20;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+}
+
+.adm-loy-rows-select-wrap svg {
+  position: absolute;
+  right: 10px;
+  width: 12px;
+  height: 12px;
+  color: #3B4E42;
+  pointer-events: none;
+}
+
+.adm-loy-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.adm-loy-page-nav {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #E3E7DC;
+  background-color: #F6F7F2;
+  color: #24382C;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.16s ease;
+}
+
+.adm-loy-page-nav:hover:not(:disabled) {
+  background-color: #E7ECE0;
+}
+
+.adm-loy-page-nav:disabled {
+  color: #9DA7A0;
+  background-color: #F7F8F4;
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.adm-loy-page-numbers {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.adm-loy-page-num {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 9px;
+  border-radius: 8px;
+  border: 1px solid #E2E7DB;
+  background-color: var(--loy-white);
+  color: #1F3528;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-loy-page-num.is-active {
+  background-color: var(--loy-forest);
+  border-color: var(--loy-forest);
+  color: var(--loy-white);
+}
+
+.adm-loy-compact-pagination {
+  padding: 6px 18px 14px;
+}
+
+/* ────────────────────── RESPONSIVE BREAKPOINTS ────────────────────── */
+@media (max-width: 1080px) {
+  .adm-loy-glance-card {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .adm-loy-glance-metric:nth-child(3) {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .adm-loy-two-col,
+  .adm-loy-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .adm-loy-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px 22px;
+  }
+
+  .adm-loy-add-btn {
+    width: 100%;
+  }
+
+  .adm-loy-banner-leaves {
+    right: 12px;
+    opacity: 0.35;
+  }
+
+  .adm-loy-glance-card {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .adm-loy-glance-metric,
+  .adm-loy-glance-progress {
+    border-left: 0;
+    border-top: 1px solid #EAEFE3;
+    padding-left: 0;
+    padding-top: 14px;
+  }
+
+  .adm-loy-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

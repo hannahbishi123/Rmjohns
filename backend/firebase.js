@@ -10,6 +10,7 @@ const serviceAccountPath = config.firebase.serviceAccountPath
 const DATABASE_URL = config.firebase.databaseURL
 
 let db = null
+let firestoreDb = null
 let adminAuth = null
 export let firebaseReady = false
 
@@ -29,6 +30,7 @@ export async function initFirebase() {
       })
     }
     db = admin.database()
+    firestoreDb = admin.firestore()
     adminAuth = admin.auth()
     await db.ref('.info/connected').once('value')
     firebaseReady = true
@@ -192,12 +194,55 @@ export async function readFromFirebase() {
 
 // ── Status ────────────────────────────────────────────────────────────────────
 export function getFirebaseStatus() {
-  return { ready: firebaseReady, databaseURL: DATABASE_URL, auth: adminAuth !== null }
+  return { ready: firebaseReady, databaseURL: DATABASE_URL, auth: adminAuth !== null, firestore: firestoreDb !== null }
+}
+
+/**
+ * Write (or merge) a user profile and role document into Cloud Firestore
+ * at `users/{uid}` so Firestore always holds the canonical user profile and role.
+ */
+export async function writeFirestoreUserRecord(uid, record) {
+  if (!firestoreDb || !uid) return false
+  try {
+    const normalizedRole = record.role || 'Customer'
+    await firestoreDb.collection('users').doc(String(uid)).set(
+      {
+        id:        String(uid),
+        uid:       String(uid),
+        username:  record.username || (record.email ? record.email.split('@')[0] : ''),
+        email:     record.email || '',
+        name:      record.name || record.username || '',
+        phone:     record.phone || record.contact || '',
+        role:      normalizedRole,
+        title:     normalizedRole === 'Admin' ? 'Manager' : normalizedRole,
+        status:    record.status || 'Active',
+        updatedAt: timestamp(),
+      },
+      { merge: true },
+    )
+    return true
+  } catch (error) {
+    console.error('[firebase] writeFirestoreUserRecord failed:', error.message)
+    return false
+  }
+}
+
+/**
+ * Read a user profile and role document from Cloud Firestore (`users/{uid}`).
+ */
+export async function readFirestoreUserRecord(uid) {
+  if (!firestoreDb || !uid) return null
+  try {
+    const snap = await firestoreDb.collection('users').doc(String(uid)).get()
+    return snap.exists ? snap.data() : null
+  } catch {
+    return null
+  }
 }
 
 /**
  * Write (or overwrite) a single user account record at
- * eateries/user_accounts/{uid} in the Realtime Database.
+ * eateries/user_accounts/{uid} in the Realtime Database AND users/{uid} in Firestore.
  * This is the role source-of-truth that the browser reads after sign-in.
  * Safe to call fire-and-forget — never throws.
  */
@@ -205,6 +250,7 @@ export async function writeUserAccountRecord(uid, record) {
   if (!firebaseReady || !db) return
   try {
     await db.ref(`eateries/user_accounts/${uid}`).set({ ...record, _syncedAt: timestamp() })
+    await writeFirestoreUserRecord(uid, record)
   } catch (error) {
     console.error('[firebase] writeUserAccountRecord failed:', error.message)
   }

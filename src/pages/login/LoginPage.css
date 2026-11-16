@@ -1,0 +1,622 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Rmjohns Eatery — Split-Screen Login Page Styles
+   Strictly scoped to .rmj-login-page so no other module is affected.
+   Official Theme Palette:
+   - Forest Green : #1B3B2B
+   - Lime Green   : #D4E157
+   - Cream        : #F9F9F6
+   - White        : #FFFFFF
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.rmj-login-page {
+  --lgn-forest: #1B3B2B;
+  --lgn-forest-deep: #12291E;
+  --lgn-forest-mid: #234E37;
+  --lgn-lime: #D4E157;
+  --lgn-lime-accent: #B7D93E;
+  --lgn-cream: #F9F9F6;
+  --lgn-cream-warm: #F4F5EC;
+  --lgn-white: #FFFFFF;
+  --lgn-text: #1B3B2B;
+  --lgn-text-muted: #5F7066;
+  --lgn-border: #DDE3D7;
+
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--lgn-cream) 0%, var(--lgn-cream-warm) 100%);
+  color: var(--lgn-text);
+  font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(20px, 3.5vh, 40px) clamp(20px, 4vw, 56px);
+  overflow: hidden;
+}
+
+.rmj-login-page *,
+.rmj-login-page *::before,
+.rmj-login-page *::after {
+  box-sizing: border-box;
+}
+
+/* Outer corner botanical leaves on the Cream background (right side) */
+.rmj-lgn-page-leaf {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.rmj-lgn-page-leaf-tr {
+  top: -10px;
+  right: -12px;
+  width: clamp(140px, 15vw, 220px);
+}
+
+.rmj-lgn-page-leaf-br {
+  bottom: -12px;
+  right: -10px;
+  width: clamp(150px, 16vw, 235px);
+}
+
+/* ────────────────────── SPLIT-SCREEN CONTAINER ────────────────────── */
+.rmj-login-split {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1180px;
+  display: grid;
+  grid-template-columns: 1.08fr 0.92fr;
+  align-items: center;
+  gap: clamp(28px, 4vw, 56px);
+}
+
+/* ────────────────────── LEFT SECTION: BRANDING PANEL ────────────────────── */
+.rmj-login-brand-panel {
+  position: relative;
+  min-height: 620px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 75% 24%, rgba(163, 198, 68, 0.18) 0%, transparent 48%),
+    linear-gradient(155deg, #183B28 0%, #132E1F 58%, #0E2317 100%);
+  color: var(--lgn-white);
+  padding: 38px 40px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  box-shadow: 0 24px 56px rgba(18, 41, 30, 0.24);
+}
+
+/* Subtle warm ambient restaurant glow in background */
+.rmj-brand-ambient-glow {
+  position: absolute;
+  top: 16%;
+  right: -30px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212, 225, 87, 0.16) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Botanical leaves inside branding panel */
+.rmj-panel-leaf {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.rmj-panel-leaf-tl {
+  top: -8px;
+  left: -8px;
+  width: 145px;
+}
+
+.rmj-panel-leaf-bl {
+  bottom: 42px;
+  left: -10px;
+  width: 120px;
+}
+
+.rmj-panel-leaf-mr {
+  bottom: 130px;
+  right: -12px;
+  width: 96px;
+}
+
+.rmj-panel-bottom-wave {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 48%;
+  height: 92px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Branding Content Stack */
+.rmj-brand-content {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.rmj-brand-logo-link {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.rmj-brand-logo-link:hover {
+  transform: translateY(-2px);
+}
+
+.rmj-brand-logo-frame {
+  width: 126px;
+  height: 126px;
+  border-radius: 50%;
+  padding: 5px;
+  background: linear-gradient(135deg, #D4E157 0%, #A9CF38 100%);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.28),
+    0 0 0 4px rgba(212, 225, 87, 0.18);
+  margin-bottom: 16px;
+}
+
+.rmj-brand-logo-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.rmj-brand-title-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.rmj-brand-title-main {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(30px, 3vw, 40px);
+  font-weight: 700;
+  color: var(--lgn-white);
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+}
+
+.rmj-brand-subtitle-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.rmj-brand-subtitle-line {
+  width: 38px;
+  height: 1px;
+  background-color: rgba(249, 249, 246, 0.45);
+}
+
+.rmj-brand-subtitle-text {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  color: rgba(249, 249, 246, 0.88);
+  text-transform: uppercase;
+}
+
+/* Main Headline */
+.rmj-brand-headline-block {
+  width: 100%;
+  max-width: 440px;
+  text-align: left;
+  margin-bottom: 18px;
+}
+
+.rmj-brand-headline {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(34px, 3.5vw, 48px);
+  font-weight: 700;
+  line-height: 1.08;
+  color: var(--lgn-white);
+}
+
+.rmj-brand-headline-accent {
+  display: block;
+  font-style: italic;
+  color: var(--lgn-lime);
+  margin-top: 2px;
+}
+
+.rmj-brand-swish {
+  width: 190px;
+  height: 12px;
+  margin-top: 6px;
+  margin-left: 24px;
+}
+
+/* Supporting Text Row */
+.rmj-brand-support-row {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  margin-bottom: 18px;
+}
+
+.rmj-support-icon-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1.8px solid var(--lgn-lime);
+  background: rgba(212, 225, 87, 0.10);
+  color: var(--lgn-lime);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.rmj-support-icon-circle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.rmj-brand-support-text {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(249, 249, 246, 0.94);
+}
+
+/* Bottom High-Resolution Food Photography Showcase */
+.rmj-brand-food-wrap {
+  position: relative;
+  z-index: 2;
+  width: calc(100% + 48px);
+  margin: 4px -24px 0 auto;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.rmj-brand-food-frame {
+  width: 88%;
+  max-width: 460px;
+  height: 195px;
+  border-radius: 26px 26px 0 0;
+  overflow: hidden;
+  border-top: 3px solid rgba(212, 225, 87, 0.45);
+  border-left: 3px solid rgba(212, 225, 87, 0.35);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.32);
+}
+
+.rmj-brand-food-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 45%;
+  display: block;
+}
+
+/* ────────────────────── RIGHT SECTION: LOGIN FORM CARD ────────────────────── */
+.rmj-login-card-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.rmj-login-card {
+  width: 100%;
+  max-width: 470px;
+  background-color: var(--lgn-white);
+  border-radius: 26px;
+  border: 1px solid #EAEFE4;
+  box-shadow: 0 20px 50px rgba(27, 59, 43, 0.08);
+  padding: clamp(32px, 4.5vw, 46px) clamp(26px, 4vw, 44px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top Cloche / Serving Platter Icon */
+.rmj-login-cloche-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
+  color: #B4D33C;
+}
+
+.rmj-login-cloche-icon svg {
+  width: 78px;
+  height: 54px;
+}
+
+.rmj-login-heading {
+  margin: 0;
+  text-align: center;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(26px, 2.5vw, 33px);
+  font-weight: 700;
+  color: var(--lgn-forest);
+  line-height: 1.18;
+}
+
+.rmj-login-subtitle {
+  margin: 8px 0 28px;
+  text-align: center;
+  font-size: 14.5px;
+  color: var(--lgn-text-muted);
+}
+
+/* Form Fields */
+.rmj-login-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rmj-login-field-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.rmj-login-input-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 52px;
+  border-radius: 12px;
+  border: 1.5px solid var(--lgn-border);
+  background-color: var(--lgn-white);
+  padding: 0 16px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rmj-login-input-box:focus-within {
+  border-color: var(--lgn-forest);
+  box-shadow: 0 0 0 3px rgba(212, 225, 87, 0.28);
+}
+
+.rmj-login-input-box.has-error {
+  border-color: #C62828;
+}
+
+.rmj-input-left-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--lgn-forest);
+  display: grid;
+  place-items: center;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.rmj-input-left-icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.rmj-login-input {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 4px !important;
+  background: transparent !important;
+  color: var(--lgn-forest);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.rmj-login-input:-webkit-autofill,
+.rmj-login-input:-webkit-autofill:hover,
+.rmj-login-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--lgn-forest);
+  -webkit-box-shadow: 0 0 0 1000px var(--lgn-white) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.rmj-login-input::placeholder {
+  color: #7D8B82;
+}
+
+.rmj-pw-toggle-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: #6B7B70;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 6px;
+  flex-shrink: 0;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.rmj-pw-toggle-btn:hover {
+  color: var(--lgn-forest);
+  background-color: #F3F6EE;
+}
+
+.rmj-pw-toggle-btn svg {
+  width: 19px;
+  height: 19px;
+}
+
+/* Forgot Password Row */
+.rmj-forgot-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: 12px 0 20px;
+}
+
+.rmj-forgot-btn {
+  border: 0;
+  background: transparent;
+  padding: 2px 0;
+  color: var(--lgn-forest);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.rmj-forgot-btn:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+/* Primary Forest-Green Sign In Button */
+.rmj-signin-btn {
+  width: 100%;
+  height: 52px;
+  border-radius: 12px;
+  border: 0;
+  background-color: var(--lgn-forest);
+  color: var(--lgn-white);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(27, 59, 43, 0.20);
+  transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.rmj-signin-btn:hover:not(:disabled) {
+  background-color: var(--lgn-forest-mid);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(27, 59, 43, 0.26);
+}
+
+.rmj-signin-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.rmj-signin-btn svg {
+  width: 19px;
+  height: 19px;
+}
+
+/* Divider & Account Links */
+.rmj-login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 16px;
+  color: #7A8980;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.rmj-login-divider::before,
+.rmj-login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: #E7ECE1;
+}
+
+.rmj-register-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  font-size: 13.5px;
+  color: var(--lgn-text-muted);
+}
+
+.rmj-register-link-btn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--lgn-forest);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Security Message Footer */
+.rmj-security-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 12.5px;
+  color: #5E6E64;
+  text-align: center;
+}
+
+.rmj-security-note svg {
+  width: 16px;
+  height: 16px;
+  color: var(--lgn-forest);
+  flex-shrink: 0;
+}
+
+/* ────────────────────── RESPONSIVE BREAKPOINTS ────────────────────── */
+@media (max-width: 960px) {
+  .rmj-login-split {
+    grid-template-columns: 1fr;
+    max-width: 520px;
+    gap: 28px;
+  }
+
+  .rmj-login-brand-panel {
+    min-height: 480px;
+    padding: 32px 28px 0;
+  }
+
+  .rmj-brand-food-frame {
+    height: 165px;
+  }
+}
+
+@media (max-width: 520px) {
+  .rmj-login-page {
+    padding: 16px;
+  }
+
+  .rmj-login-brand-panel {
+    padding: 26px 20px 0;
+    min-height: 440px;
+  }
+
+  .rmj-brand-logo-frame {
+    width: 100px;
+    height: 100px;
+  }
+
+  .rmj-login-card {
+    padding: 28px 22px;
+  }
+}

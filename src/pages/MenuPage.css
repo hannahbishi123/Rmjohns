@@ -1,0 +1,556 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   rmjohns Kitchen & Bar — Admin Menu Management Page Styles
+   Strictly scoped to .adm-menu-mgmt so no other module or page is affected.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.page-content.adm-menu-page-content > .page-heading,
+.page-content:has(.adm-menu-mgmt) > .page-heading {
+  display: none;
+}
+
+.adm-menu-mgmt {
+  --mm-forest-dark: #143622;
+  --mm-forest: #1B432C;
+  --mm-forest-light: #275C3B;
+  --mm-lime: #C8E231;
+  --mm-lime-hover: #D4EC3F;
+  --mm-cream-bg: #F7F8F2;
+  --mm-thead-bg: #DCE8B5;
+  --mm-card-bg: #FFFFFF;
+  --mm-text-primary: #142A1E;
+  --mm-text-secondary: #4A5D52;
+  --mm-text-muted: #6C7D73;
+  --mm-border: #EDF1E6;
+  --mm-avail-bg: #EAF5E0;
+  --mm-avail-text: #1E5E2F;
+  --mm-unavail-bg: #FDECEC;
+  --mm-unavail-text: #B42318;
+  --mm-edit-bg: #EAF3DE;
+  --mm-edit-color: #1F5132;
+  --mm-delete-bg: #FDE8E8;
+  --mm-delete-color: #E53935;
+
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--mm-text-primary);
+  padding-bottom: 18px;
+}
+
+/* ────────────────────── 1. HEADER BANNER ────────────────────── */
+.adm-mm-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 30px;
+  border-radius: 20px;
+  background: linear-gradient(115deg, #143522 0%, #1D492E 48%, #2D683C 100%);
+  color: #FFFFFF;
+  box-shadow: 0 12px 28px rgba(18, 45, 29, 0.16);
+  overflow: hidden;
+}
+
+.adm-mm-banner-waves {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.adm-mm-banner-left {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.adm-mm-leaf-badge {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.adm-mm-leaf-badge svg {
+  width: 48px;
+  height: 48px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.18));
+}
+
+.adm-mm-banner-divider {
+  width: 1.5px;
+  height: 46px;
+  background-color: rgba(255, 255, 255, 0.28);
+  flex-shrink: 0;
+}
+
+.adm-mm-banner-titles h1 {
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', sans-serif;
+  font-size: clamp(1.45rem, 2.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.18;
+  color: #FFFFFF;
+}
+
+.adm-mm-banner-titles p {
+  margin: 4px 0 0;
+  font-size: 0.94rem;
+  font-weight: 400;
+  color: rgba(249, 249, 246, 0.88);
+}
+
+.adm-mm-add-btn {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 24px;
+  border-radius: 999px;
+  border: 0;
+  background-color: var(--mm-lime);
+  color: #143320;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  transition: transform 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+  flex-shrink: 0;
+}
+
+.adm-mm-add-btn:hover {
+  background-color: var(--mm-lime-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+}
+
+.adm-mm-add-btn:active {
+  transform: translateY(0);
+}
+
+.adm-mm-add-plus {
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ────────────────────── 2. SEARCH & CATEGORY FILTERS ────────────────────── */
+.adm-mm-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.adm-mm-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 260px;
+  min-width: 210px;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background-color: #FFFFFF;
+  border: 1px solid #E3E8DC;
+  box-shadow: 0 2px 8px rgba(20, 42, 30, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.adm-mm-search:focus-within {
+  border-color: var(--mm-forest);
+  box-shadow: 0 0 0 3px rgba(200, 226, 49, 0.28);
+}
+
+.adm-mm-search-icon {
+  width: 17px;
+  height: 17px;
+  color: var(--mm-forest);
+  flex-shrink: 0;
+}
+
+.adm-mm-search input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--mm-text-primary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.adm-mm-search input::placeholder {
+  color: #8A978F;
+}
+
+.adm-mm-search-clear {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 0;
+  background: #EDF1E6;
+  color: var(--mm-forest);
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.adm-mm-categories {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.adm-mm-cat-btn {
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1px solid #E4E9DD;
+  background-color: #FFFFFF;
+  color: #1F3528;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(20, 42, 30, 0.03);
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  white-space: nowrap;
+}
+
+.adm-mm-cat-btn:hover {
+  border-color: #B8C7AE;
+  background-color: #FAFBF7;
+}
+
+.adm-mm-cat-btn.is-selected {
+  background-color: #163B24;
+  border-color: #163B24;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(22, 59, 36, 0.22);
+}
+
+/* ────────────────────── 3. MENU TABLE CARD ────────────────────── */
+.adm-mm-card {
+  background-color: var(--mm-card-bg);
+  border-radius: 20px;
+  border: 1px solid #E5EADF;
+  box-shadow: 0 10px 30px rgba(20, 42, 30, 0.05);
+  overflow: hidden;
+}
+
+.adm-mm-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.adm-mm-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 780px;
+}
+
+.adm-mm-table thead tr {
+  background-color: var(--mm-thead-bg);
+}
+
+.adm-mm-table th {
+  padding: 15px 22px;
+  text-align: left;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #183A24;
+  text-transform: uppercase;
+  border-bottom: 1px solid #CFDDA3;
+  user-select: none;
+}
+
+.adm-mm-table th.col-photo,
+.adm-mm-table th.col-availability,
+.adm-mm-table th.col-actions {
+  text-align: center;
+}
+
+.adm-mm-table th.col-availability .adm-mm-th-btn {
+  margin: 0 auto;
+}
+
+.adm-mm-th-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.adm-mm-th-label {
+  display: inline-block;
+}
+
+.adm-mm-sort-icon {
+  display: inline-flex;
+  align-items: center;
+  color: #4E6E4E;
+}
+
+.adm-mm-sort-icon svg {
+  width: 11px;
+  height: 14px;
+}
+
+.adm-mm-sort-icon.is-active {
+  color: #143522;
+}
+
+.adm-mm-table tbody tr {
+  border-bottom: 1px solid var(--mm-border);
+  transition: background-color 0.15s ease;
+}
+
+.adm-mm-table tbody tr:hover {
+  background-color: #FAFBF7;
+}
+
+.adm-mm-table td {
+  padding: 14px 22px;
+  vertical-align: middle;
+}
+
+/* Column 1: Item Name & Description ONLY */
+.adm-mm-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.adm-mm-item-name {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #13281C;
+  line-height: 1.3;
+}
+
+.adm-mm-item-desc {
+  font-size: 0.8rem;
+  color: var(--mm-text-muted);
+  line-height: 1.4;
+}
+
+/* Column 2: Category */
+.adm-mm-cat-text {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--mm-text-secondary);
+}
+
+/* Column 3: Price */
+.adm-mm-price-text {
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: #13281C;
+}
+
+/* Column 4: Photo (Thumbnail ONLY inside Photo column) */
+.adm-mm-table td.col-photo {
+  text-align: center;
+}
+
+.adm-mm-photo-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adm-mm-photo-img {
+  width: 72px;
+  height: 46px;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+  border: 1px solid #E2E8DA;
+  box-shadow: 0 3px 8px rgba(20, 42, 30, 0.10);
+}
+
+.adm-mm-no-photo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background-color: #F3F5EE;
+  border: 1px dashed #CED6C6;
+  color: #6E7E74;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+/* Column 5: Availability Badge */
+.adm-mm-table td.col-availability {
+  text-align: center;
+}
+
+.adm-mm-avail-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 112px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.adm-mm-avail-badge:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.97);
+}
+
+.adm-mm-avail-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.adm-mm-avail-badge.is-available {
+  background-color: var(--mm-avail-bg);
+  color: var(--mm-avail-text);
+  border-color: #D2E8BE;
+}
+
+.adm-mm-avail-badge.is-available .adm-mm-avail-dot {
+  background-color: #1E6B31;
+}
+
+.adm-mm-avail-badge.is-unavailable {
+  background-color: var(--mm-unavail-bg);
+  color: var(--mm-unavail-text);
+  border-color: #F7CACA;
+}
+
+.adm-mm-avail-badge.is-unavailable .adm-mm-avail-dot {
+  background-color: #D32F2F;
+}
+
+/* Column 6: Actions (Edit & Delete circular icon buttons) */
+.adm-mm-table td.col-actions {
+  text-align: center;
+}
+
+.adm-mm-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.adm-mm-action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 0;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
+}
+
+.adm-mm-action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.adm-mm-action-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.95);
+}
+
+.adm-mm-edit-btn {
+  background-color: var(--mm-edit-bg);
+  color: var(--mm-edit-color);
+}
+
+.adm-mm-delete-btn {
+  background-color: var(--mm-delete-bg);
+  color: var(--mm-delete-color);
+}
+
+/* Empty State */
+.adm-mm-empty {
+  padding: 44px 24px;
+  text-align: center;
+  color: var(--mm-text-muted);
+  font-size: 0.95rem;
+}
+
+/* ────────────────────── 4. FOOTER & PAGINATION ────────────────────── */
+.adm-mm-footer {
+  padding: 6px 22px 16px;
+  background-color: #FFFFFF;
+}
+
+.adm-mm-footer .pagination {
+  margin-top: 0;
+  padding-top: 10px;
+  border-top: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.adm-mm-footer .pagination-page.active {
+  background-color: #163B24;
+  border-color: #163B24;
+  color: #FFFFFF;
+}
+
+.adm-mm-footer .pagination-page,
+.adm-mm-footer .pagination-button {
+  border-radius: 999px;
+}
+
+/* ────────────────────── RESPONSIVE BREAKPOINTS ────────────────────── */
+@media (max-width: 860px) {
+  .adm-mm-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px 22px;
+  }
+
+  .adm-mm-add-btn {
+    width: 100%;
+  }
+
+  .adm-mm-search {
+    width: 100%;
+  }
+}

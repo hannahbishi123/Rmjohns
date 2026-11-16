@@ -9,15 +9,11 @@ import { initialCustomers, initialMenu, initialOrders, initialPayments, initialP
 import { mockAccounts } from '../src/data/mockAccounts.js'
 import { config } from './config.js'
 import { pool, withTransaction } from './database.js'
-import { initFirebase, getFirebaseStatus, verifyIdToken, setUserRole, upsertFirebaseUser, writeUserAccountRecord } from './firebase.js'
+import { initFirebase, getFirebaseStatus, verifyIdToken, setUserRole, upsertFirebaseUser } from './firebase.js'
 import {
   syncFullSnapshot,
-  syncOrder,
-  syncPayment,
   syncMenuItem,
   syncCustomer,
-  syncNotification,
-  syncAttendanceEvent,
   syncStaff,
   syncUserAccount,
   syncUserAccountByEmail,
@@ -97,6 +93,61 @@ function extractBearerToken(req) {
   const header = req.headers.authorization || ''
   if (!header.startsWith('Bearer ')) return null
   return header.slice(7).trim() || null
+}
+
+// ── Authentication & Role Verification Middlewares ─────────────────────────────
+async function authenticateToken(req) {
+  const idToken = extractBearerToken(req) || req.body?.idToken
+  if (!idToken) {
+    return { error: 'Authentication required. A valid Firebase ID token must be provided.', status: 401 }
+  }
+  const decoded = await verifyIdToken(idToken)
+  if (!decoded) {
+    return { error: 'The provided ID token is invalid or expired.', status: 401 }
+  }
+
+  // Cross-reference with MySQL database as the source of truth for user role
+  const email = decoded.email?.toLowerCase()
+  let dbRole = decoded.role || null
+  if (email) {
+    try {
+      const [accounts] = await pool.execute(
+        'SELECT role, username, email FROM user_accounts WHERE email = ? LIMIT 1',
+        [email],
+      )
+      if (accounts[0]?.role) {
+        dbRole = accounts[0].role
+      }
+    } catch {
+      // Retain decoded.role if database query is temporarily unavailable
+    }
+  }
+
+  return { user: { ...decoded, role: dbRole || decoded.role || 'Customer' } }
+}
+
+async function requireAdminAuth(req, res, next) {
+  const authResult = await authenticateToken(req)
+  if (authResult.error) {
+    return res.status(authResult.status).json({ error: authResult.error })
+  }
+  if (authResult.user.role !== 'Admin') {
+    return res.status(403).json({ error: 'Forbidden. Administrator privileges required.' })
+  }
+  req.user = authResult.user
+  next()
+}
+
+async function requireStaffOrAdminAuth(req, res, next) {
+  const authResult = await authenticateToken(req)
+  if (authResult.error) {
+    return res.status(authResult.status).json({ error: authResult.error })
+  }
+  if (!['Admin', 'Staff'].includes(authResult.user.role)) {
+    return res.status(403).json({ error: 'Forbidden. Staff or Administrator privileges required.' })
+  }
+  req.user = authResult.user
+  next()
 }
 
 async function rows(sql, values = []) {
@@ -241,9 +292,10 @@ async function seedDatabase() {
       [JSON.stringify(preferencesSeed)],
     )
 
+    const seedPassword = process.env.SEED_ACCOUNT_PASSWORD || process.env.DEFAULT_ADMIN_PASSWORD
     const [accountCount] = await connection.execute('SELECT COUNT(*) AS count FROM user_accounts')
-    if (accountCount[0].count === 0) {
-      const passwordHash = await bcrypt.hash('demo1234', 10)
+    if (accountCount[0].count === 0 && seedPassword) {
+      const passwordHash = await bcrypt.hash(seedPassword, 10)
       for (const account of mockAccounts) {
         const [[customer]] = await connection.execute('SELECT customer_id FROM customers WHERE email = ? LIMIT 1', [account.email])
         await connection.execute(
@@ -253,15 +305,79 @@ async function seedDatabase() {
         )
       }
     }
-  })
 
-  // ── Seed Firebase Auth accounts for mock users (after MySQL transaction) ──
-  for (const account of mockAccounts) {
-    const fbUser = await upsertFirebaseUser(account.email, account.password || 'demo1234', account.username)
-    if (fbUser) {
-      await setUserRole(fbUser.uid, account.role)
-      console.log(`[firebase] Auth user seeded: ${account.email} (${account.role})`)
+    // Ensure the dedicated Default Admin account exists in MySQL user_accounts
+    const defaultAdminEmail    = (process.env.DEFAULT_ADMIN_EMAIL || 'manager@rmjohns.com').trim().toLowerCase()
+    const defaultAdminUsername = (process.env.DEFAULT_ADMIN_USERNAME || 'manager').trim().toLowerCase()
+    const defaultAdminPassword = process.env.DEFAULT_ADMIN_PASSWORD || seedPassword
+    if (defaultAdminPassword) {
+      const [existingAdmin] = await connection.execute(
+        'SELECT account_id FROM user_accounts WHERE email = ? OR username = ? LIMIT 1',
+        [defaultAdminEmail, defaultAdminUsername],
+      )
+      if (existingAdmin.length === 0) {
+        const adminHash = await bcrypt.hash(defaultAdminPassword, 10)
+        await connection.execute(
+          `INSERT INTO user_accounts (username, email, password_hash, role, contact)
+           VALUES (?, ?, ?, 'Admin', ?)`,
+          [defaultAdminUsername, defaultAdminEmail, adminHash, '+63 917 555 0142'],
+        )
+      }
     }
+  })
+}
+
+async function ensureDefaultAdminInFirebase() {
+  const defaultAdminEmail    = (process.env.DEFAULT_ADMIN_EMAIL || 'manager@rmjohns.com').trim().toLowerCase()
+  const defaultAdminUsername = (process.env.DEFAULT_ADMIN_USERNAME || 'manager').trim().toLowerCase()
+  const defaultAdminName     = (process.env.DEFAULT_ADMIN_NAME || 'Maureen Santos').trim()
+  const defaultAdminPassword = process.env.DEFAULT_ADMIN_PASSWORD
+  const seedPassword         = process.env.SEED_ACCOUNT_PASSWORD || defaultAdminPassword
+
+  const accountsToProvision = [
+    ...(defaultAdminPassword ? [{
+      username: defaultAdminUsername,
+      email:    defaultAdminEmail,
+      name:     defaultAdminName,
+      role:     'Admin',
+      phone:    '+63 917 555 0142',
+      secret:   defaultAdminPassword,
+    }] : []),
+    ...mockAccounts
+      .filter((a) => a.email !== defaultAdminEmail && Boolean(seedPassword))
+      .map((a) => ({
+        username: a.username,
+        email:    a.email,
+        name:     a.name || a.username,
+        role:     a.role,
+        phone:    '+63 917 555 0142',
+        secret:   seedPassword,
+      })),
+  ]
+
+  for (const account of accountsToProvision) {
+    const fbUser = await upsertFirebaseUser(account.email, account.secret, account.name)
+    if (!fbUser) continue
+
+    await setUserRole(fbUser.uid, account.role)
+
+    await pool.execute(
+      `UPDATE user_accounts SET firebase_uid = ? WHERE email = ? AND (firebase_uid IS NULL OR firebase_uid != ?)`,
+      [fbUser.uid, account.email, fbUser.uid],
+    ).catch(() => {})
+
+    await syncUserAccount(fbUser.uid, {
+      uid:       fbUser.uid,
+      username:  account.username,
+      email:     account.email,
+      name:      account.name,
+      phone:     account.phone,
+      role:      account.role,
+      title:     account.role === 'Admin' ? 'Manager' : account.role,
+      status:    'Active',
+      updatedAt: new Date().toISOString(),
+    })
+    console.log(`[firebase] Auth & Firestore user provisioned: ${account.email} (${account.role})`)
   }
 }
 
@@ -362,8 +478,12 @@ function requireCollection(state, key) {
   return state[key]
 }
 
-async function deleteMissing(connection, table, column, ids) {
+async function deleteMissing(connection, table, column, ids, preserveIfEmpty = false) {
   if (!ids.length) {
+    if (preserveIfEmpty) {
+      // Safety guard: prevent accidental bulk wipe of master tables
+      return
+    }
     await connection.execute(`DELETE FROM \`${table}\``)
     return
   }
@@ -393,13 +513,6 @@ async function saveSnapshot(state) {
   function toInt(val) {
     const n = Number(val)
     return Number.isFinite(n) ? Math.floor(n) : null
-  }
-  // Strip Firebase-only metadata fields so they don't confuse INSERT statements
-  function cleanFbFields(obj) {
-    if (!obj || typeof obj !== 'object') return obj
-    // eslint-disable-next-line no-unused-vars
-    const { _syncedAt, _backedUpAt, ...rest } = obj
-    return rest
   }
 
   await withTransaction(async (connection) => {
@@ -570,9 +683,9 @@ async function saveSnapshot(state) {
     await deleteMissing(connection, 'rewards', 'reward_id', rewards.map((item) => item.id))
     await deleteMissing(connection, 'promotions', 'promotion_id', promotions.map((item) => item.id))
     await deleteMissing(connection, 'orders', 'order_number', orders.map((item) => item.id))
-    await deleteMissing(connection, 'menu_items', 'menu_item_id', menu.map((item) => item.id))
-    await deleteMissing(connection, 'staff', 'staff_id', staff.map((item) => item.id))
-    await deleteMissing(connection, 'customers', 'customer_id', customers.map((item) => item.id))
+    await deleteMissing(connection, 'menu_items', 'menu_item_id', menu.map((item) => item.id), true)
+    await deleteMissing(connection, 'staff', 'staff_id', staff.map((item) => item.id), true)
+    await deleteMissing(connection, 'customers', 'customer_id', customers.map((item) => item.id), true)
   })
 }
 
@@ -613,21 +726,25 @@ app.post('/api/auth/verify', async (req, res) => {
 
 // POST /api/auth/set-role
 // Sets a custom role claim on a Firebase Auth user by uid.
-// Requires an Admin Firebase ID token.
-app.post('/api/auth/set-role', async (req, res) => {
+// Requires a verified Administrator token. Never trusts client-supplied role claims.
+app.post('/api/auth/set-role', requireAdminAuth, async (req, res) => {
   try {
     const { uid, role } = req.body || {}
-    if (!uid || !supportedAccountRoles.includes(role)) {
-      return res.status(400).json({ error: 'A valid uid and role are required.' })
+    if (!uid || typeof uid !== 'string' || !supportedAccountRoles.includes(role)) {
+      return res.status(400).json({
+        error: `A valid uid string and supported role (${supportedAccountRoles.join(', ')}) are required.`,
+      })
     }
-    const idToken = extractBearerToken(req)
-    if (idToken) {
-      const decoded = await verifyIdToken(idToken)
-      if (!decoded || decoded.role !== 'Admin') {
-        return res.status(403).json({ error: 'Only Admin accounts can set roles.' })
-      }
-    }
+
+    // Set role custom claim in Firebase Auth
     await setUserRole(uid, role)
+
+    // Also update MySQL user_accounts if an account is linked to this firebase_uid
+    await pool.execute(
+      'UPDATE user_accounts SET role = ? WHERE firebase_uid = ?',
+      [role, uid],
+    ).catch(() => {})
+
     res.json({ ok: true, uid, role })
   } catch (error) {
     sendError(res, error, 'set role')
@@ -691,7 +808,7 @@ app.get('/api/sync/status', async (_req, res) => {
 })
 
 // POST /api/sync/flush — manually trigger the retry queue (admin use)
-app.post('/api/sync/flush', async (_req, res) => {
+app.post('/api/sync/flush', requireAdminAuth, async (_req, res) => {
   try {
     const count = await flushSyncQueue()
     res.json({ ok: true, flushed: count })
@@ -701,8 +818,8 @@ app.post('/api/sync/flush', async (_req, res) => {
 })
 
 // POST /api/sync/initial — push ALL current MySQL data to Firebase
-// Use this to manually re-connect local data to the live database at any time.
-app.post('/api/sync/initial', async (_req, res) => {
+// Requires Admin authentication.
+app.post('/api/sync/initial', requireAdminAuth, async (_req, res) => {
   try {
     const result = await initialSyncFromMySQL()
     if (result.skipped) {
@@ -759,7 +876,8 @@ app.get('/api/sync/direction', async (_req, res) => {
 // ── Menu item endpoints — real-time update + Firebase sync ───────────────────
 
 // POST /api/menu-items/update — update a single menu item (image URL, name, price, etc.)
-app.post('/api/menu-items/update', async (req, res) => {
+// Requires Staff or Administrator authentication.
+app.post('/api/menu-items/update', requireStaffOrAdminAuth, async (req, res) => {
   try {
     const { id, updates } = req.body || {}
     if (!id || !updates || typeof updates !== 'object') {
@@ -805,7 +923,8 @@ app.post('/api/menu-items/update', async (req, res) => {
 })
 
 // POST /api/menu-items/add — add a brand new menu item with image URL
-app.post('/api/menu-items/add', async (req, res) => {
+// Requires Staff or Administrator authentication.
+app.post('/api/menu-items/add', requireStaffOrAdminAuth, async (req, res) => {
   try {
     const { id, name, category, price, description, image, emoji, tone, available } = req.body || {}
     if (!name || !category || price == null) {
@@ -849,7 +968,9 @@ app.post('/api/menu-items/add', async (req, res) => {
   }
 })
 
+// ── Application state endpoints ───────────────────────────────────────────────
 
+app.get('/api/bootstrap', async (_req, res) => {
   try {
     const data = await readBootstrap()
     // Attach Firebase connection status so frontend knows if live sync is active
@@ -864,8 +985,11 @@ app.post('/api/menu-items/add', async (req, res) => {
   }
 })
 
-app.put('/api/state', async (req, res) => {
+app.put('/api/state', requireStaffOrAdminAuth, async (req, res) => {
   try {
+    if (!req.body || typeof req.body !== 'object') {
+      return res.status(400).json({ error: 'A valid JSON state payload object is required.' })
+    }
     await saveSnapshot(req.body)
     // Fire-and-forget sync to Firebase — MySQL response is never delayed.
     // syncFullSnapshot enqueues any records Firebase can't receive right now.
@@ -1048,9 +1172,10 @@ app.post('/api/auth/update-uid', async (req, res) => {
 
 app.post('/api/customers/register', async (req, res) => {
   try {
-    const { name, email, phone, password } = req.body || {}
+    const { name, email, phone, password, username } = req.body || {}
     const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : ''
     const normalizedName  = typeof name  === 'string' ? name.trim()                : ''
+    const normalizedUsername = (typeof username === 'string' && username.trim()) ? username.trim() : normalizedEmail
 
     // ── Field presence ────────────────────────────────────────────────────────
     if (!normalizedName)
@@ -1112,7 +1237,7 @@ app.post('/api/customers/register', async (req, res) => {
       await connection.execute(
         `INSERT INTO user_accounts (username, email, password_hash, role, contact, customer_id, firebase_uid)
          VALUES (?, ?, ?, 'Customer', ?, ?, ?)`,
-        [normalizedEmail, normalizedEmail, passwordHash, String(phone || '').trim(), customerId, firebaseUid],
+        [normalizedUsername, normalizedEmail, passwordHash, String(phone || '').trim(), customerId, firebaseUid],
       )
       const [[created]] = await connection.execute(
         `SELECT customer_id AS id, name, email, contact, orders_count AS orders, total_spend AS spend, points, status
@@ -1194,26 +1319,15 @@ app.post('/api/accounts/register', async (req, res) => {
 
     const callerEmail = decoded.email?.toLowerCase()
 
-    // ── Determine if this is self-registration or Admin-created ───────────────
-    // Self-registration: token email matches the account being created.
-    //   The Firebase Auth account was already created by the frontend.
-    //   We just need to save it to MySQL.
-    // Admin-created: token email belongs to an existing Admin in MySQL.
-    const isSelfRegistration = callerEmail === normalizedEmail
-
-    if (!isSelfRegistration) {
-      // Admin-created path — verify the caller is an Admin in MySQL
-      const [callerRows] = await pool.execute(
-        `SELECT role FROM user_accounts WHERE email = ? LIMIT 1`,
-        [callerEmail],
-      )
-      if (!callerRows[0] || callerRows[0].role !== 'Admin') {
-        return res.status(403).json({ error: 'Only Admin accounts can create Staff or Admin accounts for other users.' })
-      }
+    // ── SECURITY: Only existing authorized Administrators may create Admin or Staff accounts ──
+    const [callerRows] = await pool.execute(
+      `SELECT role FROM user_accounts WHERE email = ? LIMIT 1`,
+      [callerEmail],
+    )
+    const callerRole = callerRows[0]?.role || decoded.role
+    if (callerRole !== 'Admin') {
+      return res.status(403).json({ error: 'Only authorized Administrator accounts can create Staff or Admin accounts.' })
     }
-    // Self-registration path: the setup-code gate on the frontend already
-    // verified the user knows the secret code before calling this endpoint.
-    // The Firebase token proves they own a real Auth account.
 
     // ── Field validation ──────────────────────────────────────────────────────
     if (!normalizedName || normalizedName.length < 2 || normalizedName.length > 120)
@@ -1314,7 +1428,7 @@ async function start() {
       ADD COLUMN IF NOT EXISTS \`image_url\` TEXT NULL DEFAULT NULL
     `)
     console.log('[migrate] menu_items.image_url column ready.')
-  } catch (err) {
+  } catch {
     // MySQL < 8 doesn't support IF NOT EXISTS on ADD COLUMN — use the safe approach
     try {
       const [cols] = await pool.execute(
@@ -1333,6 +1447,10 @@ async function start() {
   // Connect to Firebase (optional — app works without it)
   const fbReady = await initFirebase()
   if (fbReady) {
+    // Provision default Admin & seed accounts in Firebase Auth, Firestore, and Realtime DB
+    await ensureDefaultAdminInFirebase().catch((err) => {
+      console.error('[firebase] Default admin provisioning warning:', err.message)
+    })
     // Push all existing MySQL data to Firebase on first connect
     console.log('[sync] Starting initial MySQL → Firebase sync…')
     initialSyncFromMySQL().then((result) => {
