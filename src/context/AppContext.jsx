@@ -52,17 +52,13 @@ export function AppProvider({ children }) {
   })
   const [urlRequestedRole, setUrlRequestedRole] = useState(() => initialUrlInfo.requestedRole || null)
   const [menu, setMenu] = useState(initialMenu)
-  const [orders, setOrders] = useState(initialOrders)
+  const [orders, setOrders] = useState([])
   const [cart, setCart] = useState([])
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
   const [dialog, setDialog] = useState(null)
-  const [points, setPoints] = useState(120)
-  const [loyaltyHistory, setLoyaltyHistory] = useState([
-    { id: 1, date: 'Today', detail: 'Lunch order · VK-2841', delta: 7 },
-    { id: 2, date: 'Sep 26', detail: 'Dinner with friends', delta: 12 },
-    { id: 3, date: 'Sep 22', detail: 'Calamansi spritz reward', delta: -80 },
-  ])
+  const [points, setPoints] = useState(0)
+  const [loyaltyHistory, setLoyaltyHistory] = useState([])
   const [paymentMethod, setPaymentMethod] = useState('Cash')
   const [orderFilter, setOrderFilter] = useState('All')
   const [staff, setStaff] = useState(initialStaff)
@@ -71,15 +67,11 @@ export function AppProvider({ children }) {
   const [scanSequence, setScanSequence] = useState(0)
   const [customers, setCustomers] = useState(initialCustomers)
   const [customerAccounts, setCustomerAccounts] = useState([])
-  const [payments, setPayments] = useState(initialPayments)
+  const [payments, setPayments] = useState([])
   const [rewards, setRewards] = useState(initialRewards)
   const [promotions, setPromotions] = useState(initialPromotions)
   const [preferences, setPreferences] = useState(initialPreferences)
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'New order received', detail: 'Online order VK-2841 from Mia Santos is preparing.', time: '10:42 AM', read: false },
-    { id: 2, title: 'Attendance recorded', detail: 'Ava Mendoza checked in using the demo RFID reader.', time: '10:18 AM', read: false },
-    { id: 3, title: 'Low availability', detail: 'Ube panna cotta is running low. 4 portions remain.', time: 'Yesterday', read: false },
-  ])
+  const [notifications, setNotifications] = useState([])
   const [checkoutInfo, setCheckoutInfo] = useState(() => ({
     customer: initialSession?.profile?.name || 'Maureen Santos',
     orderType: 'Pickup',
@@ -347,22 +339,33 @@ export function AppProvider({ children }) {
         // ── 4. Load auth-protected Firebase data in background ────────────────
         try {
           const toArr = (obj) => obj && typeof obj === 'object' ? Object.values(obj) : []
-          const [fbOrders, fbCustomers, fbStaff, fbPayments, fbNotifications, fbLoyalty, fbAttendance] = await Promise.all([
-            firebaseGet('eateries/orders'),
-            firebaseGet('eateries/customers'),
-            firebaseGet('eateries/staff'),
-            firebaseGet('eateries/payments'),
-            firebaseGet('eateries/notifications'),
-            firebaseGet('eateries/loyalty_transactions'),
-            firebaseGet('eateries/attendance_events'),
-          ])
-          if (fbOrders)       setOrders(toArr(fbOrders))
-          if (fbCustomers)    setCustomers(toArr(fbCustomers))
-          if (fbStaff)        setStaff(toArr(fbStaff))
-          if (fbPayments)     setPayments(toArr(fbPayments))
-          if (fbNotifications) setNotifications(toArr(fbNotifications).map(n => ({ ...n, read: Boolean(n.isRead ?? n.read) })))
-          if (fbLoyalty)      setLoyaltyHistory(toArr(fbLoyalty))
-          if (fbAttendance)   setScanEvents(toArr(fbAttendance).map(e => ({ id: e.id ?? e.event_id, name: e.staff_name ?? e.name, staffId: e.staff_id ?? e.staffId, time: e.event_time ?? e.time, action: e.action })))
+
+          if (resolvedRole === 'Admin' || resolvedRole === 'Staff') {
+            const [fbOrders, fbCustomers, fbStaff, fbPayments, fbNotifications, fbLoyalty, fbAttendance] = await Promise.all([
+              firebaseGet('eateries/orders').catch(() => null),
+              firebaseGet('eateries/customers').catch(() => null),
+              firebaseGet('eateries/staff').catch(() => null),
+              firebaseGet('eateries/payments').catch(() => null),
+              firebaseGet('eateries/notifications').catch(() => null),
+              firebaseGet('eateries/loyalty_transactions').catch(() => null),
+              firebaseGet('eateries/attendance_events').catch(() => null),
+            ])
+            if (fbOrders)        setOrders(toArr(fbOrders))
+            if (fbCustomers)     setCustomers(toArr(fbCustomers))
+            if (fbStaff)         setStaff(toArr(fbStaff))
+            if (fbPayments)      setPayments(toArr(fbPayments))
+            if (fbNotifications) setNotifications(toArr(fbNotifications).map(n => ({ ...n, read: Boolean(n.isRead ?? n.read) })))
+            if (fbLoyalty)       setLoyaltyHistory(toArr(fbLoyalty))
+            if (fbAttendance)    setScanEvents(toArr(fbAttendance).map(e => ({ id: e.id ?? e.event_id, name: e.staff_name ?? e.name, staffId: e.staff_id ?? e.staffId, time: e.event_time ?? e.time, action: e.action })))
+          } else {
+            // Customer role: only fetch notifications, loyalty, and customer-permitted data
+            const [fbNotifications, fbLoyalty] = await Promise.all([
+              firebaseGet('eateries/notifications').catch(() => null),
+              firebaseGet('eateries/loyalty_transactions').catch(() => null),
+            ])
+            if (fbNotifications) setNotifications(toArr(fbNotifications).map(n => ({ ...n, read: Boolean(n.isRead ?? n.read) })))
+            if (fbLoyalty)       setLoyaltyHistory(toArr(fbLoyalty))
+          }
         } catch {
           // Non-critical — bootstrap data is already loaded
         }
@@ -422,35 +425,78 @@ export function AppProvider({ children }) {
   // are merged so that locally-pending unsaved orders are not clobbered.
   useEffect(() => {
     if (!firebaseConnected) return undefined
-    const unsub = firebaseListen('eateries/orders', (firebaseOrders) => {
-      if (!firebaseOrders || typeof firebaseOrders !== 'object') return
-      setOrders((current) =>
-        current.map((order) => {
-          const fbOrder = firebaseOrders[order.id]
-          if (!fbOrder) return order
-          // Only apply status / payment updates from Firebase
-          const changed = fbOrder.status !== order.status || fbOrder.payment !== order.payment
-          if (!changed) return order
-          return { ...order, status: fbOrder.status ?? order.status, payment: fbOrder.payment ?? order.payment }
-        }),
+
+    // Admin and Staff are authorized to listen to all orders
+    if (role === 'Admin' || role === 'Staff') {
+      const unsub = firebaseListen(
+        'eateries/orders',
+        (firebaseOrders) => {
+          if (!firebaseOrders || typeof firebaseOrders !== 'object') return
+          setOrders((current) =>
+            current.map((order) => {
+              const fbOrder = firebaseOrders[order.id]
+              if (!fbOrder) return order
+              // Only apply status / payment updates from Firebase
+              const changed = fbOrder.status !== order.status || fbOrder.payment !== order.payment
+              if (!changed) return order
+              return { ...order, status: fbOrder.status ?? order.status, payment: fbOrder.payment ?? order.payment }
+            }),
+          )
+        },
+        (err) => {
+          console.warn('[firebase] Global orders listen error:', err?.message || err)
+        },
       )
-    })
-    return unsub
-  }, [firebaseConnected])
+      return unsub
+    }
+
+    // Customer role: Listen to status updates on their own orders individually,
+    // adhering to RTDB rules where customers can only read $orderId where customerId == auth.uid
+    const unsubs = []
+    const myOrderIds = orders.map((o) => o.id).filter(Boolean)
+    for (const orderId of myOrderIds) {
+      const unsub = firebaseListen(
+        `eateries/orders/${orderId}`,
+        (fbOrder) => {
+          if (!fbOrder) return
+          setOrders((current) =>
+            current.map((order) => {
+              if (order.id !== orderId) return order
+              const changed = fbOrder.status !== order.status || fbOrder.payment !== order.payment
+              if (!changed) return order
+              return { ...order, status: fbOrder.status ?? order.status, payment: fbOrder.payment ?? order.payment }
+            }),
+          )
+        },
+        () => {
+          // Silent catch on individual customer order listener
+        },
+      )
+      unsubs.push(unsub)
+    }
+
+    return () => {
+      unsubs.forEach((u) => { try { u() } catch {} })
+    }
+  }, [firebaseConnected, role, orders.length])
 
   // ── Live Firebase notifications listener ──────────────────────────────────
   // Merges new notifications pushed by the backend or other clients.
   useEffect(() => {
     if (!firebaseConnected) return undefined
-    const unsub = firebaseListen('eateries/notifications', (fbNotifs) => {
-      if (!fbNotifs || typeof fbNotifs !== 'object') return
-      setNotifications((current) => {
-        const currentIds = new Set(current.map((n) => String(n.id)))
-        const incoming = Object.values(fbNotifs).filter((n) => n && !currentIds.has(String(n.id)))
-        if (!incoming.length) return current
-        return [...incoming.map((n) => ({ ...n, read: Boolean(n.isRead ?? n.read) })), ...current]
-      })
-    })
+    const unsub = firebaseListen(
+      'eateries/notifications',
+      (fbNotifs) => {
+        if (!fbNotifs || typeof fbNotifs !== 'object') return
+        setNotifications((current) => {
+          const currentIds = new Set(current.map((n) => String(n.id)))
+          const incoming = Object.values(fbNotifs).filter((n) => n && !currentIds.has(String(n.id)))
+          if (!incoming.length) return current
+          return [...incoming.map((n) => ({ ...n, read: Boolean(n.isRead ?? n.read) })), ...current]
+        })
+      },
+      (err) => console.warn('[firebase] Notifications listen error:', err?.message || err),
+    )
     return unsub
   }, [firebaseConnected])
 
@@ -458,51 +504,69 @@ export function AppProvider({ children }) {
   // Merges availability changes from Firebase so all terminals stay in sync.
   useEffect(() => {
     if (!firebaseConnected) return undefined
-    const unsub = firebaseListen('eateries/menu_items', (fbMenu) => {
-      if (!fbMenu || typeof fbMenu !== 'object') return
-      setMenu((current) =>
-        current.map((item) => {
-          const fbItem = fbMenu[String(item.id)]
-          if (!fbItem) return item
-          if (fbItem.available === item.available) return item
-          return { ...item, available: Boolean(fbItem.available) }
-        }),
-      )
-    })
+    const unsub = firebaseListen(
+      'eateries/menu_items',
+      (fbMenu) => {
+        if (!fbMenu || typeof fbMenu !== 'object') return
+        setMenu((current) =>
+          current.map((item) => {
+            const fbItem = fbMenu[String(item.id)]
+            if (!fbItem) return item
+            if (fbItem.available === item.available) return item
+            return { ...item, available: Boolean(fbItem.available) }
+          }),
+        )
+      },
+      (err) => console.warn('[firebase] Menu listen error:', err?.message || err),
+    )
     return unsub
   }, [firebaseConnected])
 
   // ── Live Firebase staff status listener ───────────────────────────────────
   useEffect(() => {
     if (!firebaseConnected) return undefined
-    const unsub = firebaseListen('eateries/staff', (fbStaff) => {
-      if (!fbStaff || typeof fbStaff !== 'object') return
-      setStaff((current) =>
-        current.map((person) => {
-          const fb = fbStaff[person.id]
-          if (!fb) return person
-          if (fb.status === person.status) return person
-          return { ...person, status: fb.status }
-        }),
-      )
-    })
+    // Only Staff and Admin are authorized to listen to staff status
+    if (role !== 'Admin' && role !== 'Staff') return undefined
+
+    const unsub = firebaseListen(
+      'eateries/staff',
+      (fbStaff) => {
+        if (!fbStaff || typeof fbStaff !== 'object') return
+        setStaff((current) =>
+          current.map((person) => {
+            const fb = fbStaff[person.id]
+            if (!fb) return person
+            if (fb.status === person.status) return person
+            return { ...person, status: fb.status }
+          }),
+        )
+      },
+      (err) => console.warn('[firebase] Staff listen error:', err?.message || err),
+    )
     return unsub
-  }, [firebaseConnected])
+  }, [firebaseConnected, role])
 
   // ── Live Firebase attendance events listener ───────────────────────────────
   useEffect(() => {
     if (!firebaseConnected) return undefined
-    const unsub = firebaseListen('eateries/attendance_events', (fbEvents) => {
-      if (!fbEvents || typeof fbEvents !== 'object') return
-      setScanEvents((current) => {
-        const currentIds = new Set(current.map((e) => String(e.id)))
-        const incoming = Object.values(fbEvents).filter((e) => e && !currentIds.has(String(e.id ?? e.event_id)))
-        if (!incoming.length) return current
-        return [...incoming.map((e) => ({ id: e.id ?? e.event_id, name: e.staff_name ?? e.name, staffId: e.staff_id ?? e.staffId, time: e.event_time ?? e.time, action: e.action })), ...current]
-      })
-    })
+    // Only Staff and Admin are authorized to listen to attendance events
+    if (role !== 'Admin' && role !== 'Staff') return undefined
+
+    const unsub = firebaseListen(
+      'eateries/attendance_events',
+      (fbEvents) => {
+        if (!fbEvents || typeof fbEvents !== 'object') return
+        setScanEvents((current) => {
+          const currentIds = new Set(current.map((e) => String(e.id)))
+          const incoming = Object.values(fbEvents).filter((e) => e && !currentIds.has(String(e.id ?? e.event_id)))
+          if (!incoming.length) return current
+          return [...incoming.map((e) => ({ id: e.id ?? e.event_id, name: e.staff_name ?? e.name, staffId: e.staff_id ?? e.staffId, time: e.event_time ?? e.time, action: e.action })), ...current]
+        })
+      },
+      (err) => console.warn('[firebase] Attendance listen error:', err?.message || err),
+    )
     return unsub
-  }, [firebaseConnected])
+  }, [firebaseConnected, role])
 
   // ── Auto-save snapshot to MySQL + Firebase (debounced) ────────────────────
   // Strategy:
@@ -742,6 +806,9 @@ export function AppProvider({ children }) {
         apiError.message?.includes('NetworkError') ||
         apiError.message?.includes('fetch') ||
         apiError.message?.includes('404') ||
+        apiError.message?.includes('502') ||
+        apiError.message?.includes('503') ||
+        apiError.message?.includes('Bad Gateway') ||
         apiError.message?.includes('unavailable') ||
         apiError.message?.includes('HTML response')
       if (!isNetworkOrNotFound) throw apiError  // wrong password, etc. — surface to user
@@ -847,6 +914,12 @@ export function AppProvider({ children }) {
       text: 'You will return to the login screen.',
       confirmButtonText: 'Yes, log out',
       cancelButtonText: 'Stay here',
+      position: 'center',
+      isLogout: true,
+      customClass: {
+        container: 'rmj-swal-logout-container',
+        popup: 'rmj-swal-popup app-swal-confirm rmj-swal-logout-popup',
+      },
     })
     if (!result.isConfirmed) return
 
@@ -952,13 +1025,70 @@ export function AppProvider({ children }) {
     return reference
   }
 
-  function refundOrder(orderId) {
-    const payment = payments.find((entry) => entry.orderId === orderId && entry.status === 'Paid')
-    if (!payment) return notify('Only paid orders can be refunded')
-    setPayments((current) => current.map((entry) => entry.id === payment.id ? { ...entry, status: 'Refunded' } : entry))
-    setOrders((current) => current.map((entry) => entry.id === orderId ? { ...entry, payment: 'Refunded', status: 'Cancelled' } : entry))
-    addNotification('Refund recorded', `${orderId} · ${payment.reference}`)
-    notify(`Refund recorded for ${orderId}`)
+  function refundOrder(orderId, refundAmount, reason) {
+    const order = orders.find((entry) => entry.id === orderId)
+    if (!order) {
+      throw new Error(`Order ${orderId} not found`)
+    }
+    if (order.payment === 'Refunded') {
+      throw new Error(`Order ${orderId} has already been refunded`)
+    }
+
+    const payment = payments.find((entry) => entry.orderId === orderId && (entry.status === 'Paid' || entry.status === 'Completed'))
+      || payments.find((entry) => entry.orderId === orderId)
+
+    const amountNum = Number(refundAmount) > 0 ? Number(refundAmount) : (Number(order.total) || Number(payment?.amount) || 0)
+    const refundReason = (typeof reason === 'string' && reason.trim()) ? reason.trim() : 'Customer request'
+    const now = new Date()
+    const refundTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    const refundDate = now.toISOString().slice(0, 10)
+    const refCode = payment?.reference ? `${payment.reference}-REF` : `RF-${Date.now().toString().slice(-6)}`
+
+    setPayments((current) => {
+      const match = current.find((p) => p.orderId === orderId)
+      if (match) {
+        return current.map((p) => p.orderId === orderId ? {
+          ...p,
+          status: 'Refunded',
+          refundAmount: amountNum,
+          refundReason,
+          refundDate,
+          refundTime,
+        } : p)
+      } else {
+        return [{
+          id: `PAY-${String(current.length + 1).padStart(5, '0')}`,
+          orderId,
+          method: order.paymentMethod || 'Cash',
+          amount: amountNum,
+          status: 'Refunded',
+          refundAmount: amountNum,
+          refundReason,
+          reference: refCode,
+          refundDate,
+          refundTime,
+        }, ...current]
+      }
+    })
+
+    setOrders((current) => current.map((entry) => entry.id === orderId ? {
+      ...entry,
+      payment: 'Refunded',
+      status: 'Cancelled',
+      refundAmount: amountNum,
+      refundReason,
+      refundedAt: `${refundDate} ${refundTime}`,
+    } : entry))
+
+    addNotification('Refund recorded', `${orderId} · ₱${amountNum.toLocaleString('en-PH')} · ${refundReason}`)
+
+    return {
+      success: true,
+      orderId,
+      amount: amountNum,
+      reason: refundReason,
+      reference: refCode,
+    }
   }
 
   function updateOrder(id, status) {
@@ -1011,6 +1141,23 @@ export function AppProvider({ children }) {
       apiRequest('/api/menu-items/add', {
         method: 'POST',
         body: JSON.stringify(newItem),
+      }),
+    ])
+  }
+
+  async function deleteMenuItem(id) {
+    const itemToDelete = menu.find((item) => item.id === id)
+    setMenu((current) => current.filter((item) => item.id !== id))
+
+
+    const key = String(id)
+    await Promise.allSettled([
+      firebaseUpdate({
+        [`eateries/menu_items/${key}`]: null,
+      }),
+      apiRequest('/api/menu-items/delete', {
+        method: 'POST',
+        body: JSON.stringify({ id }),
       }),
     ])
   }
@@ -1291,7 +1438,7 @@ export function AppProvider({ children }) {
     firebaseConnected, firebaseAuthReady,
     notify, confirmAction, showError, swalSuccess, swalWarning, swalInfo, swalShowLoading, swalCloseLoading, withDatabaseAlert,
     navigate, loginAs, signIn, logout, addToCart, changeQuantity, clearCart, placeOrder,
-    completeSale, cancelSale, recordPayment, refundOrder, updateOrder, updateMenuItem, addMenuItem, reorder, addCustomer, registerAccount, registerCustomerAccount, addNotification, redeemReward,
+    completeSale, cancelSale, recordPayment, refundOrder, updateOrder, updateMenuItem, addMenuItem, deleteMenuItem, reorder, addCustomer, registerAccount, registerCustomerAccount, addNotification, redeemReward,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

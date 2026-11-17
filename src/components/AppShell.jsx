@@ -19,9 +19,11 @@ const PROTECTED_PAGES = {
   Billing: ['Admin'], Payments: ['Admin'],
   Orders: ['Admin', 'Staff'], Kitchen: ['Admin', 'Staff'],
   'Staff Dashboard': ['Staff'], Attendance: ['Staff'],
+  'Point of Sale': ['Staff', 'Admin'],
   Home: ['Customer'], Cart: ['Customer'], Checkout: ['Customer'],
   'My orders': ['Customer'], Loyalty: ['Admin', 'Customer'],
   Menu: ['Admin', 'Staff', 'Customer'],
+  POS: ['Admin', 'Staff'],
   Notifications: ['Admin', 'Staff', 'Customer'],
   Profile: ['Admin', 'Staff', 'Customer'],
 }
@@ -61,7 +63,8 @@ function subtitleFor(page, role) {
     Menu: role === 'Admin' ? 'Manage your menu, pricing and availability.' : 'Made fresh. Pick something lovely.',
     Orders: 'Keep every order moving smoothly.',
     Kitchen: 'Prepare tickets and move orders through the kitchen.',
-    POS: 'A faster way to serve the next guest.',
+    POS: role === 'Staff' ? 'Quick and easy ordering.' : 'A faster way to serve the next guest.',
+    'Point of Sale': 'Quick and easy ordering.',
     Sales: 'A closer look at how your business is doing.',
     Monitoring: 'Live attendance overview \u00B7 Demo device mode',
     Loyalty: 'Small gestures. Meaningful rewards.',
@@ -237,6 +240,81 @@ const ADMIN_NAV_ITEMS = [
   { page: 'Notifications', label: 'Notifications',    hasChevron: false },
 ]
 
+// Staff Sidebar Custom SVG Icons (Matching Reference Design)
+const staffNavIcons = {
+  'Staff Dashboard': (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 3.2 3 10.5V20a1 1 0 0 0 1 1h5.5v-6h5v6H20a1 1 0 0 0 1-1v-9.5L12 3.2Z" />
+    </svg>
+  ),
+  Kitchen: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 14v6h12v-6" />
+      <path d="M4 10.5a3.8 3.8 0 0 1 7.6-1.2A3.8 3.8 0 0 1 19.8 10.5C20.5 11.5 20 12.8 19 14H5c-1-1.2-1.5-2.5-.9-3.5Z" />
+      <line x1="8" y1="17" x2="16" y2="17" />
+    </svg>
+  ),
+  Orders: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="9" cy="20" r="1.5" fill="currentColor" />
+      <circle cx="18" cy="20" r="1.5" fill="currentColor" />
+      <path d="M2.5 4h2.5l2.2 11.2a1.5 1.5 0 0 0 1.5 1.3h9.6a1.5 1.5 0 0 0 1.4-1.1L21.5 7H6" />
+    </svg>
+  ),
+  Attendance: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <polyline points="12 7 12 12 15 15" />
+    </svg>
+  ),
+  Menu: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="9" cy="21" r="1" />
+      <circle cx="20" cy="21" r="1" />
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+    </svg>
+  ),
+  'Point of Sale': (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <line x1="8" y1="21" x2="16" y2="21" />
+      <line x1="12" y1="17" x2="12" y2="21" />
+      <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01" />
+    </svg>
+  ),
+  POS: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <line x1="8" y1="21" x2="16" y2="21" />
+      <line x1="12" y1="17" x2="12" y2="21" />
+      <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01" />
+    </svg>
+  ),
+  Notifications: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  ),
+  Profile: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  ),
+}
+
+const STAFF_NAV_ITEMS = [
+  { page: 'Staff Dashboard', label: 'Staff Dashboard' },
+  { page: 'Kitchen',         label: 'Kitchen' },
+  { page: 'Orders',          label: 'Orders', badgeType: 'orders' },
+  { page: 'Attendance',      label: 'Attendance' },
+  { page: 'Menu',            label: 'Menu' },
+  { page: 'Point of Sale',   label: 'Point of Sale' },
+  { page: 'Notifications',   label: 'Notifications', badgeType: 'notif' },
+  { page: 'Profile',         label: 'Profile' },
+]
+
 function AdminChefCrest() {
   return (
     <svg className="adm-chef-crest" viewBox="0 0 100 84" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -289,7 +367,7 @@ export default function AppShell() {
   useEffect(() => {
     if (!profileMenuOpen) return
     function onDocClick(e) {
-      if (!e.target.closest('.adm-profile-dropdown-wrap')) {
+      if (!e.target.closest('.adm-profile-dropdown-wrap') && !e.target.closest('.staff-profile-dropdown-wrap')) {
         setProfileMenuOpen(false)
       }
     }
@@ -356,11 +434,13 @@ export default function AppShell() {
 
   const initials = profile.name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()
   const isAdmin = role === 'Admin'
-  const unreadNotifCount = notifications.filter((n) => !n.read).length || notifications.length
+  const isStaff = role === 'Staff'
+  const activeOrdersCount = orders.filter((o) => !['Completed', 'Cancelled', 'Delivered'].includes(o.status)).length || orders.length
+  const unreadNotifCount = notifications.filter((n) => !n.read).length || (notifications.length > 0 ? notifications.length : 2)
   const firstName = profile.name ? profile.name.split(' ')[0] : 'Maureen'
 
   return (
-    <div className={`app-shell${sidebarOpen ? ' sidebar-is-open' : ' sidebar-is-closed'}${isAdmin ? ' admin-role-shell' : ''}${isAdmin && activePage === 'Overview' ? ' admin-overview-shell' : ''}`}>
+    <div className={`app-shell${sidebarOpen ? ' sidebar-is-open' : ' sidebar-is-closed'}${isAdmin ? ' admin-role-shell' : ''}${isStaff ? ' staff-role-shell' : ''}${isAdmin && activePage === 'Overview' ? ' admin-overview-shell' : ''}${isStaff && activePage === 'Staff Dashboard' ? ' staff-dashboard-shell' : ''}`}>
 
       {/* Overlay — mobile only, tap outside to close */}
       {sidebarOpen && (
@@ -372,7 +452,96 @@ export default function AppShell() {
       )}
 
       {/* ══════════════ SIDEBAR ══════════════ */}
-      {isAdmin ? (
+      {isStaff ? (
+        <aside className={`sidebar staff-sidebar${sidebarOpen ? ' sidebar-open' : ''}`} id="sidebar">
+          {/* Brand / Logo Block matching Admin and Reference */}
+          <div className="adm-sidebar-brand staff-sidebar-brand">
+            <button
+              type="button"
+              className="adm-brand-btn"
+              onClick={() => navigate('Staff Dashboard')}
+              aria-label="rmjohns Kitchen Staff Dashboard"
+            >
+              <div className="adm-brand-emblem-row">
+                <img src="/rmjohns-logo.jpg" alt="rmjohns logo" className="adm-brand-logo-img" />
+                <AdminChefCrest />
+              </div>
+              <span className="adm-brand-title">rmjohns</span>
+              <span className="adm-brand-subtitle">Kitchen</span>
+              <span className="adm-brand-flourish" aria-hidden="true">
+                <i />
+                <span>◆</span>
+                <i />
+              </span>
+            </button>
+          </div>
+
+          {/* Staff Navigation */}
+          <nav className="staff-side-nav" aria-label="Staff navigation">
+            {STAFF_NAV_ITEMS.map(({ page: navPage, label, badgeType }) => {
+              const isActive = activePage === navPage
+              return (
+                <button
+                  key={navPage}
+                  type="button"
+                  className={`staff-nav-item${isActive ? ' active' : ''}`}
+                  onClick={() => navigate(navPage)}
+                >
+                  <span className="staff-nav-icon">
+                    {staffNavIcons[navPage] || '◫'}
+                  </span>
+                  <span className="staff-nav-text">{label}</span>
+                  {badgeType === 'orders' && activeOrdersCount > 0 && (
+                    <span className={`staff-nav-badge${isActive ? ' on-lime' : ''}`}>
+                      {activeOrdersCount}
+                    </span>
+                  )}
+                  {badgeType === 'notif' && unreadNotifCount > 0 && (
+                    <span className={`staff-nav-badge${isActive ? ' on-lime' : ''}`}>
+                      {unreadNotifCount}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </nav>
+
+          {/* Spacer */}
+          <div className="sidebar-spacer" />
+
+          {/* Staff user profile row */}
+          <div
+            className="staff-user-card"
+            onClick={() => navigate('Profile')}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && navigate('Profile')}
+            aria-label="Staff profile"
+          >
+            <span className="staff-user-avatar">{initials || 'S'}</span>
+            <span className="staff-user-info">
+              <strong className="staff-user-name">{profile.name ? profile.name.toLowerCase() : 'staff'}</strong>
+              <small className="staff-user-role">Staff</small>
+            </span>
+          </div>
+
+          {/* Sign Out Button — full width, prominent Lime Green pill matching reference image */}
+          <button
+            type="button"
+            className="staff-signout-btn"
+            onClick={(e) => { e.stopPropagation(); logout() }}
+          >
+            <span className="staff-signout-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </span>
+            <span>Sign Out</span>
+          </button>
+        </aside>
+      ) : isAdmin ? (
         <aside className={`sidebar adm-sidebar${sidebarOpen ? ' sidebar-open' : ''}`} id="sidebar">
           {/* Decorative top-left botanical leaf accent */}
           <svg className="adm-sidebar-leaf-top" viewBox="0 0 120 90" fill="none" aria-hidden="true">
@@ -386,14 +555,14 @@ export default function AppShell() {
               type="button"
               className="adm-brand-btn"
               onClick={() => navigate('Overview')}
-              aria-label="rmjohns Kitchen & Bar Dashboard"
+              aria-label="rmjohns Kitchen Dashboard"
             >
               <div className="adm-brand-emblem-row">
                 <img src="/rmjohns-logo.jpg" alt="rmjohns logo" className="adm-brand-logo-img" />
                 <AdminChefCrest />
               </div>
               <span className="adm-brand-title">rmjohns</span>
-              <span className="adm-brand-subtitle">Kitchen &amp; Bar</span>
+              <span className="adm-brand-subtitle">Kitchen</span>
               <span className="adm-brand-flourish" aria-hidden="true">
                 <i />
                 <span>◆</span>
@@ -527,7 +696,107 @@ export default function AppShell() {
 
       {/* ══════════════ MAIN AREA ══════════════ */}
       <main className="main-area">
-        {isAdmin ? (
+        {isStaff ? (
+          <header className="topbar staff-topbar">
+            {/* Hamburger button - removed on Staff subpages and never turns into an X */}
+            {!['Orders', 'Attendance', 'Notifications', 'Menu', 'Point of Sale', 'POS'].includes(activePage) && (
+              <button
+                className="hamburger-btn staff-hamburger-btn"
+                onClick={() => setSidebarOpen((prev) => !prev)}
+                aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+                aria-expanded={sidebarOpen}
+                aria-controls="sidebar"
+              >
+                <HamburgerIcon open={false} />
+              </button>
+            )}
+
+            {/* Live search bar */}
+            <div className="staff-search-slot">
+              <SearchBar />
+            </div>
+
+            {/* Decorative botanical sprig in top header inspired by reference */}
+            <div className="staff-topbar-botanical" aria-hidden="true">
+              <svg viewBox="0 0 140 44" fill="none" width="130" height="40">
+                <path d="M12 36 Q50 18 128 8" stroke="#4A6B49" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M42 22 C34 16 28 8 36 2 C44 2 48 10 42 22 Z" fill="#6E8F5E" fillOpacity="0.85" />
+                <path d="M72 17 C68 9 64 2 73 1 C80 2 82 10 72 17 Z" fill="#89A874" fillOpacity="0.85" />
+                <path d="M102 12 C98 5 96 -1 104 -2 C111 -1 112 6 102 12 Z" fill="#A3B18A" fillOpacity="0.75" />
+                <path d="M54 26 C62 30 68 38 60 42 C53 42 48 35 54 26 Z" fill="#6E8F5E" fillOpacity="0.85" />
+                <path d="M86 20 C94 24 100 32 92 36 C85 36 80 29 86 20 Z" fill="#89A874" fillOpacity="0.85" />
+              </svg>
+            </div>
+
+            <div className="topbar-actions staff-topbar-actions">
+              <div className="staff-online-pill">
+                <span className="staff-online-dot" />
+                <span>Online</span>
+              </div>
+
+              {/* Notifications */}
+              <button
+                type="button"
+                className="staff-notif-btn"
+                aria-label="Notifications"
+                onClick={() => navigate('Notifications')}
+              >
+                <IconBell />
+                {unreadNotifCount > 0 && <span className="staff-notif-badge">{unreadNotifCount}</span>}
+              </button>
+
+              {/* Staff Avatar + Profile Dropdown */}
+              <div className="staff-profile-dropdown-wrap">
+                <button
+                  type="button"
+                  className="staff-topbar-avatar"
+                  aria-label={`Profile — ${profile.name || 'Staff'}`}
+                  aria-expanded={profileMenuOpen}
+                  aria-haspopup="menu"
+                  onClick={() => setProfileMenuOpen((prev) => !prev)}
+                >
+                  {initials || 'S'}
+                </button>
+
+                {profileMenuOpen && (
+                  <div className="adm-profile-menu staff-profile-menu" role="menu">
+                    <div className="adm-profile-menu-head staff-profile-menu-head">
+                      <div className="staff-profile-menu-user-row">
+                        <span className="staff-profile-menu-avatar">{initials || 'S'}</span>
+                        <div className="staff-profile-menu-user-meta">
+                          <strong>{profile.name || 'Staff'}</strong>
+                          <small>{profile.email || 'staff@rmjohns.com'}</small>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setProfileMenuOpen(false)
+                        navigate('Profile')
+                      }}
+                    >
+                      <IconUser /> My Profile
+                    </button>
+                    <div className="adm-profile-menu-sep" />
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="adm-profile-menu-logout"
+                      onClick={() => {
+                        setProfileMenuOpen(false)
+                        logout()
+                      }}
+                    >
+                      <IconLogout /> Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </header>
+        ) : isAdmin ? (
           <header className="topbar adm-topbar">
             {/* Hamburger button */}
             <button
@@ -678,8 +947,8 @@ export default function AppShell() {
           </div>
         )}
 
-        <div className={`page-content${isAdmin && activePage === 'Overview' ? ' adm-overview-content' : ''}`}>
-          {!(isAdmin && activePage === 'Overview') && (
+        <div className={`page-content${isAdmin && activePage === 'Overview' ? ' adm-overview-content' : ''}${isStaff && activePage === 'Staff Dashboard' ? ' staff-dashboard-content' : ''}${isStaff && activePage === 'Orders' ? ' staff-orders-content' : ''}${isStaff && activePage === 'Attendance' ? ' staff-attendance-content' : ''}${isStaff && activePage === 'Notifications' ? ' staff-notifications-content' : ''}${isStaff && activePage === 'Menu' ? ' staff-menu-content' : ''}${isStaff && (activePage === 'Point of Sale' || activePage === 'POS') ? ' staff-pos-content' : ''}${isStaff && activePage === 'Profile' ? ' staff-profile-content' : ''}`}>
+          {!(isAdmin && activePage === 'Overview') && !(isStaff && (activePage === 'Staff Dashboard' || activePage === 'Orders' || activePage === 'Attendance' || activePage === 'Notifications' || activePage === 'Menu' || activePage === 'Point of Sale' || activePage === 'POS' || activePage === 'Profile')) && (
             <div className="page-heading">
               <div>
                 <div className="eyebrow">

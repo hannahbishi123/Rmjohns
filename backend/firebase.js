@@ -14,6 +14,34 @@ let firestoreDb = null
 let adminAuth = null
 export let firebaseReady = false
 
+export function getFirestoreDb() {
+  if (firestoreDb) return firestoreDb
+  try {
+    const admin = require('firebase-admin')
+    if (admin.apps.length) {
+      firestoreDb = admin.firestore()
+      return firestoreDb
+    }
+  } catch {}
+  return null
+}
+
+export function getRealtimeDb() {
+  if (db) return db
+  try {
+    const admin = require('firebase-admin')
+    if (admin.apps.length) {
+      db = admin.database()
+      return db
+    }
+  } catch {}
+  return null
+}
+
+export function getAdminAuth() {
+  return adminAuth
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 export async function initFirebase() {
   if (!existsSync(serviceAccountPath)) {

@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs'
 import cors from 'cors'
 import express from 'express'
-import { existsSync } from 'node:fs'
+import fs, { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -13,10 +13,26 @@ import { initFirebase, getFirebaseStatus, verifyIdToken, setUserRole, upsertFire
 import {
   syncFullSnapshot,
   syncMenuItem,
+  deleteMenuItem,
   syncCustomer,
+  deleteCustomer,
   syncStaff,
+  deleteStaff,
+  syncOrder,
+  deleteOrder,
+  syncPayment,
+  deletePayment,
+  syncReward,
+  deleteReward,
+  syncPromotion,
+  deletePromotion,
+  syncNotification,
+  deleteNotification,
+  syncAttendanceEvent,
+  deleteAttendanceEvent,
   syncUserAccount,
   syncUserAccountByEmail,
+  syncRecord,
   getSyncQueueStats,
   flushSyncQueue,
   startSyncRetryLoop,
@@ -32,6 +48,13 @@ import {
 const app = express()
 const serverDirectory = path.dirname(fileURLToPath(import.meta.url))
 const projectRoot = path.resolve(serverDirectory, '..')
+
+// Local static uploads for menu pictures
+const uploadsDir = path.join(projectRoot, 'public', 'uploads')
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(path.join(uploadsDir, 'menu'), { recursive: true })
+}
+app.use('/uploads', express.static(uploadsDir))
 const profileSeed = { name: 'Maureen Santos', email: 'maureen.santos@email.com', phone: '+63 917 555 0142' }
 const loyaltySeed = [
   { id: 1, date: 'Today', detail: 'Lunch order · VK-2841', delta: 7 },
@@ -46,7 +69,7 @@ const notificationSeed = [
 const preferencesSeed = { orders: true, attendance: true, loyalty: false, receipts: true }
 const supportedAccountRoles = ['Admin', 'Staff', 'Customer']
 
-app.use(express.json({ limit: '2mb' }))
+app.use(express.json({ limit: '10mb' }))
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 // Allow requests from Firebase Hosting and local dev
@@ -59,7 +82,8 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (e.g. same-origin, mobile, Postman)
     if (!origin) return callback(null, true)
-    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+    const isLocalDevOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)
+    if (isLocalDevOrigin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
       return callback(null, true)
     }
     callback(new Error(`CORS: origin "${origin}" not allowed`))
@@ -211,7 +235,7 @@ async function seedDatabase() {
     }
 
     const [orderCount] = await connection.execute('SELECT COUNT(*) AS count FROM orders')
-    if (orderCount[0].count === 0) {
+    if (process.env.SEED_DEMO_TRANSACTIONS === 'true' && orderCount[0].count === 0) {
       const menuIds = new Set(initialMenu.map((item) => item.id))
       for (const order of initialOrders) {
         const [[customer]] = await connection.execute('SELECT customer_id FROM customers WHERE name = ? LIMIT 1', [order.customer])
@@ -237,7 +261,7 @@ async function seedDatabase() {
     }
 
     const [paymentCount] = await connection.execute('SELECT COUNT(*) AS count FROM payments')
-    if (paymentCount[0].count === 0) {
+    if (process.env.SEED_DEMO_TRANSACTIONS === 'true' && paymentCount[0].count === 0) {
       for (const payment of initialPayments) {
         await connection.execute(
           `INSERT INTO payments (payment_number, order_number, method, amount, amount_paid, status, reference)
@@ -248,7 +272,7 @@ async function seedDatabase() {
     }
 
     const [loyaltyCount] = await connection.execute('SELECT COUNT(*) AS count FROM loyalty_transactions')
-    if (loyaltyCount[0].count === 0) {
+    if (process.env.SEED_DEMO_TRANSACTIONS === 'true' && loyaltyCount[0].count === 0) {
       for (const entry of loyaltySeed) {
         await connection.execute(
           'INSERT INTO loyalty_transactions (transaction_id, detail, points_delta, date_label) VALUES (?, ?, ?, ?)',
@@ -258,7 +282,7 @@ async function seedDatabase() {
     }
 
     const [notificationCount] = await connection.execute('SELECT COUNT(*) AS count FROM notifications')
-    if (notificationCount[0].count === 0) {
+    if (process.env.SEED_DEMO_TRANSACTIONS === 'true' && notificationCount[0].count === 0) {
       for (const notice of notificationSeed) {
         await connection.execute(
           'INSERT INTO notifications (notification_id, title, detail, time_label, is_read) VALUES (?, ?, ?, ?, ?)',
@@ -478,17 +502,36 @@ function requireCollection(state, key) {
   return state[key]
 }
 
-async function deleteMissing(connection, table, column, ids, preserveIfEmpty = false) {
+async function deleteMissing(connection, table, column, ids, preserveIfEmpty = false, entityType = null) {
+  let toDelete = []
   if (!ids.length) {
     if (preserveIfEmpty) {
       // Safety guard: prevent accidental bulk wipe of master tables
       return
     }
+    if (entityType) {
+      const [rows] = await connection.execute(`SELECT \`${column}\` AS id FROM \`${table}\``)
+      toDelete = rows.map((r) => r.id)
+    }
     await connection.execute(`DELETE FROM \`${table}\``)
-    return
+  } else {
+    const placeholders = ids.map(() => '?').join(', ')
+    if (entityType) {
+      const [rows] = await connection.execute(
+        `SELECT \`${column}\` AS id FROM \`${table}\` WHERE \`${column}\` NOT IN (${placeholders})`,
+        ids,
+      )
+      toDelete = rows.map((r) => r.id)
+    }
+    await connection.execute(`DELETE FROM \`${table}\` WHERE \`${column}\` NOT IN (${placeholders})`, ids)
   }
-  const placeholders = ids.map(() => '?').join(', ')
-  await connection.execute(`DELETE FROM \`${table}\` WHERE \`${column}\` NOT IN (${placeholders})`, ids)
+
+  // Dual cloud deletion sync
+  if (entityType && toDelete.length > 0) {
+    for (const delId of toDelete) {
+      syncRecord(entityType, delId, null, 'delete').catch(() => {})
+    }
+  }
 }
 
 async function saveSnapshot(state) {
@@ -676,16 +719,16 @@ async function saveSnapshot(state) {
       [JSON.stringify(state.preferences || preferencesSeed)],
     )
 
-    await deleteMissing(connection, 'payments', 'payment_number', payments.map((item) => item.id))
-    await deleteMissing(connection, 'loyalty_transactions', 'transaction_id', loyaltyHistory.map((item) => toInt(item.id)).filter(Boolean))
-    await deleteMissing(connection, 'notifications', 'notification_id', notifications.map((item) => item.id))
-    await deleteMissing(connection, 'attendance_events', 'event_id', scanEvents.map((item) => toInt(item.id ?? item.event_id)).filter(Boolean))
-    await deleteMissing(connection, 'rewards', 'reward_id', rewards.map((item) => item.id))
-    await deleteMissing(connection, 'promotions', 'promotion_id', promotions.map((item) => item.id))
-    await deleteMissing(connection, 'orders', 'order_number', orders.map((item) => item.id))
-    await deleteMissing(connection, 'menu_items', 'menu_item_id', menu.map((item) => item.id), true)
-    await deleteMissing(connection, 'staff', 'staff_id', staff.map((item) => item.id), true)
-    await deleteMissing(connection, 'customers', 'customer_id', customers.map((item) => item.id), true)
+    await deleteMissing(connection, 'payments', 'payment_number', payments.map((item) => item.id), false, 'payments')
+    await deleteMissing(connection, 'loyalty_transactions', 'transaction_id', loyaltyHistory.map((item) => toInt(item.id)).filter(Boolean), false, 'loyalty_transactions')
+    await deleteMissing(connection, 'notifications', 'notification_id', notifications.map((item) => item.id), false, 'notifications')
+    await deleteMissing(connection, 'attendance_events', 'event_id', scanEvents.map((item) => toInt(item.id ?? item.event_id)).filter(Boolean), false, 'attendance_events')
+    await deleteMissing(connection, 'rewards', 'reward_id', rewards.map((item) => item.id), false, 'rewards')
+    await deleteMissing(connection, 'promotions', 'promotion_id', promotions.map((item) => item.id), false, 'promotions')
+    await deleteMissing(connection, 'orders', 'order_number', orders.map((item) => item.id), false, 'orders')
+    await deleteMissing(connection, 'menu_items', 'menu_item_id', menu.map((item) => item.id), true, 'menu_items')
+    await deleteMissing(connection, 'staff', 'staff_id', staff.map((item) => item.id), true, 'staff')
+    await deleteMissing(connection, 'customers', 'customer_id', customers.map((item) => item.id), true, 'customers')
   })
 }
 
@@ -778,19 +821,24 @@ app.get('/api/firebase/status', (_req, res) => {
 })
 
 // ── Sync queue status endpoint ─────────────────────────────────────────────────
-// GET /api/sync/status — returns queue stats + Firebase connection state
+// GET /api/sync/status — returns queue stats + Firebase & Firestore connection state
 app.get('/api/sync/status', async (_req, res) => {
   try {
     const firebase = getFirebaseStatus()
     const stats = await getSyncQueueStats()
+    const totalPending = stats ? (stats.pending + stats.retrying) : 0
     const mode = firebase.ready
-      ? (stats && (stats.pending + stats.retrying) > 0 ? 'syncing' : 'live')
+      ? (totalPending > 0 ? 'syncing' : 'live')
       : 'local'
     res.json({
       mode,                      // 'live' | 'local' | 'syncing' | 'error'
       firebase: {
         connected: firebase.ready,
         databaseURL: firebase.databaseURL,
+        firestore: firebase.firestore,
+      },
+      firestore: {
+        connected: firebase.firestore,
       },
       mysql: { connected: true, database: config.database.name },
       queue: stats || { pending: 0, retrying: 0, synced: 0, failed: 0 },
@@ -799,7 +847,8 @@ app.get('/api/sync/status', async (_req, res) => {
     const firebase = getFirebaseStatus()
     res.json({
       mode: 'error',
-      firebase: { connected: firebase.ready, databaseURL: firebase.databaseURL },
+      firebase: { connected: firebase.ready, databaseURL: firebase.databaseURL, firestore: firebase.firestore },
+      firestore: { connected: firebase.firestore },
       mysql: { connected: false, database: config.database.name },
       queue: { pending: 0, retrying: 0, synced: 0, failed: 0 },
       error: error.message,
@@ -875,6 +924,63 @@ app.get('/api/sync/direction', async (_req, res) => {
 
 // ── Menu item endpoints — real-time update + Firebase sync ───────────────────
 
+// POST /api/menu-items/upload-image — save uploaded menu picture locally in /public/uploads/menu/
+app.post('/api/menu-items/upload-image', requireStaffOrAdminAuth, async (req, res) => {
+  try {
+    const { itemId, dataUrl } = req.body || {}
+    if (!dataUrl) {
+      return res.status(400).json({ error: 'Image data is required.' })
+    }
+
+    const matches = dataUrl.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/)
+    if (!matches) {
+      return res.status(400).json({ error: 'Invalid image format. Expected data URL.' })
+    }
+
+    const rawExt = matches[1].toLowerCase()
+    const ext = rawExt === 'jpeg' ? 'jpg' : rawExt === 'svg+xml' ? 'svg' : rawExt
+    const base64Data = matches[2]
+    const buffer = Buffer.from(base64Data, 'base64')
+
+    if (buffer.length > 5 * 1024 * 1024) {
+      return res.status(400).json({ error: 'Image exceeds maximum size of 5 MB.' })
+    }
+
+    const menuUploadsDir = path.join(projectRoot, 'public', 'uploads', 'menu')
+    if (!fs.existsSync(menuUploadsDir)) {
+      fs.mkdirSync(menuUploadsDir, { recursive: true })
+    }
+
+    const safeItemId = String(itemId || 'item').replace(/[^a-zA-Z0-9_-]/g, '')
+    const safeFilename = `menu_${safeItemId}_${Date.now()}.${ext}`
+    const targetPath = path.join(menuUploadsDir, safeFilename)
+
+    fs.writeFileSync(targetPath, buffer)
+    const imageUrl = `/uploads/menu/${safeFilename}`
+
+    res.json({ ok: true, imageUrl })
+  } catch (error) {
+    sendError(res, error, 'upload menu image')
+  }
+})
+
+// POST /api/menu-items/delete-image — remove unused local menu image file
+app.post('/api/menu-items/delete-image', requireStaffOrAdminAuth, async (req, res) => {
+  try {
+    const { imageUrl } = req.body || {}
+    if (imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('/uploads/menu/')) {
+      const filename = path.basename(imageUrl)
+      const filePath = path.join(projectRoot, 'public', 'uploads', 'menu', filename)
+      if (fs.existsSync(filePath)) {
+        try { fs.unlinkSync(filePath) } catch {}
+      }
+    }
+    res.json({ ok: true })
+  } catch {
+    res.json({ ok: true })
+  }
+})
+
 // POST /api/menu-items/update — update a single menu item (image URL, name, price, etc.)
 // Requires Staff or Administrator authentication.
 app.post('/api/menu-items/update', requireStaffOrAdminAuth, async (req, res) => {
@@ -883,6 +989,17 @@ app.post('/api/menu-items/update', requireStaffOrAdminAuth, async (req, res) => 
     if (!id || !updates || typeof updates !== 'object') {
       return res.status(400).json({ error: 'id and updates object are required.' })
     }
+    // Enforce Staff permissions in backend/API
+    if (req.user?.role === 'Staff') {
+      const restrictedFields = ['name', 'category', 'price', 'description', 'image', 'imageUrl', 'emoji', 'tone'];
+      const attempted = restrictedFields.filter((key) => updates[key] !== undefined);
+      if (attempted.length > 0) {
+        return res.status(403).json({
+          error: 'Forbidden: Staff members are only allowed to modify item availability and stock. Restricted fields: ' + attempted.join(', ') + '.',
+        });
+      }
+    }
+
     const { name, category, price, description, image, available, emoji, tone } = updates
 
     // Build SET clause dynamically — only update provided fields
@@ -965,6 +1082,98 @@ app.post('/api/menu-items/add', requireStaffOrAdminAuth, async (req, res) => {
     res.status(201).json({ ok: true, item: rows[0] || null })
   } catch (error) {
     sendError(res, error, 'add menu item')
+  }
+})
+
+// POST /api/menu-items/delete — delete menu item and sync to cloud destinations
+app.post('/api/menu-items/delete', requireStaffOrAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.body || {}
+    if (!id) return res.status(400).json({ error: 'Item id is required.' })
+    await pool.execute('DELETE FROM menu_items WHERE menu_item_id = ?', [id])
+    await deleteMenuItem(id)
+    res.json({ ok: true, id })
+  } catch (error) {
+    sendError(res, error, 'delete menu item')
+  }
+})
+
+// POST /api/orders/delete — delete order and sync to cloud destinations
+app.post('/api/orders/delete', requireStaffOrAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.body || {}
+    if (!id) return res.status(400).json({ error: 'Order id/number is required.' })
+    await pool.execute('DELETE FROM orders WHERE order_number = ?', [id])
+    await pool.execute('DELETE FROM order_items WHERE order_number = ?', [id])
+    await deleteOrder(id)
+    res.json({ ok: true, id })
+  } catch (error) {
+    sendError(res, error, 'delete order')
+  }
+})
+
+// POST /api/customers/delete — delete customer and sync to cloud destinations
+app.post('/api/customers/delete', requireAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.body || {}
+    if (!id) return res.status(400).json({ error: 'Customer id is required.' })
+    await pool.execute('DELETE FROM customers WHERE customer_id = ?', [id])
+    await deleteCustomer(id)
+    res.json({ ok: true, id })
+  } catch (error) {
+    sendError(res, error, 'delete customer')
+  }
+})
+
+// POST /api/staff/delete — delete staff and sync to cloud destinations
+app.post('/api/staff/delete', requireAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.body || {}
+    if (!id) return res.status(400).json({ error: 'Staff id is required.' })
+    await pool.execute('DELETE FROM staff WHERE staff_id = ?', [id])
+    await deleteStaff(id)
+    res.json({ ok: true, id })
+  } catch (error) {
+    sendError(res, error, 'delete staff')
+  }
+})
+
+// POST /api/rewards/delete — delete reward and sync to cloud destinations
+app.post('/api/rewards/delete', requireStaffOrAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.body || {}
+    if (!id) return res.status(400).json({ error: 'Reward id is required.' })
+    await pool.execute('DELETE FROM rewards WHERE reward_id = ?', [id])
+    await deleteReward(id)
+    res.json({ ok: true, id })
+  } catch (error) {
+    sendError(res, error, 'delete reward')
+  }
+})
+
+// POST /api/promotions/delete — delete promotion and sync to cloud destinations
+app.post('/api/promotions/delete', requireStaffOrAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.body || {}
+    if (!id) return res.status(400).json({ error: 'Promotion id is required.' })
+    await pool.execute('DELETE FROM promotions WHERE promotion_id = ?', [id])
+    await deletePromotion(id)
+    res.json({ ok: true, id })
+  } catch (error) {
+    sendError(res, error, 'delete promotion')
+  }
+})
+
+// POST /api/notifications/delete — delete notification and sync to cloud destinations
+app.post('/api/notifications/delete', requireStaffOrAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.body || {}
+    if (!id) return res.status(400).json({ error: 'Notification id is required.' })
+    await pool.execute('DELETE FROM notifications WHERE notification_id = ?', [id])
+    await deleteNotification(id)
+    res.json({ ok: true, id })
+  } catch (error) {
+    sendError(res, error, 'delete notification')
   }
 })
 

@@ -34,6 +34,7 @@
 import { createRequire } from 'node:module'
 import { pool } from './database.js'
 import { firebaseReady } from './firebase.js'
+import { persistVerifiedOrder } from './orderValidator.js'
 
 const require = createRequire(import.meta.url)
 
@@ -102,42 +103,21 @@ async function handleOrders(snapshot) {
   let upserted = 0
   for (const [, order] of Object.entries(snapshot)) {
     if (!order || !order.id) continue
-    const ok = await safeExecute(
-      `INSERT INTO orders
-         (order_number, customer_name, items_summary, subtotal, service_charge,
-          discount, total, order_type, pickup_location, notes, payment_status,
-          payment_method, status, time_label, order_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-         customer_name=VALUES(customer_name), items_summary=VALUES(items_summary),
-         subtotal=VALUES(subtotal), service_charge=VALUES(service_charge),
-         discount=VALUES(discount), total=VALUES(total), order_type=VALUES(order_type),
-         pickup_location=VALUES(pickup_location), notes=VALUES(notes),
-         payment_status=VALUES(payment_status), payment_method=VALUES(payment_method),
-         status=VALUES(status), time_label=VALUES(time_label), order_date=VALUES(order_date),
-         firebase_sync_status='synced', firebase_synced_at=NOW()`,
-      [
-        order.id,
-        order.customer || 'Guest',
-        order.items || '',
-        order.subtotal || 0,
-        order.serviceCharge || 0,
-        order.discount || 0,
-        order.total || 0,
-        order.type || 'Dine in',
-        order.pickupLocation || null,
-        order.notes || null,
-        order.payment || 'Pending',
-        order.paymentMethod || 'Cash',
-        order.status || 'Pending',
-        order.time || '',
-        order.date || new Date().toISOString().slice(0, 10),
-      ],
-      'handleOrders',
-    )
-    if (ok) upserted++
+    try {
+      const result = await persistVerifiedOrder(order, pool)
+      if (result.success) {
+        upserted++
+        if (result.isTampered) {
+          log('warn', `orders: price manipulation detected and corrected for ${order.id}`)
+        }
+      } else {
+        log('warn', `orders: rejected order ${order.id}`, result.reason)
+      }
+    } catch (err) {
+      log('error', `Error verifying/upserting order ${order.id}`, err.message)
+    }
   }
-  if (upserted > 0) log('info', `orders: upserted ${upserted} record(s) from Firebase`)
+  if (upserted > 0) log('info', `orders: verified and upserted ${upserted} record(s) from Firebase`)
 }
 
 async function handleCustomers(snapshot) {

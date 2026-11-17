@@ -1,0 +1,828 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   rmjohns Kitchen & Bar — Reports / Analytics Page Styles
+   Strictly scoped to .adm-reports-page so no other module is affected.
+   Official Brand Palette:
+   - Forest Green : #1B3B2B
+   - Forest Deep  : #132C1F
+   - Forest Mid   : #234F36
+   - Lime Green   : #D4E157
+   - Light Sage   : #DCE8B5
+   - Cream        : #F9F9F6
+   - White        : #FFFFFF
+   - Border       : #E2E7DB
+   - Border Light : #EEF2E8
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Hide default page heading wrapper if rendered above */
+.page-content.adm-reports-page-content > .page-heading,
+.page-content:has(.adm-reports-page) > .page-heading {
+  display: none !important;
+}
+
+.adm-reports-page {
+  --rep-forest: #1B3B2B;
+  --rep-forest-deep: #132C1F;
+  --rep-forest-mid: #234F36;
+  --rep-lime: #D4E157;
+  --rep-lime-hover: #DFEC66;
+  --rep-lime-subtle: rgba(212, 225, 87, 0.16);
+  --rep-thead: #DCE8B5;
+  --rep-cream: #F9F9F6;
+  --rep-white: #FFFFFF;
+  --rep-text: #162B20;
+  --rep-text-body: #283C31;
+  --rep-text-muted: #6C7D72;
+  --rep-border: #E2E7DB;
+  --rep-border-light: #EEF2E8;
+
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--rep-text);
+  position: relative;
+  padding-bottom: 28px;
+}
+
+.adm-reports-page *,
+.adm-reports-page *::before,
+.adm-reports-page *::after {
+  box-sizing: border-box;
+}
+
+/* ────────────────────── 1. HEADER BANNER ────────────────────── */
+.adm-rep-banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--rep-forest-deep) 0%, var(--rep-forest) 55%, var(--rep-forest-mid) 100%);
+  padding: 24px 30px;
+  color: var(--rep-white);
+  box-shadow: 0 8px 24px rgba(27, 59, 43, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 96px;
+}
+
+.adm-rep-banner-leaves {
+  position: absolute;
+  right: -10px;
+  top: -15px;
+  height: 125%;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.adm-rep-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 1;
+}
+
+.adm-rep-banner-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(212, 225, 87, 0.18);
+  border: 1px solid rgba(212, 225, 87, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--rep-lime);
+  flex-shrink: 0;
+}
+
+.adm-rep-banner-text h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: #FFFFFF;
+  line-height: 1.2;
+}
+
+.adm-rep-banner-text p {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: var(--rep-thead);
+  font-weight: 400;
+  letter-spacing: 0.1px;
+}
+
+/* ────────────────────── 2. REPORT FILTERS TOOLBAR ────────────────────── */
+.adm-rep-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adm-rep-toolbar-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-rep-type-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--rep-text-body);
+}
+
+.adm-rep-type-select-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.adm-rep-type-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--rep-white);
+  border: 1px solid var(--rep-border);
+  border-radius: 10px;
+  padding: 8px 34px 8px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--rep-forest);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.adm-rep-type-select:hover,
+.adm-rep-type-select:focus {
+  border-color: var(--rep-forest-mid);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(27, 59, 43, 0.08);
+}
+
+.adm-rep-chevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--rep-text-muted);
+  font-size: 11px;
+}
+
+.adm-rep-toolbar-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.adm-rep-filter-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.adm-rep-filter-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--rep-text-muted);
+  font-size: 14px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.adm-rep-filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--rep-white);
+  border: 1px solid var(--rep-border);
+  border-radius: 10px;
+  padding: 8px 32px 8px 34px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--rep-text-body);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.adm-rep-filter-select:hover,
+.adm-rep-filter-select:focus {
+  border-color: var(--rep-forest-mid);
+  outline: none;
+}
+
+/* Search input */
+.adm-rep-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 480px;
+  display: flex;
+  align-items: center;
+}
+
+.adm-rep-search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--rep-text-muted);
+  font-size: 15px;
+  pointer-events: none;
+}
+
+.adm-rep-search-input {
+  width: 100%;
+  background: var(--rep-white);
+  border: 1px solid var(--rep-border);
+  border-radius: 10px;
+  padding: 8px 32px 8px 34px;
+  font-size: 13px;
+  color: var(--rep-text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.adm-rep-search-input:focus {
+  border-color: var(--rep-forest);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(27, 59, 43, 0.08);
+}
+
+.adm-rep-search-clear {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: var(--rep-text-muted);
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* Print button */
+.adm-rep-print-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--rep-white);
+  border: 1px solid var(--rep-border);
+  color: var(--rep-forest);
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.adm-rep-print-btn:hover {
+  background: #F4F7EE;
+  border-color: var(--rep-forest-mid);
+  color: var(--rep-forest-deep);
+}
+
+/* ────────────────────── 3. SUMMARY STAT CARDS ────────────────────── */
+.adm-rep-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.adm-rep-stat-card {
+  border-radius: 14px;
+  padding: 18px 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 128px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.adm-rep-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Dark Green Card Theme (Gross Sales, Average Order) */
+.adm-rep-stat-card.card-forest {
+  background: linear-gradient(135deg, var(--rep-forest-deep) 0%, var(--rep-forest) 100%);
+  color: var(--rep-white);
+  border: 1px solid var(--rep-forest-mid);
+}
+
+.adm-rep-stat-card.card-forest .adm-rep-stat-label {
+  color: #B2C2B8;
+}
+
+.adm-rep-stat-card.card-forest .adm-rep-stat-value {
+  color: #FFFFFF;
+}
+
+.adm-rep-stat-card.card-forest .adm-rep-stat-subtext {
+  color: #DCE8B5;
+}
+
+.adm-rep-stat-card.card-forest .adm-rep-stat-icon-wrap {
+  background: rgba(212, 225, 87, 0.2);
+  border: 1px solid rgba(212, 225, 87, 0.35);
+  color: var(--rep-lime);
+}
+
+/* Cream/White Card Theme (Transactions, Payment Records) */
+.adm-rep-stat-card.card-cream {
+  background: var(--rep-white);
+  color: var(--rep-text);
+  border: 1px solid var(--rep-border);
+}
+
+.adm-rep-stat-card.card-cream .adm-rep-stat-label {
+  color: var(--rep-text-muted);
+}
+
+.adm-rep-stat-card.card-cream .adm-rep-stat-value {
+  color: var(--rep-text);
+}
+
+.adm-rep-stat-card.card-cream .adm-rep-stat-subtext {
+  color: var(--rep-text-muted);
+}
+
+.adm-rep-stat-card.card-cream .adm-rep-stat-icon-wrap {
+  background: #EFF5E1;
+  border: 1px solid #DCE8B5;
+  color: var(--rep-forest);
+}
+
+.adm-rep-stat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.adm-rep-stat-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.adm-rep-stat-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.adm-rep-stat-value {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+  margin: 10px 0 6px;
+  font-family: 'DM Sans', -apple-system, sans-serif;
+}
+
+.adm-rep-stat-subtext {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.adm-rep-stat-subtext strong {
+  font-weight: 600;
+}
+
+/* ────────────────────── 4. MIDDLE TWO-COLUMN GRID ────────────────────── */
+.adm-rep-mid-grid {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 18px;
+}
+
+.adm-rep-panel {
+  background: var(--rep-white);
+  border: 1px solid var(--rep-border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.adm-rep-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.adm-rep-panel-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-rep-panel-icon {
+  font-size: 18px;
+  color: var(--rep-forest);
+  display: flex;
+  align-items: center;
+}
+
+.adm-rep-panel-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--rep-forest-deep);
+  line-height: 1.2;
+}
+
+.adm-rep-panel-header p {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: var(--rep-text-muted);
+}
+
+.adm-rep-panel-total {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--rep-forest-deep);
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* Chart visual container */
+.adm-rep-chart-container {
+  display: flex;
+  height: 200px;
+  gap: 14px;
+  align-items: stretch;
+  padding-top: 10px;
+}
+
+.adm-rep-chart-y-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--rep-text-muted);
+  font-weight: 500;
+  padding-bottom: 24px;
+  text-align: right;
+  min-width: 38px;
+}
+
+.adm-rep-chart-body {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-rep-chart-gridlines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.adm-rep-chart-gridlines span {
+  width: 100%;
+  border-bottom: 1px dashed #EAEFE6;
+}
+
+.adm-rep-chart-bars {
+  position: relative;
+  z-index: 1;
+  height: calc(100% - 24px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  padding: 0 10px;
+}
+
+.adm-rep-chart-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  width: 38px;
+}
+
+.adm-rep-chart-bar {
+  width: 28px;
+  border-radius: 6px 6px 0 0;
+  background: #CBE0A8;
+  transition: height 0.4s ease, background 0.2s ease;
+}
+
+.adm-rep-chart-bar:hover {
+  background: #BED698;
+}
+
+.adm-rep-chart-bar.highlight {
+  background: var(--rep-forest);
+}
+
+.adm-rep-chart-bar.highlight:hover {
+  background: var(--rep-forest-mid);
+}
+
+.adm-rep-chart-x-labels {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 10px;
+  border-top: 1px solid var(--rep-border);
+}
+
+.adm-rep-chart-x-labels span {
+  width: 38px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--rep-text-muted);
+}
+
+/* Payment breakdown card */
+.adm-rep-payment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 8px;
+}
+
+.adm-rep-payment-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.adm-rep-payment-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--rep-text-body);
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.adm-rep-payment-track {
+  flex: 1;
+  height: 10px;
+  background: #EEF2E8;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.adm-rep-payment-fill {
+  height: 100%;
+  border-radius: 6px;
+  background: var(--rep-forest);
+  transition: width 0.4s ease;
+}
+
+.adm-rep-payment-pct {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--rep-forest-deep);
+  width: 42px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ────────────────────── 5. TRANSACTIONS TABLE PANEL ────────────────────── */
+.adm-rep-table-panel {
+  background: var(--rep-white);
+  border: 1px solid var(--rep-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.adm-rep-table-panel-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--rep-border);
+}
+
+.adm-rep-print-list-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rep-forest);
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.adm-rep-print-list-btn:hover {
+  background: #EEF2E8;
+}
+
+.adm-rep-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.adm-rep-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.adm-rep-table thead tr {
+  background: var(--rep-thead) !important;
+}
+
+.adm-rep-table th {
+  padding: 12px 18px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--rep-forest-deep);
+  border-bottom: 1px solid #CADBB0;
+}
+
+.adm-rep-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--rep-border-light);
+  color: var(--rep-text-body);
+  vertical-align: middle;
+}
+
+.adm-rep-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.adm-rep-table tbody tr:hover {
+  background: #F9FAF6;
+}
+
+.adm-rep-order-chip {
+  display: inline-block;
+  font-family: 'DM Mono', monospace;
+  font-weight: 700;
+  color: var(--rep-forest);
+  background: #EEF2E8;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.adm-rep-customer-cell {
+  font-weight: 500;
+  color: var(--rep-text);
+}
+
+.adm-rep-items-cell {
+  color: var(--rep-text-muted);
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm-rep-total-cell {
+  font-weight: 700;
+  color: var(--rep-forest-deep);
+  font-family: 'DM Sans', sans-serif;
+}
+
+.adm-rep-time-cell {
+  color: var(--rep-text-muted);
+  font-size: 12.5px;
+}
+
+/* Status Badges */
+.adm-rep-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.adm-rep-badge i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.adm-rep-badge.status-completed {
+  background: #E8F5E9;
+  color: #1E6B35;
+}
+.adm-rep-badge.status-completed i {
+  background: #2E7D32;
+}
+
+.adm-rep-badge.status-pending {
+  background: #FFF8E1;
+  color: #9C6F00;
+}
+.adm-rep-badge.status-pending i {
+  background: #FFB300;
+}
+
+.adm-rep-badge.status-cancelled {
+  background: #FFEBEE;
+  color: #C62828;
+}
+.adm-rep-badge.status-cancelled i {
+  background: #D32F2F;
+}
+
+.adm-rep-badge.status-neutral {
+  background: #F5F5F5;
+  color: #616161;
+}
+.adm-rep-badge.status-neutral i {
+  background: #9E9E9E;
+}
+
+.adm-rep-empty-state {
+  padding: 36px 20px;
+  text-align: center;
+  color: var(--rep-text-muted);
+  font-size: 13.5px;
+}
+
+/* ────────────────────── 6. RESPONSIVE BREAKPOINTS ────────────────────── */
+@media (max-width: 1024px) {
+  .adm-rep-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .adm-rep-mid-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .adm-rep-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .adm-rep-toolbar-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .adm-rep-filter-select-wrap,
+  .adm-rep-search-wrap,
+  .adm-rep-print-btn {
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+  }
+  .adm-rep-filter-select {
+    width: 100%;
+  }
+}
+
+/* ────────────────────── 7. PRINT MEDIA STYLES ────────────────────── */
+@media print {
+  .adm-rep-banner,
+  .adm-rep-toolbar,
+  .adm-rep-print-btn,
+  .adm-rep-print-list-btn,
+  .adm-rep-search-wrap {
+    display: none !important;
+  }
+  .adm-reports-page {
+    padding: 0;
+  }
+  .adm-rep-panel,
+  .adm-rep-table-panel,
+  .adm-rep-stat-card {
+    box-shadow: none !important;
+    border: 1px solid #CCC !important;
+    break-inside: avoid;
+  }
+}

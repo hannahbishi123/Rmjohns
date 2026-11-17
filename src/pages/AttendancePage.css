@@ -1,0 +1,644 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   RMJOHNS STAFF ATTENDANCE PAGE — Scoped Styles
+   Matches Attendance Dashboard reference mockup
+   Official Palette:
+   - Forest Green: #1B3B2B
+   - Lime Green  : #D4E157
+   - Cream       : #F9F9F6
+   - White       : #FFFFFF
+   - Head/Sage   : #E8EFE0
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.page-content.staff-attendance-content > .page-heading,
+.page-content:has(.staff-attendance-mgmt) > .page-heading {
+  display: none !important;
+}
+
+.staff-attendance-mgmt {
+  --att-forest: #1B3B2B;
+  --att-forest-deep: #132C1F;
+  --att-lime: #D4E157;
+  --att-thead: #E8EFE0;
+  --att-cream: #F9F9F6;
+  --att-white: #FFFFFF;
+  --att-text: #162B20;
+  --att-text-body: #283C31;
+  --att-text-muted: #6C7D72;
+  --att-border: #EBEFE5;
+
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--att-text);
+  padding-bottom: 24px;
+}
+
+.staff-attendance-mgmt *,
+.staff-attendance-mgmt *::before,
+.staff-attendance-mgmt *::after {
+  box-sizing: border-box;
+}
+
+/* ────────────────────── 1. TOP KITCHEN-STYLE BANNER ────────────────────── */
+.staff-att-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 32px;
+  min-height: 118px;
+  border-radius: 20px;
+  background: linear-gradient(115deg, #133320 0%, #1B442B 52%, #295D38 100%);
+  color: var(--att-white);
+  box-shadow: 0 12px 30px rgba(19, 44, 31, 0.16);
+  overflow: hidden;
+}
+
+.staff-att-banner-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.staff-att-banner-leaves {
+  position: absolute;
+  right: 170px;
+  bottom: -6px;
+  width: 200px;
+  height: 120px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.staff-att-banner-left {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.staff-att-date {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--att-lime);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.staff-att-banner-left h1 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(30px, 2.8vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.08;
+  color: #FFFFFF;
+}
+
+.staff-att-banner-left p {
+  margin: 6px 0 0;
+  font-size: 13.5px;
+  color: #EDF3E8;
+  opacity: 0.92;
+}
+
+.staff-att-banner-refresh-btn {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  background: var(--att-lime);
+  color: var(--att-forest);
+  border: none;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+}
+
+.staff-att-banner-refresh-btn:hover {
+  background: #DFEC66;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.staff-att-banner-refresh-btn:active {
+  transform: translateY(0);
+}
+
+/* ────────────────────── 2. ATTENDANCE TRACKER CARD ────────────────────── */
+.staff-att-tracker-card {
+  background: var(--att-white);
+  border-radius: 20px;
+  padding: 24px 28px;
+  border: 1px solid var(--att-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.staff-att-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.staff-att-card-titles h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--att-forest);
+  letter-spacing: -0.01em;
+}
+
+.staff-att-card-titles p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--att-text-muted);
+}
+
+/* Date Picker Pill */
+.staff-att-date-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #D5DDD0;
+  border-radius: 999px;
+  padding: 7px 18px;
+  background: #FFFFFF;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--att-forest);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.staff-att-date-pill:hover {
+  border-color: #B8C8B1;
+  background: #FBFDF9;
+}
+
+.staff-att-date-pill svg {
+  color: var(--att-forest);
+  flex-shrink: 0;
+}
+
+.staff-att-native-date {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* 3 Summary Cards Grid */
+.staff-att-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.staff-att-stat-card {
+  position: relative;
+  background: #FFFFFF;
+  border: 1px solid #EBEFE5;
+  border-radius: 16px;
+  padding: 20px 22px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  transition: all 0.18s ease;
+}
+
+.staff-att-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+}
+
+.staff-att-stat-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #2E6038;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.staff-att-stat-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--att-forest);
+  line-height: 1.05;
+  margin-bottom: 6px;
+}
+
+.staff-att-stat-sub {
+  font-size: 12.5px;
+  color: var(--att-text-muted);
+}
+
+.staff-att-stat-wave {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 90px;
+  height: 60px;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* ────────────────────── 3. TODAY'S ATTENDANCE TABLE CARD ────────────────────── */
+.staff-att-table-card {
+  background: var(--att-white);
+  border-radius: 20px;
+  padding: 24px 28px;
+  border: 1px solid var(--att-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Print Report Button */
+.staff-att-print-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFFFFF;
+  border: 1px solid #C4D3BE;
+  border-radius: 999px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--att-forest);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.staff-att-print-btn:hover {
+  background: #F4F8F1;
+  border-color: #9DB594;
+}
+
+.staff-att-print-btn svg {
+  color: var(--att-forest);
+}
+
+.staff-att-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--att-border);
+  border-radius: 14px;
+}
+
+.staff-att-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.staff-att-table thead th {
+  background: var(--att-thead);
+  color: var(--att-forest);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 14px 20px;
+  border: none;
+  white-space: nowrap;
+}
+
+.staff-att-table tbody tr {
+  border-bottom: 1px solid #F0F4ED;
+  transition: background 0.12s ease;
+}
+
+.staff-att-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.staff-att-table tbody tr:hover {
+  background: #F9FAF5;
+}
+
+.staff-att-table tbody td {
+  padding: 16px 20px;
+  vertical-align: middle;
+  color: var(--att-text-body);
+}
+
+/* Staff Member Cell */
+.staff-att-member-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.staff-att-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #D8E6D0;
+  color: var(--att-forest);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.staff-att-name {
+  font-weight: 700;
+  color: var(--att-forest);
+  white-space: nowrap;
+}
+
+.staff-att-pos {
+  color: var(--att-text-body);
+  white-space: nowrap;
+}
+
+.staff-att-id {
+  color: var(--att-text-body);
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.staff-att-time {
+  color: var(--att-text-body);
+  white-space: nowrap;
+}
+
+/* Status Badges */
+.staff-att-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.staff-att-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.staff-att-status-pill.status-offline {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+.staff-att-status-pill.status-offline .staff-att-status-dot {
+  background: #EF4444;
+}
+
+.staff-att-status-pill.status-present,
+.staff-att-status-pill.status-online {
+  background: #DCFCE7;
+  color: #15803D;
+}
+.staff-att-status-pill.status-present .staff-att-status-dot,
+.staff-att-status-pill.status-online .staff-att-status-dot {
+  background: #16A34A;
+}
+
+.staff-att-status-pill.status-on-break {
+  background: #FEF3C7;
+  color: #B45309;
+}
+.staff-att-status-pill.status-on-break .staff-att-status-dot {
+  background: #F59E0B;
+}
+
+/* Track Button */
+.staff-att-track-btn {
+  background: #FFFFFF;
+  border: 1px solid #75B064;
+  color: #357A2B;
+  font-weight: 600;
+  font-size: 12.5px;
+  border-radius: 999px;
+  padding: 6px 18px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.staff-att-track-btn:hover {
+  background: #F0F7ED;
+  border-color: #5B9B49;
+}
+
+.staff-att-track-btn.is-time-out {
+  border-color: #D97706;
+  color: #B45309;
+}
+
+.staff-att-track-btn.is-time-out:hover {
+  background: #FFFBEB;
+  border-color: #B45309;
+}
+
+/* ────────────────────── 4. PAGINATION FOOTER ────────────────────── */
+.staff-att-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 4px 4px 4px;
+  gap: 16px;
+  font-size: 13px;
+  color: #4A5D52;
+  flex-wrap: wrap;
+}
+
+.staff-att-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.staff-att-showing {
+  font-size: 13px;
+  color: #4A5D52;
+}
+
+.staff-att-rows-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #4A5D52;
+}
+
+.staff-att-rows-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.staff-att-rows-select-wrap select {
+  appearance: none;
+  border: 1px solid #E2E8DC;
+  border-radius: 999px;
+  padding: 4px 26px 4px 12px;
+  background: #FFFFFF;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--att-forest);
+  cursor: pointer;
+  outline: none;
+}
+
+.staff-att-rows-select-wrap svg {
+  position: absolute;
+  right: 8px;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  color: var(--att-text-muted);
+}
+
+.staff-att-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.staff-att-page-nav {
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--att-text-muted);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.12s ease;
+}
+
+.staff-att-page-nav:hover:not(:disabled) {
+  background: #F4F6EE;
+  color: var(--att-forest);
+}
+
+.staff-att-page-nav:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.staff-att-page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.staff-att-page-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--att-forest);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.12s ease;
+}
+
+.staff-att-page-num:hover:not(.is-active) {
+  background: #F4F6EE;
+}
+
+.staff-att-page-num.is-active {
+  background: var(--att-forest);
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* ────────────────────── RESPONSIVE BREAKPOINTS ────────────────────── */
+@media (max-width: 900px) {
+  .staff-att-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .staff-att-banner-leaves {
+    opacity: 0.25;
+    right: 40px;
+  }
+}
+
+@media (max-width: 640px) {
+  .staff-att-banner {
+    padding: 20px 22px;
+  }
+  .staff-att-tracker-card,
+  .staff-att-table-card {
+    padding: 18px;
+  }
+  .staff-att-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .staff-att-footer-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* ────────────────────── PRINT STYLES ────────────────────── */
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+  .sidebar,
+  .topbar,
+  .staff-sidebar,
+  .staff-topbar,
+  .staff-att-banner,
+  .staff-att-banner-refresh-btn,
+  .staff-att-date-pill,
+  .staff-att-print-btn,
+  .staff-att-track-btn,
+  .staff-att-footer {
+    display: none !important;
+  }
+  .main-area,
+  .page-content {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .staff-att-tracker-card,
+  .staff-att-table-card {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  .staff-att-table thead th {
+    background: #EEEEEE !important;
+    color: #000000 !important;
+  }
+}

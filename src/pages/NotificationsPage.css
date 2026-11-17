@@ -1,0 +1,404 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   RMJOHNS STAFF NOTIFICATIONS PAGE — Scoped Styles
+   Matches Staff Notifications reference mockup
+   Official Palette:
+   - Forest Green: #1B3B2B
+   - Lime Green  : #D4E157
+   - Cream       : #F9F9F6
+   - White       : #FFFFFF
+   - Head/Sage   : #E8EFE0
+   - Mint Soft   : #D8EAD8
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.page-content.staff-notifications-content > .page-heading,
+.page-content:has(.staff-notifications-mgmt) > .page-heading {
+  display: none !important;
+}
+
+.staff-notifications-mgmt {
+  --notif-forest: #1B3B2B;
+  --notif-forest-deep: #132C1F;
+  --notif-lime: #D4E157;
+  --notif-mint: #D8EAD8;
+  --notif-cream: #F9F9F6;
+  --notif-white: #FFFFFF;
+  --notif-text: #162B20;
+  --notif-text-body: #283C31;
+  --notif-text-muted: #6C7D72;
+  --notif-border: #EBEFE5;
+
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--notif-text);
+  padding-bottom: 24px;
+}
+
+.staff-notifications-mgmt *,
+.staff-notifications-mgmt *::before,
+.staff-notifications-mgmt *::after {
+  box-sizing: border-box;
+}
+
+/* ────────────────────── 1. TOP KITCHEN-STYLE BANNER ────────────────────── */
+.staff-notif-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 32px;
+  min-height: 118px;
+  border-radius: 20px;
+  background: linear-gradient(115deg, #133320 0%, #1B442B 52%, #295D38 100%);
+  color: var(--notif-white);
+  box-shadow: 0 12px 30px rgba(19, 44, 31, 0.16);
+  overflow: hidden;
+}
+
+.staff-notif-banner-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.staff-notif-banner-leaves {
+  position: absolute;
+  right: 170px;
+  bottom: -6px;
+  width: 200px;
+  height: 120px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.staff-notif-banner-left {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.staff-notif-date {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--notif-lime);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.staff-notif-banner-left h1 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(30px, 2.8vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.08;
+  color: #FFFFFF;
+}
+
+.staff-notif-banner-left p {
+  margin: 6px 0 0;
+  font-size: 13.5px;
+  color: #EDF3E8;
+  opacity: 0.92;
+}
+
+/* ────────────────────── 2. NOTIFICATIONS CONTAINER ────────────────────── */
+.staff-notif-card {
+  background: var(--notif-white);
+  border-radius: 20px;
+  padding: 24px 28px;
+  border: 1px solid var(--notif-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.staff-notif-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 8px;
+}
+
+.staff-notif-card-titles h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--notif-forest);
+  letter-spacing: -0.01em;
+}
+
+.staff-notif-card-titles p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--notif-text-muted);
+}
+
+.staff-notif-mark-read-btn {
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--notif-forest);
+  cursor: pointer;
+  padding: 6px 0;
+  transition: opacity 0.15s ease;
+}
+
+.staff-notif-mark-read-btn:hover:not(:disabled) {
+  opacity: 0.75;
+}
+
+.staff-notif-mark-read-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ────────────────────── 3. NOTIFICATION ITEMS LIST ────────────────────── */
+.staff-notif-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.staff-notif-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 8px;
+  border-bottom: 1px solid #F0F4ED;
+  transition: background 0.12s ease;
+}
+
+.staff-notif-item:last-child {
+  border-bottom: none;
+}
+
+.staff-notif-item:hover {
+  background: #FAFBF7;
+}
+
+.staff-notif-item-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.staff-notif-icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--notif-mint);
+  color: #215436;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.staff-notif-icon-circle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.staff-notif-item-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.staff-notif-item-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--notif-forest);
+  margin: 0;
+}
+
+.staff-notif-item-detail {
+  font-size: 13px;
+  color: #4A5D52;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.staff-notif-item-time {
+  font-size: 12.5px;
+  color: var(--notif-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.staff-notif-empty {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--notif-text-muted);
+  font-size: 14px;
+}
+
+/* ────────────────────── 4. PAGINATION FOOTER ────────────────────── */
+.staff-notif-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 4px 4px 4px;
+  gap: 16px;
+  font-size: 13px;
+  color: #4A5D52;
+  border-top: 1px solid #F0F4ED;
+  flex-wrap: wrap;
+}
+
+.staff-notif-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.staff-notif-showing {
+  font-size: 13px;
+  color: #4A5D52;
+}
+
+.staff-notif-rows-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #4A5D52;
+}
+
+.staff-notif-rows-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.staff-notif-rows-select-wrap select {
+  appearance: none;
+  border: 1px solid #E2E8DC;
+  border-radius: 999px;
+  padding: 4px 26px 4px 12px;
+  background: #FFFFFF;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--notif-forest);
+  cursor: pointer;
+  outline: none;
+}
+
+.staff-notif-rows-select-wrap svg {
+  position: absolute;
+  right: 8px;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  color: var(--notif-text-muted);
+}
+
+.staff-notif-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.staff-notif-page-nav {
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--notif-text-muted);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.12s ease;
+}
+
+.staff-notif-page-nav:hover:not(:disabled) {
+  background: #F4F6EE;
+  color: var(--notif-forest);
+}
+
+.staff-notif-page-nav:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.staff-notif-page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.staff-notif-page-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--notif-forest);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.12s ease;
+}
+
+.staff-notif-page-num:hover:not(.is-active) {
+  background: #F4F6EE;
+}
+
+.staff-notif-page-num.is-active {
+  background: var(--notif-forest);
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* ────────────────────── RESPONSIVE BREAKPOINTS ────────────────────── */
+@media (max-width: 900px) {
+  .staff-notif-banner-leaves {
+    opacity: 0.25;
+    right: 40px;
+  }
+}
+
+@media (max-width: 640px) {
+  .staff-notif-banner {
+    padding: 20px 22px;
+  }
+  .staff-notif-card {
+    padding: 18px;
+  }
+  .staff-notif-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .staff-notif-item-time {
+    align-self: flex-end;
+  }
+  .staff-notif-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .staff-notif-footer-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

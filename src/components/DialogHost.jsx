@@ -1,12 +1,15 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { money } from '../data/mockData'
 import { useApp } from '../context/AppContext'
 import { Modal, getCategoryIcon } from './shared'
-import { uploadMenuImage, deleteMenuImage } from '../lib/firebase'
+import { apiRequest } from '../lib/api'
 import { useField, useForm, FieldError, fieldClass, rules } from '../lib/validation'
 import { swalShowLoading, swalCloseLoading } from '../lib/swal'
+import RefundOrderDialog from './RefundOrderDialog'
+import POSTransactionSuccessModal from './POSTransactionSuccessModal'
 
 export default function DialogHost({ dialog, onClose, menu, payments, setMenu, setStaff, setCart, setRewards, setPromotions, refundOrder, notify }) {
+  const { deleteMenuItem } = useApp() || {}
   if (dialog.type === 'account') return <AccountDialog dialog={dialog} onClose={onClose} notify={notify} />
   if (dialog.type === 'food') return <FoodDetailsDialog item={dialog.item} onClose={onClose} setCart={setCart} notify={notify} />
   if (dialog.type === 'receipt-order') {
@@ -16,40 +19,20 @@ export default function DialogHost({ dialog, onClose, menu, payments, setMenu, s
   }
   if (dialog.type === 'customer') return <CustomerDetailsDialog customer={dialog.customer} orders={dialog.orders} onClose={onClose} />
   if (dialog.type === 'confirmation') return <ConfirmationDialog dialog={dialog} onClose={onClose} />
-  if (dialog.type === 'receipt') return (
-    <Modal onClose={onClose}>
-      <div className="receipt-modal">
-        <div className="receipt-brand">
-          <img src="/rmjohns-logo.jpg" alt="RMJohns logo" className="brand-logo" />
-          <div><strong>RMJohn&apos;s</strong><small>EATERY</small></div>
-        </div>
-        <span className="eyebrow">PAYMENT RECEIPT</span>
-        <h2>Thank you.</h2>
-        <div className="receipt-meta">
-          <span>Receipt {dialog.receipt.id} &middot; {dialog.receipt.orderId}</span>
-          <span>{dialog.receipt.time}</span>
-        </div>
-        {dialog.receipt.items.map((item) => (
-          <div className="receipt-line" key={item.id}>
-            <span>{item.quantity} &times; {item.name}</span>
-            <strong>{money(item.price * item.quantity)}</strong>
-          </div>
-        ))}
-        <div className="receipt-line"><span>Subtotal</span><strong>{money(dialog.receipt.subtotal)}</strong></div>
-        {dialog.receipt.discount > 0 && <div className="receipt-line"><span>Discount</span><strong>&minus;{money(dialog.receipt.discount)}</strong></div>}
-        <div className="receipt-line"><span>Service charge</span><strong>{money(dialog.receipt.serviceCharge)}</strong></div>
-        <div className="receipt-total"><span>Total &middot; {dialog.receipt.payment}</span><strong>{money(dialog.receipt.total)}</strong></div>
-        <div className="receipt-meta">
-          <span>Served by &middot; {dialog.receipt.servedBy}</span>
-          <span>Paid {money(dialog.receipt.amountPaid)} &middot; Change {money(dialog.receipt.change)}</span>
-        </div>
-        <div className="receipt-actions">
-          <button className="button button-outline" onClick={() => window.print()}>&#9639; <span>Print</span></button>
-          <button className="button button-dark" onClick={onClose}>Done</button>
-        </div>
-      </div>
-    </Modal>
-  )
+  if (dialog.type === 'receipt') {
+    const transaction = {
+      orderId: dialog.receipt.orderId,
+      customer: dialog.receipt.customer || 'Walk-in guest',
+      totalPaid: dialog.receipt.total,
+      paymentMethod: dialog.receipt.payment || 'Cash',
+      cashTendered: dialog.receipt.amountPaid,
+      change: dialog.receipt.change,
+    }
+    return <POSTransactionSuccessModal transaction={transaction} onClose={onClose} />
+  }
+  if (dialog.type === 'pos-success') {
+    return <POSTransactionSuccessModal transaction={dialog.transaction} onClose={onClose} />
+  }
   if ((dialog.type === 'edit-menu') || (dialog.type === 'add' && dialog.entity === 'menu')) return <MenuForm dialog={dialog} onClose={onClose} setMenu={setMenu} notify={notify} />
   if (dialog.type === 'add-reward' || dialog.type === 'edit-reward') return <RewardForm dialog={dialog} onClose={onClose} setRewards={setRewards} notify={notify} />
   if (dialog.type === 'add-promotion' || dialog.type === 'edit-promotion') return <PromotionForm dialog={dialog} onClose={onClose} setPromotions={setPromotions} notify={notify} />
@@ -67,19 +50,17 @@ export default function DialogHost({ dialog, onClose, menu, payments, setMenu, s
       </div>
     </Modal>
   )
-  if (dialog.type === 'refund-order') return (
-    <Modal onClose={onClose}>
-      <div className="simple-modal">
-        <span className="modal-symbol warning">&#x21B6;</span>
-        <h2>Refund {dialog.order.id}?</h2>
-        <p>{money(dialog.order.total)} will be marked as refunded in the local payment ledger.</p>
-        <div className="modal-actions">
-          <button className="button button-outline" onClick={onClose}>Keep payment</button>
-          <button className="button button-danger" onClick={() => { refundOrder(dialog.order.id); onClose() }}>Record refund</button>
-        </div>
-      </div>
-    </Modal>
-  )
+  if (dialog.type === 'refund-order') {
+    return (
+      <RefundOrderDialog
+        order={dialog.order}
+        payments={payments}
+        refundOrder={refundOrder}
+        onClose={onClose}
+        notify={notify}
+      />
+    )
+  }
   if (dialog.type === 'delete-menu') return (
     <Modal onClose={onClose}>
       <div className="simple-modal">
@@ -88,7 +69,19 @@ export default function DialogHost({ dialog, onClose, menu, payments, setMenu, s
         <p><strong>{dialog.item.name}</strong> will be removed from this demo menu.</p>
         <div className="modal-actions">
           <button className="button button-outline" onClick={onClose}>Keep item</button>
-          <button className="button button-danger" onClick={() => { setMenu((current) => current.filter((item) => item.id !== dialog.item.id)); notify('Menu item removed'); onClose() }}>Remove item</button>
+          <button className="button button-danger" onClick={async () => {
+            try {
+              if (deleteMenuItem) {
+                await deleteMenuItem(dialog.item.id)
+              } else {
+                setMenu((current) => current.filter((item) => item.id !== dialog.item.id))
+              }
+              notify('Menu item removed')
+              onClose()
+            } catch (err) {
+              notify(err.message || 'Failed to remove menu item', { icon: 'error' })
+            }
+          }}>Remove item</button>
         </div>
       </div>
     </Modal>
@@ -612,6 +605,48 @@ function FoodDetailsDialog({ item, onClose, setCart, notify }) {
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_IMAGE_BYTES      = 4 * 1024 * 1024 // 4 MB
 
+// ── Local Menu Image Helpers ──────────────────────────────────────────────────
+function compressImageToBlob(file) {
+  return new Promise((resolve) => {
+    if (file.type === 'image/gif') return resolve(file)
+    const MAX_DIM = 800
+    const QUALITY = 0.82
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      let { width, height } = img
+      if (width > MAX_DIM || height > MAX_DIM) {
+        if (width >= height) {
+          height = Math.round((height * MAX_DIM) / width)
+          width = MAX_DIM
+        } else {
+          width = Math.round((width * MAX_DIM) / height)
+          height = MAX_DIM
+        }
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, width, height)
+      const outputType = file.type === 'image/webp' ? 'image/webp' : 'image/jpeg'
+      canvas.toBlob((blob) => resolve(blob || file), outputType, QUALITY)
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
+    img.src = url
+  })
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+}
+
 function MenuForm({ dialog, onClose, notify }) {
   const { role, updateMenuItem, addMenuItem } = useApp()
   const isAdmin = role === 'Admin'
@@ -633,6 +668,15 @@ function MenuForm({ dialog, onClose, notify }) {
   const [compressing, setCompressing] = useState(false)
 
   const fileInputRef = useRef(null)
+  const previewUrlRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current)
+      }
+    }
+  }, [])
 
   function handleFile(file) {
     if (!file) return
@@ -646,14 +690,22 @@ function MenuForm({ dialog, onClose, notify }) {
       if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
-    // Show local preview immediately; keep the File for upload on submit
-    const reader = new FileReader()
-    reader.onload = (e) => setPreview(e.target.result)
-    reader.readAsDataURL(file)
+    // Revoke previous object URL if any
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current)
+    }
+    // Show local preview immediately with zero main-thread overhead
+    const objUrl = URL.createObjectURL(file)
+    previewUrlRef.current = objUrl
+    setPreview(objUrl)
     setImageFile(file)
   }
 
   function removeImage() {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current)
+      previewUrlRef.current = null
+    }
     setPreview(null)
     setImageFile(null)
     setImageUrl(null)
@@ -681,34 +733,64 @@ function MenuForm({ dialog, onClose, notify }) {
     setSaving(true)
     let finalImageUrl = imageUrl // keep existing URL if no new file chosen
 
-    // ── Upload new image to Firebase Storage ─────────────────────────────────
+    // If existing photo was removed, clean it up from local uploads
+    if (!imageFile && !imageUrl && item.image && typeof item.image === 'string' && item.image.startsWith('/uploads/menu/')) {
+      apiRequest('/api/menu-items/delete-image', {
+        method: 'POST',
+        body: JSON.stringify({ imageUrl: item.image }),
+      }).catch(() => {})
+    }
+
+    // ── Upload new image to local backend storage ────────────────────────────
     if (imageFile) {
       try {
         setCompressing(true)
         setUploading(false)
-        setProgress(0)
+        setProgress(25)
         const tempId = item.id || `new_${Date.now()}`
 
-        // If replacing an existing image, delete the old one from Storage
-        if (item.image && item.image.startsWith('https://')) {
-          deleteMenuImage(item.image).catch(() => {})
-        }
-
-        // uploadMenuImage compresses internally before uploading
+        // Compress image using HTML5 canvas
+        const compressedBlob = await compressImageToBlob(imageFile)
         setCompressing(false)
         setUploading(true)
+        setProgress(50)
 
-        finalImageUrl = await uploadMenuImage(imageFile, tempId, (pct) => {
-          setProgress(pct)
+        // Convert blob to Data URL
+        const dataUrl = await blobToDataUrl(compressedBlob)
+        setProgress(75)
+
+        // Upload to local Node.js backend
+        const res = await apiRequest('/api/menu-items/upload-image', {
+          method: 'POST',
+          body: JSON.stringify({
+            itemId: tempId,
+            dataUrl,
+            filename: imageFile.name,
+          }),
         })
+
+        if (!res || !res.imageUrl) {
+          throw new Error(res?.error || 'Failed to upload image to local storage.')
+        }
+
+        finalImageUrl = res.imageUrl
         setImageUrl(finalImageUrl)
+        setProgress(100)
         setUploading(false)
+
+        // If replacing an existing local image, clean up old file
+        if (item.image && typeof item.image === 'string' && item.image.startsWith('/uploads/menu/')) {
+          apiRequest('/api/menu-items/delete-image', {
+            method: 'POST',
+            body: JSON.stringify({ imageUrl: item.image }),
+          }).catch(() => {})
+        }
       } catch (err) {
         setCompressing(false)
         setUploading(false)
         setSaving(false)
         return notify(
-          `Image upload failed: ${err.message}. Check your Firebase Storage rules and try again.`,
+          `Image upload failed: ${err.message}`,
           { icon: 'error', title: 'Upload failed' },
         )
       }
@@ -868,7 +950,7 @@ function MenuForm({ dialog, onClose, notify }) {
               >
                 <span className="upload-icon">📷</span>
                 <strong>Click to upload photo</strong>
-                <small>JPEG, PNG, WebP or GIF · max 4 MB · stored in Firebase Storage</small>
+                <small>JPEG, PNG, WebP or GIF · max 4 MB · stored locally</small>
               </button>
             )}
 

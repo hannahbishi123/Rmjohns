@@ -1,0 +1,935 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   rmjohns Kitchen & Bar — Settings Page Styles
+   Strictly scoped to .adm-settings-page so no other module is affected.
+   Official Brand Palette:
+   - Forest Green : #1B3B2B
+   - Forest Deep  : #132C1F
+   - Forest Mid   : #234F36
+   - Lime Green   : #D4E157
+   - Light Sage   : #DCE8B5
+   - Cream        : #F9F9F6
+   - Cream Banner : #EFF5E6
+   - White        : #FFFFFF
+   - Border       : #E2E7DB
+   - Border Light : #EEF2E8
+   - Border Green : #D4EAD7
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Hide default page heading wrapper if rendered above */
+.page-content.adm-settings-page-content > .page-heading,
+.page-content:has(.adm-settings-page) > .page-heading {
+  display: none !important;
+}
+
+.adm-settings-page {
+  --set-forest: #1B3B2B;
+  --set-forest-deep: #132C1F;
+  --set-forest-mid: #234F36;
+  --set-lime: #D4E157;
+  --set-lime-hover: #DFEC66;
+  --set-lime-subtle: rgba(212, 225, 87, 0.16);
+  --set-thead: #DCE8B5;
+  --set-cream: #F9F9F6;
+  --set-cream-banner: #EFF5E6;
+  --set-white: #FFFFFF;
+  --set-text: #162B20;
+  --set-text-body: #283C31;
+  --set-text-muted: #6C7D72;
+  --set-text-subtle: #9EAAA0;
+  --set-border: #E2E7DB;
+  --set-border-light: #EEF2E8;
+  --set-border-green: #D4EAD7;
+
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--set-text);
+  position: relative;
+  padding-bottom: 30px;
+}
+
+.adm-settings-page *,
+.adm-settings-page *::before,
+.adm-settings-page *::after {
+  box-sizing: border-box;
+}
+
+/* ────────────────────── 1. HEADER BANNER ────────────────────── */
+.adm-set-banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--set-forest-deep) 0%, var(--set-forest) 55%, var(--set-forest-mid) 100%);
+  padding: 24px 30px;
+  color: var(--set-white);
+  box-shadow: 0 8px 24px rgba(27, 59, 43, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 96px;
+}
+
+.adm-set-banner-leaves {
+  position: absolute;
+  right: -10px;
+  top: -15px;
+  height: 125%;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.adm-set-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 1;
+}
+
+.adm-set-banner-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(212, 225, 87, 0.18);
+  border: 1px solid rgba(212, 225, 87, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--set-lime);
+  flex-shrink: 0;
+}
+
+.adm-set-banner-text h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: #FFFFFF;
+  line-height: 1.2;
+}
+
+.adm-set-banner-text p {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: var(--set-thead);
+  font-weight: 400;
+  letter-spacing: 0.1px;
+}
+
+/* ────────────────────── 2. UPPER TWO-COLUMN GRID ────────────────────── */
+.adm-set-upper-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.adm-set-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* White Standard Card */
+.adm-set-card {
+  background: var(--set-white);
+  border: 1px solid var(--set-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.adm-set-card-header {
+  padding: 18px 22px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--set-border-light);
+}
+
+.adm-set-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-set-card-header-icon {
+  font-size: 18px;
+  color: var(--set-forest);
+  display: flex;
+  align-items: center;
+}
+
+.adm-set-card-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--set-forest-deep);
+  line-height: 1.2;
+}
+
+.adm-set-card-header p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--set-text-muted);
+}
+
+.adm-set-card-body {
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Pill action button (Refresh, etc.) */
+.adm-set-btn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--set-white);
+  border: 1px solid var(--set-border);
+  color: var(--set-forest);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+
+.adm-set-btn-pill:hover {
+  background: #F4F8EE;
+  border-color: var(--set-forest-mid);
+}
+
+.adm-set-btn-pill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ────────────────────── 3. SYNCHRONIZATION STATUS ────────────────────── */
+.adm-set-db-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.adm-set-db-box {
+  background: #F3F8EE;
+  border: 1px solid var(--set-border-green);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.adm-set-db-box-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-set-db-icon {
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.adm-set-db-info strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--set-forest-deep);
+  line-height: 1.2;
+}
+
+.adm-set-db-info small {
+  display: block;
+  font-size: 11px;
+  color: var(--set-text-subtle);
+  margin-top: 2px;
+}
+
+/* Status badge pills */
+.adm-set-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.adm-set-status-pill.connected {
+  background: #E8F8EB;
+  color: #1A7A2A;
+  border: 1px solid #B8E8C0;
+}
+
+.adm-set-status-pill.offline {
+  background: #FEF2F2;
+  color: #B91C1C;
+  border: 1px solid #FCA5A5;
+}
+
+.adm-set-status-pill.syncing {
+  background: #FEF9E7;
+  color: #7A5800;
+  border: 1px solid #FCD34D;
+}
+
+.adm-set-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.adm-set-dot.green {
+  background: #3BB54A;
+}
+.adm-set-dot.red {
+  background: #EF4444;
+}
+.adm-set-dot.amber {
+  background: #F59E0B;
+}
+
+/* Sync Mode Bar */
+.adm-set-mode-bar {
+  background: var(--set-white);
+  border: 1px solid var(--set-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.adm-set-mode-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-set-mode-icon {
+  font-size: 18px;
+  color: var(--set-forest);
+  display: flex;
+  align-items: center;
+}
+
+.adm-set-mode-info strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--set-forest-deep);
+  line-height: 1.2;
+}
+
+.adm-set-mode-info small {
+  display: block;
+  font-size: 11px;
+  color: var(--set-text-subtle);
+  margin-top: 2px;
+}
+
+/* Direction cards */
+.adm-set-dir-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.adm-set-dir-box {
+  background: #F3F8EE;
+  border: 1px solid var(--set-border-green);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.adm-set-dir-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-set-dir-info strong {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--set-forest-deep);
+  line-height: 1.2;
+}
+
+.adm-set-dir-info small {
+  display: block;
+  font-size: 11px;
+  color: var(--set-text-subtle);
+  margin-top: 2px;
+}
+
+.adm-set-check-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #3BB54A;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Manual actions row */
+.adm-set-actions-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+.adm-set-btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.adm-set-btn-action.btn-dark {
+  background: var(--set-forest);
+  color: var(--set-white);
+  border: 1px solid var(--set-forest-deep);
+}
+
+.adm-set-btn-action.btn-dark:hover {
+  background: var(--set-forest-mid);
+}
+
+.adm-set-btn-action.btn-outline {
+  background: var(--set-white);
+  color: var(--set-forest);
+  border: 1px solid var(--set-border);
+}
+
+.adm-set-btn-action.btn-outline:hover {
+  background: #F4F8EE;
+  border-color: var(--set-forest-mid);
+}
+
+.adm-set-btn-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ────────────────────── 4. HOW SYNCHRONIZATION WORKS ────────────────────── */
+.adm-set-dark-card {
+  background: var(--set-forest);
+  border-radius: 14px;
+  padding: 22px 24px;
+  color: var(--set-white);
+  box-shadow: 0 4px 16px rgba(27, 59, 43, 0.14);
+}
+
+.adm-set-dark-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.adm-set-dark-icon {
+  font-size: 20px;
+  color: var(--set-lime);
+  display: flex;
+  align-items: center;
+}
+
+.adm-set-dark-card-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1.2;
+}
+
+.adm-set-dark-card-header p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--set-thead);
+}
+
+.adm-set-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.adm-set-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.adm-set-step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--set-lime);
+  color: var(--set-forest-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.adm-set-step-content {
+  flex: 1;
+}
+
+.adm-set-step-content strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+
+.adm-set-step-content p {
+  margin: 0;
+  font-size: 11.5px;
+  color: #C3D1C8;
+  line-height: 1.5;
+}
+
+/* ────────────────────── 5. SYNC LOG PANEL ────────────────────── */
+.adm-set-log-card {
+  background: var(--set-white);
+  border: 1px solid var(--set-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.adm-set-log-header {
+  background: var(--set-forest);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--set-white);
+}
+
+.adm-set-log-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-set-log-header h2 {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1.2;
+}
+
+.adm-set-log-header p {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--set-thead);
+}
+
+.adm-set-log-btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.adm-set-log-btn-refresh:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.adm-set-log-table-wrap {
+  width: 100%;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.adm-set-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 12px;
+}
+
+.adm-set-log-table thead tr {
+  background: var(--set-thead) !important;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.adm-set-log-table th {
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--set-forest-deep);
+  border-bottom: 1px solid #CADBB0;
+}
+
+.adm-set-log-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--set-border-light);
+  color: var(--set-text-body);
+  vertical-align: middle;
+}
+
+.adm-set-log-table tbody tr:hover {
+  background: #F9FAF6;
+}
+
+.adm-set-log-time {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--set-text-subtle);
+  white-space: nowrap;
+}
+
+.adm-set-log-level-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.adm-set-log-level-badge.info {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+
+.adm-set-log-level-badge.warn {
+  background: #FEF9E7;
+  color: #7A5800;
+  border: 1px solid #FCD34D;
+}
+
+.adm-set-log-level-badge.error {
+  background: #FEF2F2;
+  color: #B91C1C;
+  border: 1px solid #FCA5A5;
+}
+
+.adm-set-log-msg {
+  font-size: 12px;
+  color: var(--set-forest-deep);
+}
+
+.adm-set-log-col {
+  font-family: 'DM Mono', monospace;
+  font-size: 11.5px;
+  color: var(--set-text-muted);
+}
+
+.adm-set-log-recs {
+  font-weight: 700;
+  color: var(--set-forest-deep);
+}
+
+.adm-set-log-empty {
+  padding: 28px 20px;
+  text-align: center;
+  color: var(--set-text-subtle);
+  font-size: 12.5px;
+}
+
+/* ────────────────────── 6. SYSTEM PREFERENCES ────────────────────── */
+.adm-set-pref-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adm-set-pref-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--set-border-light);
+  cursor: pointer;
+}
+
+.adm-set-pref-row:last-child {
+  border-bottom: none;
+}
+
+.adm-set-pref-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.adm-set-pref-icon {
+  font-size: 17px;
+  color: var(--set-forest);
+  display: flex;
+  align-items: center;
+}
+
+.adm-set-pref-info strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--set-forest-deep);
+  line-height: 1.2;
+}
+
+.adm-set-pref-info small {
+  display: block;
+  font-size: 11.5px;
+  color: var(--set-text-muted);
+  margin-top: 2px;
+}
+
+/* Custom styled checkbox */
+.adm-set-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: #FFFFFF;
+  border: 1.5px solid #CAD0C6;
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.adm-set-checkbox::before {
+  content: "";
+  width: 10px;
+  height: 6px;
+  border-left: 2px solid #FFFFFF;
+  border-bottom: 2px solid #FFFFFF;
+  transform: rotate(-45deg) translate(1px, -1px);
+  display: none;
+}
+
+.adm-set-checkbox:checked {
+  background: var(--set-forest);
+  border-color: var(--set-forest);
+}
+
+.adm-set-checkbox:checked::before {
+  display: block;
+}
+
+.adm-set-pref-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+  padding-top: 8px;
+}
+
+.adm-set-btn-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--set-forest);
+  color: var(--set-white);
+  border: 1px solid var(--set-forest-deep);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.adm-set-btn-save:hover {
+  background: var(--set-forest-mid);
+}
+
+.adm-set-btn-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--set-white);
+  color: var(--set-text-body);
+  border: 1px solid var(--set-border);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.adm-set-btn-reset:hover {
+  background: #F4F8EE;
+  border-color: var(--set-forest-mid);
+}
+
+/* ────────────────────── 7. ACCOUNT ACCESS BANNER ────────────────────── */
+.adm-set-account-banner {
+  background: var(--set-cream-banner);
+  border: 1px solid var(--set-thead);
+  border-radius: 14px;
+  padding: 20px 26px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.adm-set-account-leaves {
+  position: absolute;
+  right: -5px;
+  bottom: -15px;
+  height: 130%;
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.adm-set-account-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 1;
+}
+
+.adm-set-account-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--set-forest);
+  color: var(--set-lime);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(27, 59, 43, 0.2);
+}
+
+.adm-set-account-text h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--set-forest-deep);
+  line-height: 1.2;
+}
+
+.adm-set-account-text p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--set-text-muted);
+  line-height: 1.5;
+  max-width: 650px;
+}
+
+.adm-set-btn-provision {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--set-forest);
+  color: var(--set-white);
+  border: 1px solid var(--set-forest-deep);
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 1;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(27, 59, 43, 0.15);
+  transition: all 0.2s ease;
+}
+
+.adm-set-btn-provision:hover {
+  background: var(--set-forest-mid);
+  box-shadow: 0 4px 10px rgba(27, 59, 43, 0.22);
+}
+
+/* ────────────────────── 8. RESPONSIVE BREAKPOINTS ────────────────────── */
+@media (max-width: 1024px) {
+  .adm-set-upper-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .adm-set-db-grid,
+  .adm-set-dir-grid {
+    grid-template-columns: 1fr;
+  }
+  .adm-set-account-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .adm-set-btn-provision {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ────────────────────── 9. PRINT MEDIA ────────────────────── */
+@media print {
+  .adm-set-banner,
+  .adm-set-btn-pill,
+  .adm-set-btn-action,
+  .adm-set-btn-save,
+  .adm-set-btn-reset,
+  .adm-set-btn-provision {
+    display: none !important;
+  }
+  .adm-settings-page {
+    padding: 0;
+  }
+  .adm-set-card,
+  .adm-set-dark-card,
+  .adm-set-account-banner {
+    box-shadow: none !important;
+    border: 1px solid #CCC !important;
+    break-inside: avoid;
+  }
+}

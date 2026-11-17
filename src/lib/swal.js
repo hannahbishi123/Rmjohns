@@ -2,6 +2,7 @@ import Swal from 'sweetalert2'
 
 /**
  * Standardized SweetAlert2 (Swal) configuration for RMJohn's Kitchen & Bar.
+ * All popups are standardized with position: 'top' (top-center of the screen).
  * Theme: Forest Green (#1B3B2B) + Lime Green (#D4E157) + Cream (#F9F9F6) + Sage (#A3B18A)
  */
 
@@ -20,8 +21,10 @@ const DEFAULT_TITLES = {
 
 /**
  * Base modal instance styled with the Forest Green + Lime + Cream palette.
+ * Position is strictly top-center.
  */
 export const RmjSwal = Swal.mixin({
+  position: 'top',
   background: '#F9F9F6',
   color: '#1B3B2B',
   confirmButtonColor: '#1B3B2B',
@@ -41,10 +44,11 @@ export const RmjSwal = Swal.mixin({
 
 /**
  * Base toast instance for non-blocking feedback.
+ * Standardized to appear at the top-center of the screen.
  */
 export const RmjToast = Swal.mixin({
   toast: true,
-  position: 'top-end',
+  position: 'top',
   showConfirmButton: false,
   timer: 2500,
   timerProgressBar: true,
@@ -85,6 +89,7 @@ export function swalNotify(message, options = {}) {
 
   if (modal || showConfirmButton) {
     return RmjSwal.fire({
+      position: 'top',
       icon,
       title: title || DEFAULT_TITLES[icon],
       text,
@@ -94,6 +99,7 @@ export function swalNotify(message, options = {}) {
   }
 
   return RmjToast.fire({
+    position: 'top',
     icon,
     title: title || message,
     text: title ? text : undefined,
@@ -107,6 +113,7 @@ export function swalSuccess(message, title = 'Success', options = {}) {
 
 export function swalError(message, title = 'Something went wrong', options = {}) {
   return RmjSwal.fire({
+    position: 'top',
     icon: 'error',
     title,
     text: message,
@@ -133,8 +140,13 @@ export function swalConfirm({
   cancelButtonText = 'Cancel',
   icon = 'warning',
   danger = false,
+  position = 'top',
+  isLogout = false,
+  customClass = {},
 } = {}) {
+  const isCenteredLogout = isLogout || title === 'Log out?' || position === 'center'
   return RmjSwal.fire({
+    position: isCenteredLogout ? 'center' : 'top',
     icon,
     title,
     text,
@@ -144,6 +156,15 @@ export function swalConfirm({
     confirmButtonColor: danger ? '#C0503D' : '#1B3B2B',
     cancelButtonColor: '#6E7B72',
     focusCancel: danger,
+    customClass: {
+      container:     `rmj-swal-container${isCenteredLogout ? ' rmj-swal-logout-container' : ''} ${customClass.container || ''}`.trim(),
+      popup:         `rmj-swal-popup app-swal-confirm${isCenteredLogout ? ' rmj-swal-logout-popup' : ''} ${customClass.popup || ''}`.trim(),
+      title:         `rmj-swal-title ${customClass.title || ''}`.trim(),
+      htmlContainer: `rmj-swal-html ${customClass.htmlContainer || ''}`.trim(),
+      confirmButton: `rmj-swal-confirm-btn ${customClass.confirmButton || ''}`.trim(),
+      cancelButton:  `rmj-swal-cancel-btn ${customClass.cancelButton || ''}`.trim(),
+      actions:       `rmj-swal-actions ${customClass.actions || ''}`.trim(),
+    },
   })
 }
 
@@ -152,6 +173,7 @@ export function swalConfirm({
  */
 export function swalShowLoading(title = 'Saving changes…', text = 'Synchronizing with the database. Please wait.') {
   RmjSwal.fire({
+    position: 'top',
     title,
     text,
     allowOutsideClick: false,

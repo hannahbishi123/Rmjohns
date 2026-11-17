@@ -1,0 +1,937 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   rmjohns Kitchen & Bar — Monitoring / Staff Attendance Page Styles
+   Strictly scoped to .adm-mon-mgmt so no other module is affected.
+   Official Theme Palette:
+   - Forest Green : #1B3B2B
+   - Lime Green   : #D4E157
+   - Cream        : #F9F9F6
+   - Light Sage   : #DCE8B5
+   - White        : #FFFFFF
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Hide default page heading wrapper if rendered above */
+.page-content.adm-monitoring-page-content > .page-heading,
+.page-content:has(.adm-mon-mgmt) > .page-heading {
+  display: none !important;
+}
+
+.adm-mon-mgmt {
+  --mon-forest: #1B3B2B;
+  --mon-forest-deep: #132C1F;
+  --mon-forest-mid: #234F36;
+  --mon-lime: #D4E157;
+  --mon-lime-hover: #DFEC66;
+  --mon-lime-subtle: rgba(212, 225, 87, 0.16);
+  --mon-thead: #DCE8B5;
+  --mon-cream: #F9F9F6;
+  --mon-white: #FFFFFF;
+  --mon-text: #162B20;
+  --mon-text-body: #283C31;
+  --mon-text-muted: #6C7D72;
+  --mon-border: #E2E7DB;
+  --mon-border-light: #EEF2E8;
+
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--mon-text);
+  position: relative;
+  padding-bottom: 28px;
+}
+
+.adm-mon-mgmt *,
+.adm-mon-mgmt *::before,
+.adm-mon-mgmt *::after {
+  box-sizing: border-box;
+}
+
+/* ────────────────────── 1. MONITORING HEADER BANNER ────────────────────── */
+.adm-mon-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 26px 32px;
+  min-height: 120px;
+  border-radius: 20px;
+  background: linear-gradient(115deg, #133320 0%, #1B442B 52%, #295D38 100%);
+  color: var(--mon-white);
+  box-shadow: 0 12px 30px rgba(19, 44, 31, 0.16);
+  overflow: hidden;
+}
+
+.adm-mon-banner-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.adm-mon-banner-leaves {
+  position: absolute;
+  right: 170px;
+  bottom: -6px;
+  width: 200px;
+  height: 120px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.adm-mon-banner-left {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-mon-date {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  color: var(--mon-lime);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.adm-mon-banner-left h1 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(28px, 2.6vw, 38px);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+  color: var(--mon-white);
+}
+
+.adm-mon-banner-left p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(249, 249, 246, 0.90);
+}
+
+.adm-mon-banner-badge {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  backdrop-filter: blur(8px);
+  color: var(--mon-white);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.adm-mon-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--mon-lime);
+  box-shadow: 0 0 10px var(--mon-lime);
+  animation: monPulse 2s infinite ease-in-out;
+}
+
+@keyframes monPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.85); }
+}
+
+/* ────────────────────── 2. DEVICE STATUS CARD ────────────────────── */
+.adm-mon-device-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 24px;
+  border-radius: 18px;
+  background: var(--mon-white);
+  border: 1px solid var(--mon-border);
+  box-shadow: 0 4px 16px rgba(20, 42, 30, 0.04);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.adm-mon-device-panel:hover {
+  border-color: #D6DEC8;
+  box-shadow: 0 6px 20px rgba(20, 42, 30, 0.07);
+}
+
+.adm-mon-device-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.adm-mon-device-icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #EFF5E3;
+  color: var(--mon-forest);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(27, 59, 43, 0.08);
+  transition: transform 0.2s ease;
+}
+
+.adm-mon-device-panel:hover .adm-mon-device-icon-box {
+  transform: scale(1.04);
+}
+
+.adm-mon-device-icon-box svg {
+  width: 26px;
+  height: 26px;
+}
+
+.adm-mon-device-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.adm-mon-device-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  color: var(--mon-forest);
+  text-transform: uppercase;
+}
+
+.adm-mon-device-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.adm-mon-device-title-row h2 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--mon-text);
+  letter-spacing: -0.01em;
+}
+
+.adm-mon-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.adm-mon-status-pill.connected {
+  background-color: #EBF7EE;
+  color: #1A6932;
+  border: 1px solid #CDECD4;
+}
+
+.adm-mon-status-pill.offline {
+  background-color: #F8ECEC;
+  color: #9C2A2A;
+  border: 1px solid #F0D0D0;
+}
+
+.adm-mon-status-pill i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.adm-mon-status-pill.connected i {
+  background-color: #2E9E4F;
+  box-shadow: 0 0 6px rgba(46, 158, 79, 0.5);
+}
+
+.adm-mon-status-pill.offline i {
+  background-color: #C0392B;
+}
+
+.adm-mon-device-desc {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  color: var(--mon-text-muted);
+  font-weight: 500;
+}
+
+.adm-mon-device-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.adm-mon-device-btn.btn-disconnect {
+  background-color: #FFFFFF;
+  border: 1.5px solid #D9E1D3;
+  color: var(--mon-forest);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.adm-mon-device-btn.btn-disconnect:hover {
+  background-color: #F5F7F1;
+  border-color: var(--mon-forest);
+  transform: translateY(-1px);
+}
+
+.adm-mon-device-btn.btn-reconnect {
+  background-color: var(--mon-lime);
+  border: 1.5px solid var(--mon-lime);
+  color: #14301E;
+  box-shadow: 0 4px 12px rgba(212, 225, 87, 0.35);
+}
+
+.adm-mon-device-btn.btn-reconnect:hover {
+  background-color: var(--mon-lime-hover);
+  border-color: var(--mon-lime-hover);
+  transform: translateY(-1px);
+}
+
+/* ────────────────────── 3. SUMMARY KPI STAT CARDS ────────────────────── */
+.adm-mon-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.adm-mon-stat-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 22px 24px;
+  min-height: 140px;
+  border-radius: 18px;
+  background-color: var(--mon-white);
+  border: 1px solid var(--mon-border);
+  box-shadow: 0 4px 16px rgba(20, 42, 30, 0.04);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.adm-mon-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(20, 42, 30, 0.08);
+}
+
+/* Dark Green Highlight on Primary Card */
+.adm-mon-stat-card.card-primary {
+  background: linear-gradient(135deg, #1B3B2B 0%, #245037 100%);
+  color: var(--mon-white);
+  border: 0;
+  box-shadow: 0 10px 26px rgba(19, 44, 31, 0.18);
+}
+
+.adm-mon-stat-card.card-primary .adm-mon-stat-label {
+  color: var(--mon-lime);
+}
+
+.adm-mon-stat-card.card-primary .adm-mon-stat-value {
+  color: var(--mon-white);
+}
+
+.adm-mon-stat-card.card-primary .adm-mon-stat-trend {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.adm-mon-stat-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.adm-mon-stat-label {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--mon-text-muted);
+  text-transform: uppercase;
+}
+
+.adm-mon-stat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+.adm-mon-stat-card.card-primary .adm-mon-stat-icon {
+  background: rgba(212, 225, 87, 0.20);
+  color: var(--mon-lime);
+}
+
+.adm-mon-stat-icon.icon-amber {
+  background: #FFF5E5;
+  color: #C07000;
+}
+
+.adm-mon-stat-icon.icon-blue {
+  background: #EBF3FA;
+  color: #1E6091;
+}
+
+.adm-mon-stat-icon.icon-green {
+  background: #EFF7EE;
+  color: #277B42;
+}
+
+.adm-mon-stat-mid {
+  margin: 10px 0 6px;
+}
+
+.adm-mon-stat-value {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--mon-text);
+  letter-spacing: -0.015em;
+}
+
+.adm-mon-stat-bottom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--mon-text-muted);
+}
+
+.adm-mon-stat-trend {
+  font-weight: 700;
+  color: var(--mon-text-body);
+}
+
+.adm-mon-stat-dot {
+  font-size: 8px;
+  opacity: 0.5;
+}
+
+/* ────────────────────── 4. TODAY'S ATTENDANCE TABLE PANEL ────────────────────── */
+.adm-mon-panel {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--mon-white);
+  border-radius: 20px;
+  border: 1px solid var(--mon-border);
+  box-shadow: 0 4px 18px rgba(20, 42, 30, 0.04);
+  overflow: hidden;
+}
+
+.adm-mon-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 28px;
+  border-bottom: 1px solid var(--mon-border-light);
+  flex-wrap: wrap;
+}
+
+.adm-mon-panel-title-group h2 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--mon-text);
+}
+
+.adm-mon-panel-title-group p {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: var(--mon-text-muted);
+  font-weight: 500;
+}
+
+.adm-mon-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Search Box */
+.adm-mon-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 280px;
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background-color: var(--mon-cream);
+  border: 1px solid var(--mon-border);
+  transition: all 0.2s ease;
+}
+
+.adm-mon-search-box:focus-within {
+  border-color: var(--mon-forest);
+  background-color: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(212, 225, 87, 0.30);
+}
+
+.adm-mon-search-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--mon-forest);
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.adm-mon-search-box input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--mon-text);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.adm-mon-search-box input::placeholder {
+  color: #8C9990;
+}
+
+.adm-mon-search-clear {
+  border: 0;
+  background: transparent;
+  color: #7B8A80;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 6px;
+  border-radius: 50%;
+}
+
+.adm-mon-search-clear:hover {
+  color: var(--mon-text);
+}
+
+/* Status Filter Dropdown */
+.adm-mon-filter-select {
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background-color: var(--mon-cream);
+  border: 1px solid var(--mon-border);
+  color: var(--mon-text-body);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.adm-mon-filter-select:focus,
+.adm-mon-filter-select:hover {
+  border-color: var(--mon-forest);
+  background-color: #FFFFFF;
+}
+
+/* Print Button */
+.adm-mon-print-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--mon-border);
+  color: var(--mon-forest);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.adm-mon-print-btn:hover {
+  background-color: #F4F7EF;
+  border-color: var(--mon-forest);
+  transform: translateY(-1px);
+}
+
+/* ────────────────────── 5. DATA TABLE ────────────────────── */
+.adm-mon-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.adm-mon-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13.5px;
+  text-align: left;
+}
+
+.adm-mon-table thead th {
+  background-color: var(--mon-thead);
+  color: #173824;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 14px 22px;
+  border-bottom: 1px solid #CFDBA7;
+  white-space: nowrap;
+}
+
+.adm-mon-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.adm-mon-table tbody tr:hover {
+  background-color: #F8FAF4;
+}
+
+.adm-mon-table tbody td {
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--mon-border-light);
+  color: var(--mon-text-body);
+  vertical-align: middle;
+}
+
+.adm-mon-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Staff member cell */
+.adm-mon-staff-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.adm-mon-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #E8F0D6;
+  color: #1F452A;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(27, 59, 43, 0.08);
+}
+
+.adm-mon-staff-name-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-mon-staff-name {
+  font-weight: 700;
+  color: var(--mon-text);
+  font-size: 14px;
+}
+
+.adm-mon-role-cell {
+  font-weight: 600;
+  color: var(--mon-text-body);
+}
+
+.adm-mon-id-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background-color: #F1F4EB;
+  color: #43554A;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #E3E8DC;
+}
+
+.adm-mon-time-cell {
+  font-weight: 600;
+  color: #2F4437;
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-mon-time-cell.empty {
+  color: #9AA79E;
+  font-weight: 400;
+}
+
+/* Status Badges */
+.adm-mon-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.adm-mon-badge i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.adm-mon-badge.status-present {
+  background-color: #E8F5E9;
+  color: #1B5E20;
+  border: 1px solid #C8E6C9;
+}
+
+.adm-mon-badge.status-present i {
+  background-color: #2E7D32;
+  box-shadow: 0 0 6px rgba(46, 125, 50, 0.4);
+}
+
+.adm-mon-badge.status-on-break {
+  background-color: #FFF8E1;
+  color: #E65100;
+  border: 1px solid #FFE082;
+}
+
+.adm-mon-badge.status-on-break i {
+  background-color: #FB8C00;
+}
+
+.adm-mon-badge.status-offline {
+  background-color: #F5F5F5;
+  color: #616161;
+  border: 1px solid #E0E0E0;
+}
+
+.adm-mon-badge.status-offline i {
+  background-color: #9E9E9E;
+}
+
+/* Scan Action Button */
+.adm-mon-scan-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 96px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  border: 0;
+}
+
+.adm-mon-scan-btn.btn-time-in {
+  background-color: var(--mon-lime);
+  color: #163320;
+  box-shadow: 0 2px 6px rgba(212, 225, 87, 0.35);
+}
+
+.adm-mon-scan-btn.btn-time-in:hover:not(:disabled) {
+  background-color: var(--mon-lime-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(212, 225, 87, 0.45);
+}
+
+.adm-mon-scan-btn.btn-time-out {
+  background-color: #FFFFFF;
+  border: 1.5px solid #C7D4BF;
+  color: #8C2C2C;
+}
+
+.adm-mon-scan-btn.btn-time-out:hover:not(:disabled) {
+  background-color: #FDF4F4;
+  border-color: #D32F2F;
+  color: #D32F2F;
+  transform: translateY(-1px);
+}
+
+.adm-mon-scan-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.adm-mon-empty-state {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--mon-text-muted);
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+/* ────────────────────── 6. RECENT RFID SCAN LOGS ────────────────────── */
+.adm-mon-scan-log-panel {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--mon-white);
+  border-radius: 20px;
+  border: 1px solid var(--mon-border);
+  box-shadow: 0 4px 18px rgba(20, 42, 30, 0.04);
+  overflow: hidden;
+}
+
+.adm-mon-log-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-mon-log-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--mon-border-light);
+  transition: background-color 0.15s ease;
+}
+
+.adm-mon-log-item:hover {
+  background-color: #F9FAF6;
+}
+
+.adm-mon-log-item:last-child {
+  border-bottom: 0;
+}
+
+.adm-mon-log-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.adm-mon-log-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background-color: #EFF5E5;
+  color: var(--mon-forest);
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.adm-mon-log-time {
+  font-size: 13px;
+  font-weight: 700;
+  color: #384E40;
+  font-variant-numeric: tabular-nums;
+  min-width: 75px;
+}
+
+.adm-mon-log-person {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mon-text);
+}
+
+.adm-mon-log-id {
+  font-size: 12px;
+  color: var(--mon-text-muted);
+  font-family: monospace;
+  margin-left: 6px;
+  font-weight: 500;
+}
+
+.adm-mon-log-action-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.adm-mon-log-action-badge.action-in {
+  background-color: #E8F5E9;
+  color: #1B5E20;
+  border: 1px solid #C8E6C9;
+}
+
+.adm-mon-log-action-badge.action-out {
+  background-color: #FFF3E0;
+  color: #E65100;
+  border: 1px solid #FFE0B2;
+}
+
+/* ────────────────────── 7. RESPONSIVE MEDIA QUERIES ────────────────────── */
+@media (max-width: 1100px) {
+  .adm-mon-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .adm-mon-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .adm-mon-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 22px;
+  }
+  .adm-mon-device-panel {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .adm-mon-device-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .adm-mon-panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .adm-mon-panel-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .adm-mon-search-box {
+    width: 100%;
+  }
+  .adm-mon-filter-select,
+  .adm-mon-print-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

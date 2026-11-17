@@ -249,7 +249,7 @@ export default function OverviewPage() {
 
         <div className="adm-welcome-copy">
           <h1>
-            Welcome back, <span className="adm-welcome-highlight">{firstName}!</span>
+            Welcome back, <span className="adm-welcome-highlight">Admin!</span>
           </h1>
           <p>Here&apos;s what&apos;s happening with rmjohns today.</p>
         </div>

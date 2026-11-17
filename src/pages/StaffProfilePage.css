@@ -1,0 +1,500 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   rmjohns Kitchen — Staff Profile Page Styles
+   Strictly scoped to .staff-profile-mgmt so no other role or page is affected.
+   Palette:
+   - Forest Green : #1B3B2B
+   - Lime Green   : #D4E157
+   - Cream        : #F9F9F6
+   - White        : #FFFFFF
+   - Border       : #E5EADF
+   - Muted Text   : #7A8B7B
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Hide generic AppShell page heading when StaffProfilePage is rendered */
+.page-content.staff-profile-content > .page-heading,
+.page-content:has(.staff-profile-mgmt) > .page-heading {
+  display: none !important;
+}
+
+.staff-profile-mgmt {
+  --spf-forest: #1B3B2B;
+  --spf-forest-mid: #25523C;
+  --spf-forest-deep: #132C1F;
+  --spf-lime: #D4E157;
+  --spf-lime-hover: #DFEC66;
+  --spf-cream: #F9F9F6;
+  --spf-white: #FFFFFF;
+  --spf-text: #1B3B2B;
+  --spf-text-muted: #7A8B7B;
+  --spf-border: #E5EADF;
+  --spf-border-subtle: #EDF3E8;
+  --spf-bg-input: #FFFFFF;
+  --spf-bg-role: #EDF3E8;
+
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--spf-text);
+  position: relative;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.staff-profile-mgmt *,
+.staff-profile-mgmt *::before,
+.staff-profile-mgmt *::after {
+  box-sizing: border-box;
+}
+
+/* ────────────────────── 1. TOP KITCHEN-STYLE HERO BANNER ────────────────────── */
+.staff-profile-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  min-height: 124px;
+  border-radius: 20px;
+  background: linear-gradient(115deg, #133320 0%, #1B3B2B 52%, #295D38 100%);
+  color: var(--spf-white);
+  box-shadow: 0 10px 28px rgba(19, 44, 31, 0.16);
+  overflow: hidden;
+}
+
+.staff-profile-banner-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.staff-profile-banner-leaves {
+  position: absolute;
+  right: 14px;
+  bottom: -4px;
+  width: 220px;
+  height: 130px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.staff-profile-banner-left {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.staff-profile-date {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--spf-lime);
+  text-transform: uppercase;
+}
+
+.staff-profile-banner-left h1 {
+  margin: 0;
+  font-family: 'Playfair Display', 'DM Serif Display', Georgia, serif;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--spf-white);
+  letter-spacing: -0.02em;
+}
+
+.staff-profile-banner-left p {
+  margin: 0;
+  font-size: 13.5px;
+  color: #D0DFD5;
+}
+
+.staff-profile-banner-refresh-btn {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  background: var(--spf-lime);
+  color: var(--spf-forest);
+  border: none;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+}
+
+.staff-profile-banner-refresh-btn:hover {
+  background: var(--spf-lime-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.staff-profile-banner-refresh-btn:active {
+  transform: translateY(0);
+}
+
+/* ────────────────────── 2. PROFILE INFORMATION CARD ────────────────────── */
+.staff-profile-card {
+  background: var(--spf-white);
+  border: 1px solid var(--spf-border);
+  border-radius: 20px;
+  padding: 36px 40px 40px;
+  box-shadow: 0 4px 20px rgba(27, 59, 43, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Profile Header Row */
+.staff-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.staff-profile-avatar-circle {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: #E5EDE2;
+  color: var(--spf-forest);
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+  font-weight: 800;
+  font-family: 'Playfair Display', Georgia, serif;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(27, 59, 43, 0.08);
+}
+
+.staff-profile-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.staff-profile-name {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--spf-forest);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.staff-profile-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: #EAF5EA;
+  color: #2E7D32;
+  border: 1px solid #D2E9D4;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.staff-profile-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2E7D32;
+}
+
+.staff-profile-since {
+  font-size: 13px;
+  color: var(--spf-text-muted);
+  font-weight: 500;
+}
+
+/* Subtle Divider */
+.staff-profile-divider {
+  height: 1px;
+  background: var(--spf-border-subtle);
+  width: 100%;
+}
+
+/* Personal Information Section Header */
+.staff-profile-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.staff-profile-section-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.staff-profile-sprig-icon {
+  width: 28px;
+  height: 28px;
+  color: #5A7A54;
+  flex-shrink: 0;
+}
+
+.staff-profile-section-title-wrap h2 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--spf-forest);
+  line-height: 1.2;
+}
+
+.staff-profile-section-title-wrap p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--spf-text-muted);
+}
+
+/* Edit / Cancel Toggle Buttons */
+.staff-profile-actions-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.staff-profile-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: #F4F7F2;
+  border: 1px solid #D5DEC9;
+  border-radius: 999px;
+  color: var(--spf-forest);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.staff-profile-edit-btn:hover {
+  background: #EAF0E6;
+  border-color: #BAC7AB;
+  transform: translateY(-1px);
+}
+
+.staff-profile-cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid #D5DEC9;
+  border-radius: 999px;
+  color: #7A8B7B;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.staff-profile-cancel-btn:hover {
+  color: #C0503D;
+  border-color: #F0C4BC;
+  background: #FDF4F2;
+}
+
+/* ────────────────────── 3. TWO-COLUMN FORM GRID ────────────────────── */
+.staff-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px 28px;
+}
+
+.staff-profile-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.staff-profile-field-group label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2D3B2D;
+}
+
+.staff-profile-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--spf-bg-input);
+  border: 1.5px solid #E2E8DC;
+  border-radius: 12px;
+  padding: 12px 16px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.staff-profile-input-wrap.is-editing:focus-within {
+  border-color: var(--spf-forest);
+  box-shadow: 0 0 0 3px rgba(27, 59, 43, 0.08);
+}
+
+.staff-profile-input-wrap.readonly-field {
+  background: #FAFCFA;
+  border-color: #E2E8DC;
+}
+
+.staff-profile-input-wrap.role-field {
+  background: var(--spf-bg-role);
+  border-color: #DEE6D8;
+}
+
+.staff-profile-input-icon {
+  width: 18px;
+  height: 18px;
+  color: #556855;
+  flex-shrink: 0;
+}
+
+.staff-profile-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--spf-forest);
+  outline: none;
+  padding: 0;
+  font-family: inherit;
+}
+
+.staff-profile-input:disabled,
+.staff-profile-input[readonly] {
+  cursor: default;
+  color: #2D3B2D;
+}
+
+.staff-profile-role-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--spf-forest);
+}
+
+/* ────────────────────── 4. SAVE CHANGES BOTTOM ACTION ────────────────────── */
+.staff-profile-submit-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.staff-profile-save-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--spf-forest);
+  color: var(--spf-white);
+  border: none;
+  border-radius: 12px;
+  padding: 13px 44px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 6px 18px rgba(27, 59, 43, 0.18);
+}
+
+.staff-profile-save-btn:hover {
+  background: var(--spf-forest-mid);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(27, 59, 43, 0.24);
+}
+
+.staff-profile-save-btn:active {
+  transform: translateY(0);
+}
+
+.staff-profile-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.staff-profile-bottom-cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 28px;
+  background: #F4F7F2;
+  border: 1px solid #D5DEC9;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #556855;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.staff-profile-bottom-cancel-btn:hover {
+  background: #EAF0E6;
+  color: #1B3B2B;
+}
+
+/* ────────────────────── RESPONSIVE BREAKPOINTS ────────────────────── */
+@media (max-width: 900px) {
+  .staff-profile-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .staff-profile-banner {
+    padding: 20px 24px;
+  }
+
+  .staff-profile-banner-left h1 {
+    font-size: 28px;
+  }
+
+  .staff-profile-card {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .staff-profile-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .staff-profile-banner-refresh-btn {
+    align-self: flex-start;
+  }
+
+  .staff-profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .staff-profile-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .staff-profile-submit-row {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .staff-profile-save-btn,
+  .staff-profile-bottom-cancel-btn {
+    width: 100%;
+  }
+}

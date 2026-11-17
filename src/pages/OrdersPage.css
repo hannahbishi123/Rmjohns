@@ -669,3 +669,577 @@
     justify-content: space-between;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RMJOHNS STAFF ORDERS PAGE — Scoped Styles
+   Matches Staff Orders reference mockup
+   Official Palette:
+   - Forest Green: #1B3B2B
+   - Lime Green  : #D4E157
+   - Cream       : #F9F9F6
+   - White       : #FFFFFF
+   - Head/Sage   : #E8EFE0
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.page-content.staff-orders-content > .page-heading,
+.page-content.staff-orders-page-content > .page-heading,
+.page-content:has(.staff-orders-mgmt) > .page-heading {
+  display: none !important;
+}
+
+.staff-orders-mgmt {
+  --staff-forest: #1B3B2B;
+  --staff-forest-deep: #132C1F;
+  --staff-lime: #D4E157;
+  --staff-thead: #E8EFE0;
+  --staff-cream: #F9F9F6;
+  --staff-white: #FFFFFF;
+  --staff-text: #162B20;
+  --staff-text-body: #283C31;
+  --staff-text-muted: #6C7D72;
+  --staff-border: #EBEFE5;
+
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--staff-text);
+  padding-bottom: 24px;
+}
+
+.staff-orders-mgmt *,
+.staff-orders-mgmt *::before,
+.staff-orders-mgmt *::after {
+  box-sizing: border-box;
+}
+
+/* ────────────────────── 1. TOP KITCHEN-STYLE BANNER ────────────────────── */
+.staff-ord-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 32px;
+  min-height: 118px;
+  border-radius: 20px;
+  background: linear-gradient(115deg, #133320 0%, #1B442B 52%, #295D38 100%);
+  color: var(--staff-white);
+  box-shadow: 0 12px 30px rgba(19, 44, 31, 0.16);
+  overflow: hidden;
+}
+
+.staff-ord-banner-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.staff-ord-banner-leaves {
+  position: absolute;
+  right: 170px;
+  bottom: -6px;
+  width: 200px;
+  height: 120px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.staff-ord-banner-left {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.staff-ord-date {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--staff-lime);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.staff-ord-banner-left h1 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(30px, 2.8vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.08;
+  color: #FFFFFF;
+}
+
+.staff-ord-banner-left p {
+  margin: 6px 0 0;
+  font-size: 13.5px;
+  color: #EDF3E8;
+  opacity: 0.92;
+}
+
+.staff-ord-banner-refresh-btn {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  background: var(--staff-lime);
+  color: var(--staff-forest);
+  border: none;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+}
+
+.staff-ord-banner-refresh-btn:hover {
+  background: #DFEC66;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.staff-ord-banner-refresh-btn:active {
+  transform: translateY(0);
+}
+
+/* ────────────────────── 2. ORDERS FILTER BAR & SEARCH ────────────────────── */
+.staff-ord-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 2px 0;
+}
+
+.staff-ord-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.staff-ord-filter-pill {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #F4F6EE;
+  color: var(--staff-forest);
+  transition: all 0.15s ease;
+}
+
+.staff-ord-filter-pill:hover {
+  background: #EAEFE2;
+}
+
+.staff-ord-filter-count {
+  background: #E5EADF;
+  color: var(--staff-forest);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 18px;
+  text-align: center;
+}
+
+.staff-ord-filter-pill.is-active {
+  background: var(--staff-forest);
+  color: #FFFFFF;
+}
+
+.staff-ord-filter-pill.is-active .staff-ord-filter-count {
+  background: #10261A;
+  color: #FFFFFF;
+}
+
+.staff-ord-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 240px;
+  max-width: 300px;
+  flex: 1;
+}
+
+.staff-ord-search-icon {
+  position: absolute;
+  left: 14px;
+  width: 16px;
+  height: 16px;
+  color: var(--staff-text-muted);
+  pointer-events: none;
+}
+
+.staff-ord-search-input {
+  width: 100%;
+  border: none;
+  background: #F4F6EE;
+  border-radius: 999px;
+  padding: 10px 34px 10px 38px;
+  font-size: 13px;
+  color: var(--staff-text);
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.staff-ord-search-input:focus {
+  background: #EDF1E6;
+  box-shadow: 0 0 0 2px rgba(27, 59, 43, 0.15);
+}
+
+.staff-ord-search-input::placeholder {
+  color: #8C9C91;
+}
+
+.staff-ord-search-clear {
+  position: absolute;
+  right: 12px;
+  border: none;
+  background: transparent;
+  color: #8C9C91;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.staff-ord-search-clear:hover {
+  color: var(--staff-forest);
+}
+
+/* ────────────────────── 3. ORDERS TABLE CARD ────────────────────── */
+.staff-ord-card {
+  background: var(--staff-white);
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--staff-border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.staff-ord-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.staff-ord-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.staff-ord-table thead th {
+  background: var(--staff-thead);
+  color: var(--staff-forest);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 14px 20px;
+  border: none;
+  white-space: nowrap;
+}
+
+.staff-ord-table tbody tr {
+  border-bottom: 1px solid #F0F4ED;
+  transition: background 0.12s ease;
+  cursor: pointer;
+}
+
+.staff-ord-table tbody tr:hover {
+  background: #F9FAF5;
+}
+
+.staff-ord-table tbody td {
+  padding: 16px 20px;
+  vertical-align: middle;
+  color: var(--staff-text-body);
+}
+
+.staff-ord-id {
+  font-weight: 700;
+  color: var(--staff-forest);
+  white-space: nowrap;
+}
+
+.staff-ord-customer {
+  font-weight: 500;
+  color: var(--staff-text-body);
+  white-space: nowrap;
+}
+
+.staff-ord-items {
+  color: var(--staff-text-body);
+  max-width: 280px;
+  display: block;
+}
+
+.staff-ord-total {
+  font-weight: 700;
+  color: var(--staff-forest);
+  white-space: nowrap;
+}
+
+/* Status Pill */
+.staff-ord-status-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.staff-ord-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.staff-ord-status-chevron {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2.5;
+  margin-left: 2px;
+}
+
+.staff-ord-status-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Status Colors */
+.staff-ord-status-pill.status-completed {
+  background: #DCFCE7;
+  color: #15803D;
+}
+.staff-ord-status-pill.status-completed .staff-ord-status-dot {
+  background: #16A34A;
+}
+
+.staff-ord-status-pill.status-pending {
+  background: #FEF3C7;
+  color: #B45309;
+}
+.staff-ord-status-pill.status-pending .staff-ord-status-dot {
+  background: #F59E0B;
+}
+
+.staff-ord-status-pill.status-preparing {
+  background: #E0F2FE;
+  color: #0369A1;
+}
+.staff-ord-status-pill.status-preparing .staff-ord-status-dot {
+  background: #0284C7;
+}
+
+.staff-ord-status-pill.status-ready {
+  background: #D1FAE5;
+  color: #047857;
+}
+.staff-ord-status-pill.status-ready .staff-ord-status-dot {
+  background: #10B981;
+}
+
+.staff-ord-status-pill.status-cancelled {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+.staff-ord-status-pill.status-cancelled .staff-ord-status-dot {
+  background: #EF4444;
+}
+
+.staff-ord-status-pill.status-confirmed {
+  background: #FEF9C3;
+  color: #854D0E;
+}
+.staff-ord-status-pill.status-confirmed .staff-ord-status-dot {
+  background: #CA8A04;
+}
+
+.staff-ord-time {
+  color: var(--staff-text-muted);
+  white-space: nowrap;
+  font-size: 12.5px;
+}
+
+.staff-ord-refund-btn {
+  background: var(--staff-thead);
+  color: var(--staff-forest);
+  font-weight: 600;
+  font-size: 12.5px;
+  border-radius: 999px;
+  padding: 6px 18px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.staff-ord-refund-btn:hover {
+  background: #DCE5D2;
+}
+
+.staff-ord-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--staff-text-muted);
+  font-size: 14px;
+}
+
+/* ────────────────────── 4. PAGINATION FOOTER ────────────────────── */
+.staff-ord-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 22px;
+  gap: 16px;
+  border-top: 1px solid #F0F4ED;
+  font-size: 13px;
+  color: #4A5D52;
+  flex-wrap: wrap;
+}
+
+.staff-ord-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.staff-ord-showing {
+  font-size: 13px;
+  color: #4A5D52;
+}
+
+.staff-ord-rows-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #4A5D52;
+}
+
+.staff-ord-rows-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.staff-ord-rows-select-wrap select {
+  appearance: none;
+  border: 1px solid #E2E8DC;
+  border-radius: 999px;
+  padding: 4px 26px 4px 12px;
+  background: #FFFFFF;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--staff-forest);
+  cursor: pointer;
+  outline: none;
+}
+
+.staff-ord-rows-select-wrap svg {
+  position: absolute;
+  right: 8px;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  color: var(--staff-text-muted);
+}
+
+.staff-ord-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.staff-ord-page-nav {
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--staff-text-muted);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.12s ease;
+}
+
+.staff-ord-page-nav:hover:not(:disabled) {
+  background: #F4F6EE;
+  color: var(--staff-forest);
+}
+
+.staff-ord-page-nav:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.staff-ord-page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.staff-ord-page-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--staff-forest);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.12s ease;
+}
+
+.staff-ord-page-num:hover:not(.is-active) {
+  background: #F4F6EE;
+}
+
+.staff-ord-page-num.is-active {
+  background: var(--staff-forest);
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* Responsive adjustments for Staff Orders */
+@media (max-width: 900px) {
+  .staff-ord-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .staff-ord-search-wrap {
+    max-width: 100%;
+  }
+  .staff-ord-banner-leaves {
+    opacity: 0.25;
+    right: 40px;
+  }
+}

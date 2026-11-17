@@ -156,11 +156,21 @@ export async function firestoreSetUserProfile(uid, profileData) {
  * Subscribe to real-time updates on a path.
  * Returns an unsubscribe function.
  */
-export function firebaseListen(path, callback) {
+export function firebaseListen(path, callback, onError) {
   const dbRef = ref(db, path)
-  onValue(dbRef, (snap) => {
-    callback(snap.exists() ? snap.val() : null)
-  })
+  onValue(
+    dbRef,
+    (snap) => {
+      callback(snap.exists() ? snap.val() : null)
+    },
+    (error) => {
+      if (typeof onError === 'function') {
+        onError(error)
+      } else {
+        console.warn(`[firebase] Listen error on "${path}":`, error?.message || error)
+      }
+    },
+  )
   return () => off(dbRef)
 }
 
@@ -263,15 +273,29 @@ export async function uploadMenuImage(file, itemId, onProgress) {
       cacheControl: 'public, max-age=31536000',   // 1-year CDN cache
     })
 
+    // Timeout guard (15s) so network or unprovisioned bucket issues never hang the browser
+    const timer = setTimeout(() => {
+      try { task.cancel() } catch {}
+      reject(new Error("Storage upload timed out. Please ensure Firebase Storage has been initialized on 'rmjohns-eateries' in Firebase Console (click 'Get Started')."))
+    }, 15000)
+
     task.on(
       'state_changed',
       (snap) => {
-        if (onProgress) {
+        if (onProgress && snap.totalBytes > 0) {
           onProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100))
         }
       },
-      (err) => reject(err),
+      (err) => {
+        clearTimeout(timer)
+        if (err.code === 'storage/unknown' || err.message?.includes('404')) {
+          reject(new Error("Firebase Storage has not been initialized. Open Firebase Console and click 'Get Started' under Storage."))
+        } else {
+          reject(err)
+        }
+      },
       async () => {
+        clearTimeout(timer)
         try {
           const url = await getDownloadURL(task.snapshot.ref)
           resolve(url)
