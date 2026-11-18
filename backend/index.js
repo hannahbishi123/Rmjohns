@@ -427,7 +427,10 @@ async function readBootstrap() {
     rows('SELECT customer_id AS id, name, email, contact, orders_count AS orders, total_spend AS spend, points, status FROM customers ORDER BY customer_id'),
     rows(`SELECT staff_id AS id, name, role, contact, status, time_in AS time, time_out AS timeOut, rfid_uid AS rfidUid,
                  approval_status AS approvalStatus, rejection_reason AS rejectionReason, approved_by AS approvedBy,
-                 approved_at AS approvedAt, rfid_status AS rfidStatus
+                 approved_at AS approvedAt, rfid_status AS rfidStatus,
+                 employee_id AS employeeId, first_name AS firstName, middle_name AS middleName, last_name AS lastName,
+                 birthdate, gender, email, address, position, date_hired AS dateHired,
+                 COALESCE(employment_status, 'Active') AS employmentStatus, account_id AS accountId
           FROM staff ORDER BY staff_id`),
     rows(`SELECT order_number AS id, customer_name AS customer, items_summary AS items, subtotal, service_charge AS serviceCharge,
                  discount, total, order_type AS type, pickup_location AS pickupLocation, notes, payment_status AS payment,
@@ -1360,6 +1363,418 @@ app.get('/api/iot/enrollment/status', (req, res) => {
   })
 })
 
+// ── Admin Staff Management Endpoints ──────────────────────────────────────────
+
+// POST /api/admin/staff/create — Admin manually creates a new staff account
+app.post('/api/admin/staff/create', async (req, res) => {
+  try {
+    const {
+      first_name,
+      firstName,
+      middle_name,
+      middleName,
+      last_name,
+      lastName,
+      birthdate,
+      gender,
+      contact_number,
+      contact,
+      phone,
+      email,
+      address,
+      home_address,
+      employee_id,
+      employeeId,
+      position,
+      date_hired,
+      dateHired,
+      employment_status,
+      employmentStatus,
+      username,
+      password,
+      account_status,
+      accountStatus
+    } = req.body || {}
+
+    const fn = (first_name || firstName || '').trim()
+    const mn = (middle_name || middleName || '').trim()
+    const ln = (last_name || lastName || '').trim()
+    const userEmail = (email || '').trim().toLowerCase()
+    const userContact = (contact_number || contact || phone || '').trim()
+    const userPosition = position || 'Staff'
+    const userPassword = (password || '').trim()
+
+    // 1. Validate required fields
+    if (!fn || !ln || !userEmail || !userContact || !userPosition || !userPassword) {
+      return res.status(400).json({
+        error: 'First Name, Last Name, Email, Contact Number, Position, and Password are required.'
+      })
+    }
+
+    // 2. Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(userEmail)) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' })
+    }
+
+    // 3. Validate contact number
+    const cleanPhone = userContact.replace(/\D/g, '')
+    if (cleanPhone.length < 7) {
+      return res.status(400).json({ error: 'Contact number must contain at least 7 digits.' })
+    }
+
+    // 4. Employee ID: Ensure unique or auto-generate
+    let finalEmpId = (employee_id || employeeId || '').trim()
+    if (!finalEmpId) {
+      finalEmpId = `EMP-${Date.now().toString().slice(-4)}`
+    }
+    const [empDupes] = await pool.execute('SELECT staff_id FROM staff WHERE employee_id = ? LIMIT 1', [finalEmpId])
+    if (empDupes.length > 0) {
+      return res.status(409).json({ error: `Employee ID "${finalEmpId}" is already assigned to another staff member.` })
+    }
+
+    // 5. Check duplicate Email across staff and user_accounts
+    const [emailDupesStaff] = await pool.execute(
+      'SELECT staff_id FROM staff WHERE LOWER(email) = ? OR LOWER(contact) = ? LIMIT 1',
+      [userEmail, userEmail]
+    )
+    const [emailDupesAccount] = await pool.execute(
+      'SELECT account_id FROM user_accounts WHERE LOWER(email) = ? LIMIT 1',
+      [userEmail]
+    )
+    if (emailDupesStaff.length > 0 || emailDupesAccount.length > 0) {
+      return res.status(409).json({ error: `Email address "${userEmail}" is already registered in the system.` })
+    }
+
+    // 6. Check duplicate Username
+    const finalUsername = (username || userEmail).trim()
+    const [usernameDupes] = await pool.execute(
+      'SELECT account_id FROM user_accounts WHERE LOWER(username) = ? LIMIT 1',
+      [finalUsername.toLowerCase()]
+    )
+    if (usernameDupes.length > 0) {
+      return res.status(409).json({ error: `Username "${finalUsername}" is already taken.` })
+    }
+
+    // 7. Security: Hash password using bcrypt
+    const passwordHash = await bcrypt.hash(userPassword, 10)
+
+    // 8. Staff metadata
+    const fullName = [fn, mn, ln].filter(Boolean).join(' ')
+    const staffId = `STAFF-${Date.now()}`
+    const finalEmploymentStatus = (employment_status || employmentStatus || 'Active') === 'Inactive' ? 'Inactive' : 'Active'
+    const finalAccountStatus = (account_status || accountStatus || 'Active') === 'Inactive' ? 'Inactive' : 'Active'
+    const finalDateHired = date_hired || dateHired || new Date().toISOString().slice(0, 10)
+    const finalAddress = (address || home_address || '').trim()
+
+    // 9. Insert into user_accounts
+    // IMPORTANT: Position is an employment designation, NOT an authorization role.
+    // Authorization role is STRICTLY 'Staff'. Manager position NEVER grants Admin privileges.
+    const [accountResult] = await pool.execute(
+      `INSERT INTO user_accounts 
+        (username, email, password_hash, role, contact, position, employee_id, staff_id, approval_status, approved_by, approved_at, account_status)
+       VALUES (?, ?, ?, 'Staff', ?, ?, ?, ?, 'APPROVED', 'Admin', NOW(), ?)`,
+      [finalUsername, userEmail, passwordHash, userContact, userPosition, finalEmpId, staffId, finalAccountStatus]
+    )
+    const newAccountId = accountResult.insertId
+
+    // 10. Insert into staff table
+    await pool.execute(
+      `INSERT INTO staff
+        (staff_id, name, role, contact, status, approval_status, approved_by, approved_at, rfid_status,
+         employee_id, account_id, first_name, middle_name, last_name, birthdate, gender, email, address,
+         position, date_hired, employment_status)
+       VALUES (?, ?, 'Staff', ?, 'Offline', 'APPROVED', 'Admin', NOW(), 'INACTIVE',
+         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        staffId,
+        fullName,
+        userContact,
+        finalEmpId,
+        newAccountId,
+        fn,
+        mn || null,
+        ln,
+        birthdate || null,
+        gender || null,
+        userEmail,
+        finalAddress || null,
+        userPosition,
+        finalDateHired,
+        finalEmploymentStatus
+      ]
+    )
+
+    // 11. Optional Firebase User Creation
+    try {
+      await upsertFirebaseUser(userEmail, userPassword, fullName, 'Staff')
+    } catch (fbErr) {
+      console.warn('[admin/staff/create] Firebase Auth upsert notice:', fbErr.message)
+    }
+
+    // 12. Create Notification
+    const notifId = 'NOTIF-' + Date.now()
+    const notifDetail = `New staff account created: ${fullName} (${userPosition}, Employee ID: ${finalEmpId}).`
+    await pool.execute(
+      `INSERT INTO notifications (notification_id, title, detail, audience, time_label, is_read)
+       VALUES (?, ?, ?, 'all', 'Just now', 0)`,
+      [notifId, 'Staff Account Created', notifDetail]
+    ).catch(() => {})
+
+    syncNotification({
+      id: notifId,
+      title: 'Staff Account Created',
+      detail: notifDetail,
+      audience: 'all',
+      time: 'Just now',
+      isRead: false
+    }).catch(() => {})
+
+    // 13. Fetch created staff record
+    const [createdRows] = await pool.execute(
+      `SELECT staff_id AS id, name, role, contact, status, time_in AS time, time_out AS timeOut, rfid_uid AS rfidUid,
+              approval_status AS approvalStatus, rejection_reason AS rejectionReason, approved_by AS approvedBy,
+              approved_at AS approvedAt, rfid_status AS rfidStatus,
+              employee_id AS employeeId, first_name AS firstName, middle_name AS middleName, last_name AS lastName,
+              birthdate, gender, email, address, position, date_hired AS dateHired,
+              employment_status AS employmentStatus, account_id AS accountId
+       FROM staff WHERE staff_id = ?`,
+      [staffId]
+    )
+
+    const createdStaff = createdRows[0]
+    if (createdStaff) {
+      syncStaff(createdStaff).catch(() => {})
+    }
+
+    console.log(`[admin/staff/create] Successfully created staff ${fullName} (${finalEmpId})`)
+    res.json({
+      ok: true,
+      message: `Staff account for ${fullName} successfully created.`,
+      staff: createdStaff
+    })
+  } catch (error) {
+    sendError(res, error, 'admin create staff')
+  }
+})
+
+// POST /api/admin/staff/update — Admin edits staff personal & employment details
+app.post('/api/admin/staff/update', async (req, res) => {
+  try {
+    const {
+      staff_id,
+      staffId,
+      first_name,
+      firstName,
+      middle_name,
+      middleName,
+      last_name,
+      lastName,
+      birthdate,
+      gender,
+      contact_number,
+      contact,
+      phone,
+      email,
+      address,
+      home_address,
+      position,
+      date_hired,
+      dateHired,
+      employment_status,
+      employmentStatus
+    } = req.body || {}
+
+    const targetStaffId = staff_id || staffId
+    if (!targetStaffId) return res.status(400).json({ error: 'staff_id is required.' })
+
+    const [existing] = await pool.execute('SELECT * FROM staff WHERE staff_id = ? LIMIT 1', [targetStaffId])
+    if (existing.length === 0) return res.status(404).json({ error: 'Staff member not found.' })
+
+    const cur = existing[0]
+    const fn = first_name !== undefined ? first_name : (firstName !== undefined ? firstName : cur.first_name)
+    const mn = middle_name !== undefined ? middle_name : (middleName !== undefined ? middleName : cur.middle_name)
+    const ln = last_name !== undefined ? last_name : (lastName !== undefined ? lastName : cur.last_name)
+    const fullName = [fn, mn, ln].filter(Boolean).join(' ') || cur.name
+    const userContact = (contact_number || contact || phone || cur.contact || '').trim()
+    const userEmail = (email || cur.email || '').trim().toLowerCase()
+    const finalPosition = position || cur.position || cur.role
+    const finalEmpStatus = (employment_status || employmentStatus || cur.employment_status || 'Active') === 'Inactive' ? 'Inactive' : 'Active'
+    const finalBirthdate = birthdate !== undefined ? birthdate : cur.birthdate
+    const finalGender = gender !== undefined ? gender : cur.gender
+    const finalAddress = (address || home_address || cur.address || '').trim()
+    const finalDateHired = date_hired || dateHired || cur.date_hired
+
+    await pool.execute(
+      `UPDATE staff SET
+        name = ?,
+        first_name = ?,
+        middle_name = ?,
+        last_name = ?,
+        birthdate = ?,
+        gender = ?,
+        contact = ?,
+        email = ?,
+        address = ?,
+        position = ?,
+        date_hired = ?,
+        employment_status = ?,
+        updated_at = NOW()
+       WHERE staff_id = ?`,
+      [
+        fullName,
+        fn || null,
+        mn || null,
+        ln || null,
+        finalBirthdate || null,
+        finalGender || null,
+        userContact,
+        userEmail,
+        finalAddress || null,
+        finalPosition,
+        finalDateHired || null,
+        finalEmpStatus,
+        targetStaffId
+      ]
+    )
+
+    // Synchronize to user_accounts
+    await pool.execute(
+      `UPDATE user_accounts SET
+        contact = ?,
+        email = ?,
+        position = ?,
+        account_status = ?,
+        updated_at = NOW()
+       WHERE staff_id = ? OR email = ? OR contact = ?`,
+      [userContact, userEmail, finalPosition, finalEmpStatus, targetStaffId, cur.email || cur.contact, cur.contact]
+    ).catch(() => {})
+
+    const [updatedRows] = await pool.execute(
+      `SELECT staff_id AS id, name, role, contact, status, time_in AS time, time_out AS timeOut, rfid_uid AS rfidUid,
+              approval_status AS approvalStatus, rejection_reason AS rejectionReason, approved_by AS approvedBy,
+              approved_at AS approvedAt, rfid_status AS rfidStatus,
+              employee_id AS employeeId, first_name AS firstName, middle_name AS middleName, last_name AS lastName,
+              birthdate, gender, email, address, position, date_hired AS dateHired,
+              employment_status AS employmentStatus, account_id AS accountId
+       FROM staff WHERE staff_id = ?`,
+      [targetStaffId]
+    )
+    if (updatedRows[0]) {
+      syncStaff(updatedRows[0]).catch(() => {})
+    }
+
+    console.log(`[admin/staff/update] Updated staff ${targetStaffId} (${fullName})`)
+    res.json({ ok: true, message: 'Staff information updated successfully.', staff: updatedRows[0] })
+  } catch (error) {
+    sendError(res, error, 'admin update staff')
+  }
+})
+
+// POST /api/admin/staff/status — Admin activates or deactivates staff accounts
+app.post('/api/admin/staff/status', async (req, res) => {
+  try {
+    const { staff_id, staffId, status, employment_status, employmentStatus } = req.body || {}
+    const targetStaffId = staff_id || staffId
+    const newStatus = status || employment_status || employmentStatus
+    if (!targetStaffId || !newStatus) {
+      return res.status(400).json({ error: 'staff_id and status (Active/Inactive) are required.' })
+    }
+    const cleanStatus = newStatus === 'Active' ? 'Active' : 'Inactive'
+
+    await pool.execute(
+      `UPDATE staff SET employment_status = ?, updated_at = NOW() WHERE staff_id = ?`,
+      [cleanStatus, targetStaffId]
+    )
+    await pool.execute(
+      `UPDATE user_accounts SET account_status = ?, updated_at = NOW() WHERE staff_id = ?`,
+      [cleanStatus, targetStaffId]
+    ).catch(() => {})
+
+    const [updatedRows] = await pool.execute(
+      `SELECT staff_id AS id, name, role, contact, status, time_in AS time, time_out AS timeOut, rfid_uid AS rfidUid,
+              approval_status AS approvalStatus, rfid_status AS rfidStatus,
+              employee_id AS employeeId, first_name AS firstName, last_name AS lastName,
+              position, employment_status AS employmentStatus
+       FROM staff WHERE staff_id = ?`,
+      [targetStaffId]
+    )
+    if (updatedRows[0]) {
+      syncStaff(updatedRows[0]).catch(() => {})
+    }
+
+    res.json({ ok: true, message: `Staff status updated to ${cleanStatus}.`, staff: updatedRows[0] })
+  } catch (error) {
+    sendError(res, error, 'admin toggle staff status')
+  }
+})
+
+// POST /api/admin/staff/deactivate-rfid — Admin deactivates staff RFID card
+app.post('/api/admin/staff/deactivate-rfid', async (req, res) => {
+  try {
+    const { staff_id, staffId } = req.body || {}
+    const targetStaffId = staff_id || staffId
+    if (!targetStaffId) return res.status(400).json({ error: 'staff_id is required.' })
+
+    const [staffRows] = await pool.execute('SELECT * FROM staff WHERE staff_id = ? LIMIT 1', [targetStaffId])
+    const member = staffRows[0]
+    if (!member) return res.status(404).json({ error: 'Staff member not found.' })
+
+    // Update assignment history
+    await pool.execute(
+      `UPDATE rfid_card_assignments
+       SET card_status = 'Deactivated', deactivated_at = NOW()
+       WHERE staff_id = ? AND card_status = 'Active'`,
+      [targetStaffId]
+    )
+
+    await pool.execute(
+      `UPDATE staff SET rfid_uid = NULL, rfid_status = 'INACTIVE', updated_at = NOW() WHERE staff_id = ?`,
+      [targetStaffId]
+    )
+    await pool.execute(
+      `UPDATE user_accounts SET rfid_uid = NULL, rfid_status = 'INACTIVE', updated_at = NOW() WHERE staff_id = ?`,
+      [targetStaffId]
+    ).catch(() => {})
+
+    const [updatedRows] = await pool.execute(
+      `SELECT staff_id AS id, name, role, contact, status, time_in AS time, time_out AS timeOut, rfid_uid AS rfidUid,
+              approval_status AS approvalStatus, rfid_status AS rfidStatus,
+              employee_id AS employeeId, position, employment_status AS employmentStatus
+       FROM staff WHERE staff_id = ?`,
+      [targetStaffId]
+    )
+    if (updatedRows[0]) {
+      syncStaff(updatedRows[0]).catch(() => {})
+    }
+
+    console.log(`[admin/staff/deactivate-rfid] RFID deactivated for staff ${targetStaffId} (${member.name})`)
+    res.json({ ok: true, message: `RFID card for ${member.name} has been deactivated.`, staff: updatedRows[0] })
+  } catch (error) {
+    sendError(res, error, 'admin deactivate rfid card')
+  }
+})
+
+// GET /api/admin/staff/:staffId/rfid-history — Fetch RFID card assignment history
+app.get('/api/admin/staff/:staffId/rfid-history', async (req, res) => {
+  try {
+    const { staffId } = req.params
+    const [rows] = await pool.execute(
+      `SELECT id, staff_id, rfid_uid, card_status,
+              DATE_FORMAT(registered_at, '%Y-%m-%d %H:%i:%s') AS registered_at,
+              registered_by,
+              DATE_FORMAT(deactivated_at, '%Y-%m-%d %H:%i:%s') AS deactivated_at
+       FROM rfid_card_assignments
+       WHERE staff_id = ?
+       ORDER BY registered_at DESC`,
+      [staffId]
+    )
+    res.json({ ok: true, history: rows })
+  } catch (error) {
+    sendError(res, error, 'fetch staff rfid history')
+  }
+})
+
 // ── Staff Registration & Approval Endpoints ─────────────────────────────────────
 
 // POST /api/accounts/register-staff — Mobile app registration for staff with position
@@ -1637,7 +2052,7 @@ app.post('/api/iot/rfid-scan', async (req, res) => {
 
     // ── CHECK IF ENROLLMENT SESSION IS ACTIVE ──
     if (activeEnrollment && (Date.now() - activeEnrollment.started_at <= 180000)) {
-      // 1. Check duplicate card UID across other staff members
+      // 1. Check duplicate card UID across other staff members (staff table and assignments table)
       const [dupes] = await pool.execute(
         `SELECT staff_id, name FROM staff 
          WHERE (UPPER(rfid_uid) = ? 
@@ -1656,22 +2071,56 @@ app.post('/api/iot/rfid-scan', async (req, res) => {
         })
       }
 
-      // 2. Link card to enrolling staff member
+      const [assignedOther] = await pool.execute(
+        `SELECT r.staff_id, s.name 
+         FROM rfid_card_assignments r
+         LEFT JOIN staff s ON s.staff_id = r.staff_id
+         WHERE (UPPER(r.rfid_uid) = ? OR REPLACE(UPPER(r.rfid_uid), ':', '') = ?)
+           AND r.card_status = 'Active' AND r.staff_id != ? LIMIT 1`,
+        [cleanUid, rawClean, activeEnrollment.staff_id]
+      )
+      if (assignedOther.length > 0) {
+        console.warn(`[iot/rfid] Duplicate card in assignments: ${cleanUid} active for ${assignedOther[0].name}`)
+        return res.status(409).json({
+          success: false,
+          duplicate: true,
+          message: `Card already assigned to ${assignedOther[0].name || assignedOther[0].staff_id}`,
+          staff_name: assignedOther[0].name
+        })
+      }
+
+      // 2. Archive previous active card assignment for this staff member as 'Replaced'
       const targetStaffId = activeEnrollment.staff_id
       const targetStaffName = activeEnrollment.staff_name
+
+      await pool.execute(
+        `UPDATE rfid_card_assignments
+         SET card_status = 'Replaced', deactivated_at = NOW()
+         WHERE staff_id = ? AND card_status = 'Active'`,
+        [targetStaffId]
+      )
+
+      // 3. Insert new active card assignment record for audit history
+      await pool.execute(
+        `INSERT INTO rfid_card_assignments (staff_id, rfid_uid, card_status, registered_at, registered_by)
+         VALUES (?, ?, 'Active', NOW(), 'Admin')`,
+        [targetStaffId, cleanUid]
+      )
+
+      // 4. Link card to enrolling staff member in staff table
       await pool.execute(
         `UPDATE staff SET rfid_uid = ?, rfid_status = 'ACTIVE', updated_at = NOW() WHERE staff_id = ?`,
         [cleanUid, targetStaffId]
       )
 
-      // Also link to user_accounts if matching contact / email / username
+      // Also link to user_accounts if matching staff_id or contact/email/username
       await pool.execute(
-        `UPDATE user_accounts SET rfid_uid = ?, rfid_status = 'ACTIVE' 
-         WHERE contact = ? OR email = ? OR username = ?`,
-        [cleanUid, targetStaffName, targetStaffName, targetStaffName]
+        `UPDATE user_accounts SET rfid_uid = ?, rfid_status = 'ACTIVE', updated_at = NOW()
+         WHERE staff_id = ? OR contact = ? OR email = ? OR username = ?`,
+        [cleanUid, targetStaffId, targetStaffName, targetStaffName, targetStaffName]
       ).catch(() => {})
 
-      // 3. Persistent notification
+      // 5. Persistent notification
       const notifId = 'NOTIF-' + Date.now()
       const notifDetail = `RFID card [${cleanUid}] successfully registered to ${targetStaffName}.`
       await pool.execute(
@@ -1690,7 +2139,9 @@ app.post('/api/iot/rfid-scan', async (req, res) => {
 
       const [updatedRows] = await pool.execute(
         `SELECT staff_id AS id, name, role, contact, status, time_in AS time, time_out AS timeOut, rfid_uid AS rfidUid,
-                approval_status AS approvalStatus, rfid_status AS rfidStatus
+                approval_status AS approvalStatus, rfid_status AS rfidStatus,
+                employee_id AS employeeId, first_name AS firstName, last_name AS lastName,
+                position, employment_status AS employmentStatus
          FROM staff WHERE staff_id = ?`,
         [targetStaffId]
       )
@@ -1715,7 +2166,7 @@ app.post('/api/iot/rfid-scan', async (req, res) => {
     // ── NORMAL ATTENDANCE SCAN ──
     const [staffRows] = await pool.execute(
       `SELECT staff_id, name, role, contact, status, time_in, time_out, rfid_uid,
-              approval_status, rfid_status
+              approval_status, rfid_status, COALESCE(employment_status, 'Active') AS employment_status, email
        FROM staff 
        WHERE UPPER(rfid_uid) = ? 
           OR REPLACE(UPPER(rfid_uid), ':', '') = ? 
@@ -1737,25 +2188,45 @@ app.post('/api/iot/rfid-scan', async (req, res) => {
 
     const staffMember = staffRows[0]
 
-    // Verify approval status
-    if (staffMember.approval_status === 'REJECTED') {
+    // Strict 5-point verification for staff RFID attendance:
+    // 1. Staff account exists (verified above: staffMember exists)
+    // 2. Staff approval status must be APPROVED
+    if (staffMember.approval_status !== 'APPROVED') {
       return res.status(403).json({
         success: false,
-        message: 'Account Rejected - Attendance Denied',
+        message: `Account is ${staffMember.approval_status} - Attendance Denied`,
         staff_name: staffMember.name
       })
     }
-    if (staffMember.approval_status === 'PENDING') {
+
+    // 3. Staff employment status must be Active
+    if (staffMember.employment_status === 'Inactive') {
       return res.status(403).json({
         success: false,
-        message: 'Account Pending Approval',
+        message: 'Staff Employment Status is Inactive - Attendance Denied',
         staff_name: staffMember.name
       })
     }
+
+    // 4. Staff RFID card status must be ACTIVE
     if (staffMember.rfid_status !== 'ACTIVE') {
       return res.status(403).json({
         success: false,
-        message: 'RFID Inactive - Attendance Denied',
+        message: 'RFID Card is Inactive or Deactivated - Attendance Denied',
+        staff_name: staffMember.name
+      })
+    }
+
+    // 5. Staff account in user_accounts must also be active
+    const [userAccRows] = await pool.execute(
+      `SELECT account_id, account_status FROM user_accounts 
+       WHERE staff_id = ? OR email = ? OR contact = ? LIMIT 1`,
+      [staffMember.staff_id, staffMember.email || staffMember.contact, staffMember.contact]
+    )
+    if (userAccRows[0] && userAccRows[0].account_status === 'Inactive') {
+      return res.status(403).json({
+        success: false,
+        message: 'Staff Account is Inactive - Attendance Denied',
         staff_name: staffMember.name
       })
     }

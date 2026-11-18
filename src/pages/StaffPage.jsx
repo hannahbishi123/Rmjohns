@@ -18,19 +18,41 @@ function formatDynamicHeaderDate() {
 function getInitials(name = '') {
   const parts = String(name).trim().split(/\s+/).filter(Boolean)
   if (!parts.length) return 'ST'
-  return parts.map((part) => part[0]).join('').slice(0, 3)
+  return parts.map((part) => part[0]).join('').slice(0, 3).toUpperCase()
+}
+
+function generateRandomPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*'
+  let pwd = ''
+  for (let i = 0; i < 10; i++) {
+    pwd += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return pwd
 }
 
 export default function StaffPage() {
   const { staff = [], setStaff, setDialog, notify } = useApp()
   const [activeTab, setActiveTab] = useState('directory') // 'directory' | 'requests'
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('All status')
 
-  // Registration Requests State
+  // Search & Multiple Filters
+  const [search, setSearch] = useState('')
+  const [positionFilter, setPositionFilter] = useState('All positions')
+  const [employmentFilter, setEmploymentFilter] = useState('All employment')
+  const [rfidFilter, setRfidFilter] = useState('All RFID')
+  const [shiftFilter, setShiftFilter] = useState('All shifts')
+
+  // Modals
+  const [addModalOpen, setAddModalOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState(null)
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false)
+  const [detailsTarget, setDetailsTarget] = useState(null)
+  const [rfidHistory, setRfidHistory] = useState([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+
+  // Registration Requests State (Mobile applicants prior to lock)
   const [requests, setRequests] = useState([])
-  const [loadingRequests, setLoadingRequests] = useState(false)
-  const [requestsFilter, setRequestsFilter] = useState('All') // 'All' | 'PENDING' | 'APPROVED' | 'REJECTED'
+  const [requestsFilter, setRequestsFilter] = useState('All')
 
   // Rejection Modal State
   const [rejectModalOpen, setRejectModalOpen] = useState(false)
@@ -42,17 +64,53 @@ export default function StaffPage() {
   const [reviewModalOpen, setReviewModalOpen] = useState(false)
   const [reviewTarget, setReviewTarget] = useState(null)
 
-  function handleOpenReview(staffMember) {
-    setReviewTarget(staffMember)
-    setReviewModalOpen(true)
-  }
-
   // Live RFID Enrollment Session State
   const [enrollModalOpen, setEnrollModalOpen] = useState(false)
   const [enrollingStaff, setEnrollingStaff] = useState(null)
-  const [enrollmentStatus, setEnrollmentStatus] = useState('waiting') // 'waiting' | 'success' | 'error'
+  const [enrollmentStatus, setEnrollmentStatus] = useState('waiting') // 'waiting' | 'success' | 'duplicate' | 'error'
   const [enrolledUid, setEnrolledUid] = useState('')
   const [enrollError, setEnrollError] = useState('')
+  const [enrollCountdown, setEnrollCountdown] = useState(180)
+
+  // Add Staff Form State
+  const [addForm, setAddForm] = useState({
+    firstName: '',
+    middleName: '',
+    lastName: '',
+    birthdate: '',
+    gender: 'Prefer not to say',
+    contactNumber: '',
+    email: '',
+    address: '',
+    employeeId: `EMP-${Date.now().toString().slice(-4)}`,
+    position: 'Service Crew',
+    dateHired: new Date().toISOString().slice(0, 10),
+    employmentStatus: 'Active',
+    username: '',
+    password: '',
+    confirmPassword: '',
+    accountStatus: 'Active',
+    enrollRfidImmediately: true
+  })
+  const [addFormErrors, setAddFormErrors] = useState({})
+  const [isSubmittingAdd, setIsSubmittingAdd] = useState(false)
+
+  // Edit Staff Form State
+  const [editForm, setEditForm] = useState({
+    firstName: '',
+    middleName: '',
+    lastName: '',
+    birthdate: '',
+    gender: '',
+    contactNumber: '',
+    email: '',
+    address: '',
+    position: 'Staff',
+    dateHired: '',
+    employmentStatus: 'Active'
+  })
+  const [editFormErrors, setEditFormErrors] = useState({})
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false)
 
   const dynamicDate = useMemo(() => formatDynamicHeaderDate(), [])
 
@@ -86,30 +144,55 @@ export default function StaffPage() {
     return () => clearInterval(interval)
   }, [])
 
-  // Pending count for badge
+  // KPI Overview stats
+  const totalStaffCount = staff.length
+  const activeTodayCount = useMemo(
+    () => staff.filter((person) => person.status === 'Present').length,
+    [staff]
+  )
+  const activeEmploymentCount = useMemo(
+    () => staff.filter((person) => (person.employmentStatus || 'Active') === 'Active').length,
+    [staff]
+  )
+  const rfidRegisteredCount = useMemo(
+    () => staff.filter((person) => Boolean(person.rfidUid)).length,
+    [staff]
+  )
   const pendingRequestsCount = useMemo(() => {
     return requests.filter((r) => r.approvalStatus === 'PENDING').length
   }, [requests])
 
-  // Filtered regular staff
+  // Filtered staff directory
   const visibleStaff = useMemo(() => {
     const q = search.trim().toLowerCase()
     return staff.filter((person) => {
-      const matchesSearch =
-        !q ||
-        `${person.name || ''} ${person.id || ''} ${person.role || ''} ${person.contact || ''}`
-          .toLowerCase()
-          .includes(q)
-      const matchesStatus = statusFilter === 'All status' || person.status === statusFilter
-      return matchesSearch && matchesStatus
+      // Search matching name, employeeId, id, contact, email, position
+      const haystack = `${person.name || ''} ${person.employeeId || ''} ${person.id || ''} ${person.position || person.role || ''} ${person.contact || ''} ${person.email || ''}`.toLowerCase()
+      const matchesSearch = !q || haystack.includes(q)
+
+      // Position filter
+      const pos = person.position || person.role || 'Staff'
+      const matchesPosition = positionFilter === 'All positions' || pos.toLowerCase() === positionFilter.toLowerCase()
+
+      // Employment status filter
+      const empStatus = person.employmentStatus || 'Active'
+      const matchesEmployment = employmentFilter === 'All employment' || empStatus.toLowerCase() === employmentFilter.toLowerCase()
+
+      // RFID status filter
+      const hasRfid = Boolean(person.rfidUid)
+      const matchesRfid =
+        rfidFilter === 'All RFID' ||
+        (rfidFilter === 'Registered' && hasRfid) ||
+        (rfidFilter === 'Not Registered' && !hasRfid)
+
+      // Shift status filter
+      const matchesShift = shiftFilter === 'All shifts' || person.status === shiftFilter
+
+      return matchesSearch && matchesPosition && matchesEmployment && matchesRfid && matchesShift
     })
-  }, [staff, search, statusFilter])
+  }, [staff, search, positionFilter, employmentFilter, rfidFilter, shiftFilter])
 
   const pagination = usePagination(visibleStaff, 10)
-  const activeTodayCount = useMemo(
-    () => staff.filter((person) => person.status === 'Present').length,
-    [staff],
-  )
 
   // Filtered requests
   const visibleRequests = useMemo(() => {
@@ -119,22 +202,380 @@ export default function StaffPage() {
     })
   }, [requests, requestsFilter])
 
-  // ── APPROVE STAFF REQUEST ──────────────────────────────────────────────────
-  async function handleApprove(staffMember) {
+  // ── OPEN ADD STAFF MODAL ──────────────────────────────────────────────────
+  function handleOpenAddStaff() {
+    const tempPassword = generateRandomPassword()
+    const autoEmpId = `EMP-${Date.now().toString().slice(-4)}`
+    setAddForm({
+      firstName: '',
+      middleName: '',
+      lastName: '',
+      birthdate: '',
+      gender: 'Prefer not to say',
+      contactNumber: '',
+      email: '',
+      address: '',
+      employeeId: autoEmpId,
+      position: 'Service Crew',
+      dateHired: new Date().toISOString().slice(0, 10),
+      employmentStatus: 'Active',
+      username: '',
+      password: tempPassword,
+      confirmPassword: tempPassword,
+      accountStatus: 'Active',
+      enrollRfidImmediately: true
+    })
+    setAddFormErrors({})
+    setAddModalOpen(true)
+  }
+
+  // ── SUBMIT ADD STAFF FORM ─────────────────────────────────────────────────
+  async function handleSubmitAddStaff(e) {
+    e.preventDefault()
+    const errors = {}
+
+    if (!addForm.firstName.trim()) errors.firstName = 'First Name is required'
+    if (!addForm.lastName.trim()) errors.lastName = 'Last Name is required'
+    if (!addForm.birthdate) errors.birthdate = 'Birthdate is required'
+    if (!addForm.contactNumber.trim()) errors.contactNumber = 'Contact Number is required'
+    if (!addForm.email.trim()) errors.email = 'Email address is required'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(addForm.email.trim())) {
+      errors.email = 'Please enter a valid email address'
+    }
+    if (!addForm.employeeId.trim()) errors.employeeId = 'Employee ID is required'
+    if (!addForm.password) errors.password = 'Password is required'
+    else if (addForm.password.length < 6) errors.password = 'Password must be at least 6 characters'
+    if (addForm.password !== addForm.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setAddFormErrors(errors)
+      return notify('Please correct the highlighted errors in the form.', { icon: 'warning' })
+    }
+
+    setIsSubmittingAdd(true)
+    try {
+      const res = await fetch('/api/admin/staff/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(addForm)
+      })
+      const data = await res.json()
+      if (res.ok && data.ok) {
+        notify(`Staff account for ${data.staff.name} created successfully!`, { icon: 'success' })
+        setStaff((prev) => [data.staff, ...prev])
+        setAddModalOpen(false)
+
+        // If admin checked immediate RFID enrollment, launch it immediately
+        if (addForm.enrollRfidImmediately) {
+          handleStartEnrollment(data.staff)
+        }
+      } else {
+        notify(data.error || 'Failed to create staff account', { icon: 'error' })
+      }
+    } catch (err) {
+      notify('Network error creating staff: ' + err.message, { icon: 'error' })
+    } finally {
+      setIsSubmittingAdd(false)
+    }
+  }
+
+  // ── OPEN EDIT STAFF MODAL ─────────────────────────────────────────────────
+  function handleOpenEditStaff(person) {
+    setEditTarget(person)
+    // Extract first, middle, last name if not explicitly set
+    let fn = person.firstName || ''
+    let mn = person.middleName || ''
+    let ln = person.lastName || ''
+    if (!fn && person.name) {
+      const parts = person.name.trim().split(/\s+/)
+      fn = parts[0] || ''
+      if (parts.length > 2) {
+        mn = parts.slice(1, -1).join(' ')
+        ln = parts[parts.length - 1]
+      } else if (parts.length === 2) {
+        ln = parts[1]
+      }
+    }
+
+    setEditForm({
+      firstName: fn,
+      middleName: mn,
+      lastName: ln,
+      birthdate: person.birthdate || '',
+      gender: person.gender || 'Prefer not to say',
+      contactNumber: person.contact || person.contactNumber || '',
+      email: person.email || '',
+      address: person.address || '',
+      position: person.position || person.role || 'Staff',
+      dateHired: person.dateHired || '',
+      employmentStatus: person.employmentStatus || 'Active'
+    })
+    setEditFormErrors({})
+    setEditModalOpen(true)
+  }
+
+  // ── SUBMIT EDIT STAFF FORM ────────────────────────────────────────────────
+  async function handleSubmitEditStaff(e) {
+    e.preventDefault()
+    if (!editTarget) return
+
+    const errors = {}
+    if (!editForm.firstName.trim()) errors.firstName = 'First Name is required'
+    if (!editForm.lastName.trim()) errors.lastName = 'Last Name is required'
+    if (!editForm.contactNumber.trim()) errors.contactNumber = 'Contact Number is required'
+    if (!editForm.email.trim()) errors.email = 'Email is required'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editForm.email.trim())) {
+      errors.email = 'Valid email is required'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setEditFormErrors(errors)
+      return notify('Please fix validation errors.', { icon: 'warning' })
+    }
+
+    setIsSubmittingEdit(true)
+    try {
+      const res = await fetch('/api/admin/staff/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          staff_id: editTarget.id,
+          ...editForm
+        })
+      })
+      const data = await res.json()
+      if (res.ok && data.ok) {
+        notify(`Staff information updated for ${data.staff.name}.`, { icon: 'success' })
+        setStaff((prev) => prev.map((p) => (p.id === data.staff.id ? { ...p, ...data.staff } : p)))
+        setEditModalOpen(false)
+        if (detailsModalOpen && detailsTarget?.id === data.staff.id) {
+          setDetailsTarget(data.staff)
+        }
+      } else {
+        notify(data.error || 'Failed to update staff info', { icon: 'error' })
+      }
+    } catch (err) {
+      notify('Network error updating staff: ' + err.message, { icon: 'error' })
+    } finally {
+      setIsSubmittingEdit(false)
+    }
+  }
+
+  // ── OPEN STAFF DETAILS & RFID MANAGEMENT MODAL ────────────────────────────
+  async function handleOpenStaffDetails(person) {
+    setDetailsTarget(person)
+    setDetailsModalOpen(true)
+    setRfidHistory([])
+    setLoadingHistory(true)
+    try {
+      const res = await fetch(`/api/admin/staff/${encodeURIComponent(person.id)}/rfid-history`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.ok && Array.isArray(data.history)) {
+          setRfidHistory(data.history)
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to load RFID history:', err)
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
+  // ── TOGGLE EMPLOYMENT STATUS (ACTIVE / INACTIVE) ───────────────────────────
+  async function handleToggleEmploymentStatus(person) {
+    const currentStatus = person.employmentStatus || 'Active'
+    const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active'
+    const confirmMsg =
+      newStatus === 'Inactive'
+        ? `Are you sure you want to DEACTIVATE ${person.name}? They will be blocked from RFID attendance clock-in.`
+        : `Are you sure you want to RE-ACTIVATE ${person.name}?`
+
+    if (!window.confirm(confirmMsg)) return
+
+    try {
+      const res = await fetch('/api/admin/staff/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          staff_id: person.id,
+          status: newStatus
+        })
+      })
+      const data = await res.json()
+      if (res.ok && data.ok) {
+        notify(`${person.name} is now ${newStatus}.`, { icon: 'info' })
+        setStaff((prev) => prev.map((p) => (p.id === person.id ? { ...p, employmentStatus: newStatus } : p)))
+        if (detailsModalOpen && detailsTarget?.id === person.id) {
+          setDetailsTarget((prev) => ({ ...prev, employmentStatus: newStatus }))
+        }
+      } else {
+        notify(data.error || 'Failed to toggle employment status', { icon: 'error' })
+      }
+    } catch (err) {
+      notify('Network error toggling status: ' + err.message, { icon: 'error' })
+    }
+  }
+
+  // ── DEACTIVATE RFID CARD ──────────────────────────────────────────────────
+  async function handleDeactivateRfid(person) {
+    if (!person.rfidUid) return
+    const confirmed = window.confirm(
+      `Sigurado ka bang nais mong i-deactivate ang RFID card (${person.rfidUid}) ni ${person.name}? Hindi na ito magagamit para sa attendance.`
+    )
+    if (!confirmed) return
+
+    try {
+      const res = await fetch('/api/admin/staff/deactivate-rfid', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staff_id: person.id })
+      })
+      const data = await res.json()
+      if (res.ok && data.ok) {
+        notify(`RFID card ni ${person.name} ay na-deactivate na.`, { icon: 'info' })
+        setStaff((prev) =>
+          prev.map((p) => (p.id === person.id ? { ...p, rfidUid: null, rfidStatus: 'INACTIVE' } : p))
+        )
+        if (detailsModalOpen && detailsTarget?.id === person.id) {
+          setDetailsTarget((prev) => ({ ...prev, rfidUid: null, rfidStatus: 'INACTIVE' }))
+          // Reload history
+          handleOpenStaffDetails({ ...person, rfidUid: null, rfidStatus: 'INACTIVE' })
+        }
+      } else {
+        notify(data.error || 'Nabigong i-deactivate ang RFID', { icon: 'error' })
+      }
+    } catch (err) {
+      notify('Network error deactivating RFID: ' + err.message, { icon: 'error' })
+    }
+  }
+
+  // ── DELETE STAFF RECORD PERMANENTLY ───────────────────────────────────────
+  async function handleDeleteStaff(person) {
+    if (!person) return
+    const confirmed = window.confirm(
+      `Sigurado ka bang nais mong burahin si ${person.name} (${person.employeeId || person.id})? Mabubura ang record at credentials nito nang permanente.`
+    )
+    if (!confirmed) return
+
+    try {
+      const res = await fetch('/api/staff/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: person.id })
+      })
+      const data = await res.json()
+      if (res.ok && data.ok) {
+        notify(`Nabura na ang profile ni ${person.name}.`, { icon: 'success' })
+        setStaff((prev) => prev.filter((p) => p.id !== person.id))
+        if (detailsModalOpen) setDetailsModalOpen(false)
+      } else {
+        notify(data.error || 'Nabigong burahin ang staff', { icon: 'error' })
+      }
+    } catch (err) {
+      notify('Error sa pagbura: ' + err.message, { icon: 'error' })
+    }
+  }
+
+  // ── START LIVE RFID ENROLLMENT SESSION ────────────────────────────────────
+  async function handleStartEnrollment(staffMember) {
+    setEnrollingStaff(staffMember)
+    setEnrollmentStatus('waiting')
+    setEnrolledUid('')
+    setEnrollError('')
+    setEnrollCountdown(180)
+    setEnrollModalOpen(true)
+
+    try {
+      const res = await fetch('/api/iot/enrollment/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staff_id: staffMember.id })
+      })
+      const data = await res.json()
+      if (!res.ok || !data.ok) {
+        setEnrollError(data.error || 'Could not start enrollment session on ESP32.')
+        setEnrollmentStatus('error')
+      }
+    } catch (err) {
+      setEnrollError(err.message)
+      setEnrollmentStatus('error')
+    }
+  }
+
+  // Poll enrollment status and countdown while modal is open
+  useEffect(() => {
+    if (!enrollModalOpen || enrollmentStatus !== 'waiting') return
+
+    const timer = setInterval(() => {
+      setEnrollCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          setEnrollmentStatus('error')
+          setEnrollError('Enrollment session timed out. Please tap "Try Again" to restart.')
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    const pollTimer = setInterval(async () => {
+      try {
+        const res = await fetch('/api/iot/status')
+        if (res.ok) {
+          const data = await res.json()
+          if (enrollingStaff) {
+            // Check bootstrap or staff query to see if RFID card was linked
+            const checkRes = await fetch('/api/bootstrap')
+            if (checkRes.ok) {
+              const bData = await checkRes.json()
+              const updated = bData.staff?.find((s) => s.id === enrollingStaff.id)
+              if (updated && updated.rfidUid && updated.rfidStatus === 'ACTIVE') {
+                setEnrolledUid(updated.rfidUid)
+                setEnrollmentStatus('success')
+                notify(`RFID Card [${updated.rfidUid}] linked to ${enrollingStaff.name}!`, { icon: 'success' })
+                setStaff((prev) =>
+                  prev.map((p) => (p.id === enrollingStaff.id ? { ...p, ...updated } : p))
+                )
+                if (detailsModalOpen && detailsTarget?.id === enrollingStaff.id) {
+                  setDetailsTarget(updated)
+                }
+              }
+            }
+          }
+        }
+      } catch {}
+    }, 2000)
+
+    return () => {
+      clearInterval(timer)
+      clearInterval(pollTimer)
+    }
+  }, [enrollModalOpen, enrollmentStatus, enrollingStaff, detailsModalOpen, detailsTarget])
+
+  // Cancel enrollment
+  async function handleCancelEnrollment() {
+    try {
+      await fetch('/api/iot/enrollment/cancel', { method: 'POST' })
+    } catch {}
+    setEnrollModalOpen(false)
+    setEnrollingStaff(null)
+  }
+
+  // Requests Tab Handlers
+  async function handleApproveRequest(staffMember) {
     try {
       const res = await fetch('/api/admin/staff-requests/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          staff_id: staffMember.id,
-          admin_name: 'Admin',
-        }),
+        body: JSON.stringify({ staff_id: staffMember.id, admin_name: 'Admin' })
       })
       const data = await res.json()
       if (res.ok && data.ok) {
         notify(`Approved ${staffMember.name}! Eligible for RFID enrollment.`, { icon: 'success' })
         fetchRequests()
-        // Automatically prompt for RFID enrollment
         handleStartEnrollment(staffMember)
       } else {
         notify(data.error || 'Failed to approve staff request', { icon: 'error' })
@@ -144,15 +585,13 @@ export default function StaffPage() {
     }
   }
 
-  // ── OPEN REJECTION MODAL ───────────────────────────────────────────────────
-  function handleOpenReject(staffMember) {
+  function handleOpenRejectRequest(staffMember) {
     setRejectTarget(staffMember)
     setRejectionReason('')
     setRejectModalOpen(true)
   }
 
-  // ── SUBMIT REJECTION WITH REASON ───────────────────────────────────────────
-  async function handleSubmitReject(e) {
+  async function handleSubmitRejectRequest(e) {
     if (e) e.preventDefault()
     if (!rejectionReason.trim()) {
       return notify('Please enter a rejection reason.', { icon: 'warning' })
@@ -167,8 +606,8 @@ export default function StaffPage() {
         body: JSON.stringify({
           staff_id: rejectTarget.id,
           rejection_reason: rejectionReason.trim(),
-          admin_name: 'Admin',
-        }),
+          admin_name: 'Admin'
+        })
       })
       const data = await res.json()
       if (res.ok && data.ok) {
@@ -187,17 +626,16 @@ export default function StaffPage() {
     }
   }
 
-  // ── DELETE STAFF REQUEST & USER ACCOUNT ────────────────────────────────────
   async function handleDeleteRequest(staffMember) {
     if (!staffMember) return
-    const confirmed = window.confirm(`Sigurado ka bang nais mong burahin ang record ni ${staffMember.name}? Mabubura ang account at request nito nang permanente.`)
+    const confirmed = window.confirm(`Sigurado ka bang nais mong burahin ang record ni ${staffMember.name}?`)
     if (!confirmed) return
 
     try {
       const res = await fetch('/api/admin/staff-requests/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ staff_id: staffMember.id }),
+        body: JSON.stringify({ staff_id: staffMember.id })
       })
       const data = await res.json()
       if (res.ok && data.ok) {
@@ -215,77 +653,9 @@ export default function StaffPage() {
     }
   }
 
-  // ── START LIVE RFID ENROLLMENT SESSION ──────────────────────────────────────
-  async function handleStartEnrollment(staffMember) {
-    setEnrollingStaff(staffMember)
-    setEnrollmentStatus('waiting')
-    setEnrolledUid('')
-    setEnrollError('')
-    setEnrollModalOpen(true)
-
-    try {
-      const res = await fetch('/api/iot/enrollment/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ staff_id: staffMember.id }),
-      })
-      const data = await res.json()
-      if (!res.ok || !data.ok) {
-        setEnrollError(data.error || 'Could not start enrollment session on ESP32.')
-        setEnrollmentStatus('error')
-      }
-    } catch (err) {
-      setEnrollError(err.message)
-      setEnrollmentStatus('error')
-    }
-  }
-
-  // Poll enrollment status while modal is open
-  useEffect(() => {
-    if (!enrollModalOpen || enrollmentStatus !== 'waiting') return
-
-    const pollTimer = setInterval(async () => {
-      try {
-        const res = await fetch('/api/iot/status')
-        if (res.ok) {
-          const data = await res.json()
-          // If enrollment was active and now completed, check if staff was linked
-          if (enrollingStaff) {
-            const reqRes = await fetch('/api/admin/staff-requests')
-            if (reqRes.ok) {
-              const reqData = await reqRes.json()
-              const updated = reqData.requests?.find((r) => r.id === enrollingStaff.id)
-              if (updated && updated.rfidStatus === 'ACTIVE' && updated.rfidUid) {
-                setEnrolledUid(updated.rfidUid)
-                setEnrollmentStatus('success')
-                notify(`RFID Card [${updated.rfidUid}] linked to ${enrollingStaff.name}!`, { icon: 'success' })
-                fetchRequests()
-              }
-            }
-          }
-        }
-      } catch {}
-    }, 2000)
-
-    return () => clearInterval(pollTimer)
-  }, [enrollModalOpen, enrollmentStatus, enrollingStaff])
-
-  // Cancel enrollment
-  async function handleCancelEnrollment() {
-    try {
-      await fetch('/api/iot/enrollment/cancel', { method: 'POST' })
-    } catch {}
-    setEnrollModalOpen(false)
-    setEnrollingStaff(null)
-  }
-
-  function handleAddStaff() {
-    setDialog({ type: 'add', entity: 'staff' })
-  }
-
   return (
     <div className="adm-staff-mgmt">
-      {/* ══════════════ 1. STAFF HEADER BANNER ══════════════ */}
+      {/* ══════════════ 1. HEADER BANNER ══════════════ */}
       <header className="adm-stf-banner">
         <svg
           className="adm-stf-banner-art"
@@ -298,40 +668,89 @@ export default function StaffPage() {
           <path d="M695 -10 C625 42 585 102 555 155 L745 155 C760 98 795 42 855 -10 Z" fill="#A3C644" fillOpacity="0.24" />
         </svg>
 
-        <svg className="adm-stf-banner-leaves" viewBox="0 0 220 130" fill="none" aria-hidden="true">
-          <path d="M110 128 C118 82 146 46 186 22 C178 70 152 108 110 128 Z" fill="#5D9E31" />
-          <path d="M114 124 Q148 72 182 26" stroke="#B7E048" strokeWidth="2" strokeLinecap="round" />
-          <path d="M68 132 C80 92 112 64 156 54 C136 96 104 122 68 132 Z" fill="#77B83F" />
-          <path d="M72 128 Q112 90 152 56" stroke="#D4E157" strokeWidth="1.8" strokeLinecap="round" />
-          <path d="M36 128 C52 106 78 92 108 92 C90 116 64 128 36 128 Z" fill="#498425" />
-        </svg>
-
         <div className="adm-stf-banner-left">
           <span className="adm-stf-date">{dynamicDate}</span>
-          <h1>Staff & Registrations</h1>
-          <p>Manage eatery crew, review mobile app registrations, and enroll RFID attendance cards.</p>
+          <h1>Staff Management & RFID System</h1>
+          <p>Admin control for staff accounts, employment designations, and ESP32 RFID card enrollment.</p>
         </div>
 
-        <button type="button" className="adm-stf-banner-add-btn" onClick={handleAddStaff}>
+        <button type="button" className="adm-stf-banner-add-btn" onClick={handleOpenAddStaff}>
           <span className="adm-stf-plus" aria-hidden="true">+</span>
-          <span>Add staff</span>
+          <span>Add New Staff</span>
         </button>
       </header>
 
-      {/* ══════════════ TAB NAVIGATION ══════════════ */}
+      {/* ══════════════ 2. KPI OVERVIEW STATS CARDS ══════════════ */}
+      <div className="adm-stf-kpi-grid">
+        <div className="adm-stf-kpi-card">
+          <div className="kpi-icon-wrap" style={{ background: '#E8F5E9', color: '#2E7D32' }}>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </div>
+          <div className="kpi-info">
+            <span className="kpi-label">Total Staff</span>
+            <span className="kpi-value">{totalStaffCount}</span>
+          </div>
+        </div>
+
+        <div className="adm-stf-kpi-card">
+          <div className="kpi-icon-wrap" style={{ background: '#F1F8E9', color: '#558B2F' }}>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </div>
+          <div className="kpi-info">
+            <span className="kpi-label">Present on Shift</span>
+            <span className="kpi-value">{activeTodayCount}</span>
+          </div>
+        </div>
+
+        <div className="adm-stf-kpi-card">
+          <div className="kpi-icon-wrap" style={{ background: '#E0F2F1', color: '#00695C' }}>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          </div>
+          <div className="kpi-info">
+            <span className="kpi-label">Active Employment</span>
+            <span className="kpi-value">{activeEmploymentCount}</span>
+          </div>
+        </div>
+
+        <div className="adm-stf-kpi-card">
+          <div className="kpi-icon-wrap" style={{ background: '#FFF8E1', color: '#F57F17' }}>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <rect x="2" y="5" width="20" height="14" rx="2" />
+              <line x1="2" y1="10" x2="22" y2="10" />
+            </svg>
+          </div>
+          <div className="kpi-info">
+            <span className="kpi-label">RFID Cards Enrolled</span>
+            <span className="kpi-value">{rfidRegisteredCount}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ══════════════ 3. TAB NAVIGATION ══════════════ */}
       <div className="adm-stf-nav-tabs">
         <button
           type="button"
           className={`adm-stf-tab-btn ${activeTab === 'directory' ? 'is-active' : ''}`}
           onClick={() => setActiveTab('directory')}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
             <circle cx="9" cy="7" r="4" />
             <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
-          <span>Team Directory</span>
+          <span>Staff Directory</span>
           <span className="adm-stf-tab-badge">{staff.length}</span>
         </button>
 
@@ -340,13 +759,13 @@ export default function StaffPage() {
           className={`adm-stf-tab-btn ${activeTab === 'requests' ? 'is-active' : ''}`}
           onClick={() => setActiveTab('requests')}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
             <circle cx="9" cy="7" r="4" />
             <line x1="19" y1="8" x2="19" y2="14" />
             <line x1="22" y1="11" x2="16" y2="11" />
           </svg>
-          <span>Staff Registration Requests</span>
+          <span>Historical Requests</span>
           {pendingRequestsCount > 0 && (
             <span className="adm-stf-tab-badge-pending">
               {pendingRequestsCount} PENDING
@@ -355,22 +774,13 @@ export default function StaffPage() {
         </button>
       </div>
 
-      {/* ══════════════ TAB 1: TEAM DIRECTORY ══════════════ */}
+      {/* ══════════════ 4. STAFF DIRECTORY TAB ══════════════ */}
       {activeTab === 'directory' && (
         <>
-          {/* SEARCH AND STATUS FILTERS */}
-          <div className="adm-stf-toolbar">
-            <label className="adm-stf-search" aria-label="Search staff by name, role, or ID">
-              <svg
-                className="adm-stf-search-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
+          {/* MULTI-FILTER TOOLBAR */}
+          <div className="adm-stf-toolbar-advanced">
+            <label className="adm-stf-search" aria-label="Search staff by name, ID, role, or contact">
+              <svg className="adm-stf-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                 <circle cx="11" cy="11" r="7" />
                 <line x1="20" y1="20" x2="16.2" y2="16.2" />
               </svg>
@@ -379,51 +789,54 @@ export default function StaffPage() {
                 value={search}
                 maxLength={120}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search staff by name, role, or ID..."
+                placeholder="Search staff by name, ID, position, contact, email..."
               />
               {search && (
-                <button
-                  type="button"
-                  className="adm-stf-search-clear"
-                  onClick={() => setSearch('')}
-                  aria-label="Clear search"
-                >
-                  ×
-                </button>
+                <button type="button" className="adm-stf-search-clear" onClick={() => setSearch('')}>×</button>
               )}
             </label>
 
-            <div className="adm-stf-status-filter-wrap">
-              <select
-                className="adm-stf-status-filter"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                aria-label="Filter staff by status"
-              >
-                <option value="All status">All status</option>
+            {/* Position filter */}
+            <div className="adm-stf-select-wrap">
+              <select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)}>
+                <option value="All positions">All Positions</option>
+                <option value="Manager">Manager</option>
+                <option value="Head Chef">Head Chef</option>
+                <option value="Service Crew">Service Crew</option>
+                <option value="Staff">Staff</option>
+              </select>
+            </div>
+
+            {/* Employment Status filter */}
+            <div className="adm-stf-select-wrap">
+              <select value={employmentFilter} onChange={(e) => setEmploymentFilter(e.target.value)}>
+                <option value="All employment">All Employment</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+
+            {/* RFID Status filter */}
+            <div className="adm-stf-select-wrap">
+              <select value={rfidFilter} onChange={(e) => setRfidFilter(e.target.value)}>
+                <option value="All RFID">All RFID Status</option>
+                <option value="Registered">Registered</option>
+                <option value="Not Registered">Not Registered</option>
+              </select>
+            </div>
+
+            {/* Shift filter */}
+            <div className="adm-stf-select-wrap">
+              <select value={shiftFilter} onChange={(e) => setShiftFilter(e.target.value)}>
+                <option value="All shifts">All Shifts</option>
                 <option value="Present">Present</option>
                 <option value="Offline">Offline</option>
                 <option value="On break">On break</option>
-                {staff.some((p) => p.status === 'Inactive') && (
-                  <option value="Inactive">Inactive</option>
-                )}
               </select>
-              <svg
-                className="adm-stf-filter-chevron"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
             </div>
           </div>
 
-          {/* TEAM DIRECTORY TABLE CARD */}
+          {/* TABLE CONTAINER */}
           <section className="adm-stf-card" aria-label="Team directory">
             <div className="adm-stf-card-head">
               <div className="adm-stf-card-title-group">
@@ -437,20 +850,16 @@ export default function StaffPage() {
                   </svg>
                 </div>
                 <div>
-                  <h2>Team directory</h2>
+                  <h2>Staff Directory</h2>
                   <p>
-                    {staff.length} team members &middot; {activeTodayCount} active today
+                    Showing {pagination.paginatedItems.length} of {visibleStaff.length} filtered members &middot; {totalStaffCount} total staff
                   </p>
                 </div>
               </div>
 
-              <button
-                type="button"
-                className="adm-stf-card-add-btn"
-                onClick={handleAddStaff}
-              >
+              <button type="button" className="adm-stf-card-add-btn" onClick={handleOpenAddStaff}>
                 <span aria-hidden="true">+</span>
-                <span>Add staff</span>
+                <span>Add Staff</span>
               </button>
             </div>
 
@@ -459,200 +868,212 @@ export default function StaffPage() {
                 <thead>
                   <tr>
                     <th className="col-staff">Staff Member</th>
-                    <th className="col-role">Position / Role</th>
-                    <th className="col-contact">Contact</th>
-                    <th className="col-status">Status</th>
-                    <th className="col-rfid">RFID Card</th>
+                    <th className="col-role">Position</th>
+                    <th className="col-contact">Contact & Email</th>
+                    <th className="col-emp-status">Employment</th>
+                    <th className="col-status">Shift Status</th>
+                    <th className="col-rfid">RFID Card Status</th>
                     <th className="col-actions">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {pagination.paginatedItems.map((person) => {
-                    const initials = getInitials(person.name)
-                    const stClass = statusClass(person.status || 'Offline')
-                    const rfidActive = Boolean(person.rfidUid)
+                  {pagination.paginatedItems.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} style={{ textAlign: 'center', padding: '36px', color: '#6C7D72' }}>
+                        No staff members match the selected filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    pagination.paginatedItems.map((person) => {
+                      const initials = getInitials(person.name)
+                      const stClass = statusClass(person.status || 'Offline')
+                      const rfidActive = Boolean(person.rfidUid)
+                      const empStatus = person.employmentStatus || 'Active'
+                      const isEmpActive = empStatus === 'Active'
+                      const pos = person.position || person.role || 'Staff'
+                      const empId = person.employeeId || person.id
 
-                    return (
-                      <tr key={person.id} className="adm-stf-row">
-                        <td className="col-staff">
-                          <div className="adm-stf-person">
-                            <span className="adm-stf-avatar" aria-hidden="true">
-                              {initials}
-                            </span>
-                            <div className="adm-stf-meta">
-                              <span className="adm-stf-name">{person.name}</span>
-                              <span className="adm-stf-id">{person.id}</span>
+                      return (
+                        <tr key={person.id} className={`adm-stf-row ${!isEmpActive ? 'is-inactive-row' : ''}`}>
+                          <td className="col-staff">
+                            <div
+                              className="adm-stf-person is-clickable"
+                              onClick={() => handleOpenStaffDetails(person)}
+                              title="Click to view full details"
+                              style={{ cursor: 'pointer' }}
+                            >
+                              <span className="adm-stf-avatar" aria-hidden="true">
+                                {initials}
+                              </span>
+                              <div className="adm-stf-meta">
+                                <span className="adm-stf-name">{person.name}</span>
+                                <span className="adm-stf-empid-badge">{empId}</span>
+                              </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
 
-                        <td className="col-role">
-                          <span className="adm-stf-role">{person.role}</span>
-                        </td>
-
-                        <td className="col-contact">
-                          <span className="adm-stf-contact">{person.contact || '—'}</span>
-                        </td>
-
-                        <td className="col-status">
-                          <span className={`adm-stf-status-badge status-${stClass}`}>
-                            <i className="adm-stf-status-dot" aria-hidden="true" />
-                            <span>{person.status}</span>
-                          </span>
-                        </td>
-
-                        <td className="col-rfid">
-                          {rfidActive ? (
-                            <span className="adm-stf-rfid-active-badge" title={`RFID UID: ${person.rfidUid}`}>
-                              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="2" y="5" width="20" height="14" rx="2" />
-                                <line x1="2" y1="10" x2="22" y2="10" />
-                              </svg>
-                              <code>{person.rfidUid}</code>
+                          <td className="col-role">
+                            <span className={`adm-stf-position-tag pos-${pos.toLowerCase().replace(/\s+/g, '-')}`}>
+                              {pos}
                             </span>
-                          ) : (
-                            <button
-                              type="button"
-                              className="adm-stf-enroll-btn"
-                              onClick={() => handleStartEnrollment(person)}
-                              title="Start RFID enrollment on ESP32 terminal"
-                            >
-                              Enroll Card
-                            </button>
-                          )}
-                        </td>
+                          </td>
 
-                        <td className="col-actions">
-                          <div className="adm-stf-action-group">
-                            <button
-                              type="button"
-                              className="adm-stf-action-btn edit-btn"
-                              onClick={() => setDialog({ type: 'edit', entity: 'staff', item: person })}
-                              aria-label={`Edit ${person.name}`}
-                              title="Edit staff details"
-                            >
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                              </svg>
-                            </button>
+                          <td className="col-contact">
+                            <div className="adm-stf-contact-meta">
+                              <span className="contact-phone">{person.contact || '—'}</span>
+                              {person.email && <small className="contact-email">{person.email}</small>}
+                            </div>
+                          </td>
 
-                            <button
-                              type="button"
-                              className="adm-stf-action-btn delete-btn"
-                              onClick={() => setDialog({ type: 'delete', entity: 'staff', item: person })}
-                              aria-label={`Delete ${person.name}`}
-                              title="Delete staff member"
-                            >
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                <polyline points="3 6 5 6 21 6" />
-                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                                <path d="M10 11v6" />
-                                <path d="M14 11v6" />
-                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
+                          <td className="col-emp-status">
+                            <span className={`adm-stf-emp-pill ${isEmpActive ? 'status-active' : 'status-inactive'}`}>
+                              <i className="adm-stf-status-dot" aria-hidden="true" />
+                              <span>{empStatus}</span>
+                            </span>
+                          </td>
+
+                          <td className="col-status">
+                            <span className={`adm-stf-status-badge status-${stClass}`}>
+                              <i className="adm-stf-status-dot" aria-hidden="true" />
+                              <span>{person.status || 'Offline'}</span>
+                            </span>
+                          </td>
+
+                          <td className="col-rfid">
+                            {rfidActive ? (
+                              <div className="adm-stf-rfid-chip-tag" title={`Card UID: ${person.rfidUid}`}>
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                  <rect x="2" y="5" width="20" height="14" rx="2" />
+                                  <line x1="2" y1="10" x2="22" y2="10" />
+                                </svg>
+                                <code>{person.rfidUid}</code>
+                                <span className="rfid-status-text">Registered</span>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                className="adm-stf-enroll-btn"
+                                onClick={() => handleStartEnrollment(person)}
+                                title="Start RFID enrollment on ESP32 terminal"
+                              >
+                                Enroll Card
+                              </button>
+                            )}
+                          </td>
+
+                          <td className="col-actions">
+                            <div className="adm-stf-action-group">
+                              {/* View Details */}
+                              <button
+                                type="button"
+                                className="adm-stf-action-btn view-btn"
+                                onClick={() => handleOpenStaffDetails(person)}
+                                title="View full profile & RFID history"
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                  <circle cx="12" cy="12" r="3" />
+                                </svg>
+                              </button>
+
+                              {/* Edit Staff */}
+                              <button
+                                type="button"
+                                className="adm-stf-action-btn edit-btn"
+                                onClick={() => handleOpenEditStaff(person)}
+                                title="Edit staff information"
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                              </button>
+
+                              {/* Enroll / Replace RFID */}
+                              <button
+                                type="button"
+                                className="adm-stf-action-btn rfid-action-btn"
+                                onClick={() => handleStartEnrollment(person)}
+                                title={rfidActive ? 'Replace RFID Card' : 'Register RFID Card'}
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                  <rect x="2" y="5" width="20" height="14" rx="2" />
+                                  <line x1="2" y1="10" x2="22" y2="10" />
+                                </svg>
+                              </button>
+
+                              {/* Toggle Employment Status */}
+                              <button
+                                type="button"
+                                className={`adm-stf-action-btn toggle-btn ${isEmpActive ? 'deactivate-icon' : 'activate-icon'}`}
+                                onClick={() => handleToggleEmploymentStatus(person)}
+                                title={isEmpActive ? 'Deactivate staff account' : 'Reactivate staff account'}
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                  <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                                  <line x1="12" y1="2" x2="12" y2="12" />
+                                </svg>
+                              </button>
+
+                              {/* Delete Staff */}
+                              <button
+                                type="button"
+                                className="adm-stf-action-btn delete-btn"
+                                onClick={() => handleDeleteStaff(person)}
+                                title="Delete staff account permanently"
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                  <path d="M10 11v6" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
                 </tbody>
               </table>
-
-              {pagination.paginatedItems.length === 0 && (
-                <div className="adm-stf-empty">
-                  No staff members match your current search or status filter.
-                </div>
-              )}
             </div>
 
-            {/* PAGINATION FOOTER */}
-            <div className="adm-stf-footer">
-              <div className="adm-stf-footer-left">
-                <span className="adm-stf-showing">
-                  Showing <strong>{pagination.startEntry}&ndash;{pagination.endEntry}</strong> of{' '}
-                  <strong>{pagination.totalItems}</strong> staff
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="adm-stf-pagination">
+                <span className="pagination-text">
+                  Page {pagination.currentPage} of {pagination.totalPages}
                 </span>
-
-                <label className="adm-stf-rows-label">
-                  <span>Rows per page:</span>
-                  <div className="adm-stf-rows-select-wrap">
-                    <select
-                      value={pagination.pageSize}
-                      onChange={(e) => pagination.onPageSizeChange(Number(e.target.value))}
-                      aria-label="Rows per page"
-                    >
-                      {PAGE_SIZE_CHOICES.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </div>
-                </label>
-              </div>
-
-              <div className="adm-stf-footer-right">
-                <button
-                  type="button"
-                  className="adm-stf-page-nav"
-                  disabled={pagination.currentPage <= 1}
-                  onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
-                >
-                  &lsaquo; Previous
-                </button>
-
-                <div className="adm-stf-page-numbers">
-                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((pageNum) => (
-                    <button
-                      key={pageNum}
-                      type="button"
-                      className={`adm-stf-page-num${pageNum === pagination.currentPage ? ' is-active' : ''}`}
-                      aria-current={pageNum === pagination.currentPage ? 'page' : undefined}
-                      onClick={() => pagination.onPageChange(pageNum)}
-                    >
-                      {pageNum}
-                    </button>
-                  ))}
+                <div className="pagination-buttons">
+                  <button
+                    type="button"
+                    disabled={!pagination.canPrev}
+                    onClick={pagination.prevPage}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!pagination.canNext}
+                    onClick={pagination.nextPage}
+                  >
+                    Next
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  className="adm-stf-page-nav"
-                  disabled={pagination.currentPage >= pagination.totalPages}
-                  onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-                >
-                  Next &rsaquo;
-                </button>
               </div>
-            </div>
+            )}
           </section>
         </>
       )}
 
-      {/* ══════════════ TAB 2: STAFF REGISTRATION REQUESTS ══════════════ */}
+      {/* ══════════════ 5. HISTORICAL REQUESTS TAB ══════════════ */}
       {activeTab === 'requests' && (
-        <section className="adm-stf-card" aria-label="Staff registration requests">
+        <section className="adm-stf-card">
           <div className="adm-stf-card-head">
-            <div className="adm-stf-card-title-group">
-              <div className="adm-stf-team-icon" style={{ background: '#FFF3E0', color: '#E65100' }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <line x1="19" y1="8" x2="19" y2="14" />
-                  <line x1="22" y1="11" x2="16" y2="11" />
-                </svg>
-              </div>
-              <div>
-                <h2>Staff Registration Requests</h2>
-                <p>Mobile app registration submissions awaiting Admin approval or RFID card enrollment.</p>
-              </div>
+            <div>
+              <h2>Staff Registration Requests</h2>
+              <p>Mobile app registration submissions awaiting Admin approval or RFID card enrollment.</p>
             </div>
-
             <div className="adm-stf-requests-filter-pills">
               {['All', 'PENDING', 'APPROVED', 'REJECTED'].map((f) => (
                 <button
@@ -694,37 +1115,29 @@ export default function StaffPage() {
                       <td>
                         <div
                           className="adm-stf-person is-clickable"
-                          onClick={() => handleOpenReview(req)}
-                          title="Click to review applicant info"
+                          onClick={() => {
+                            setReviewTarget(req)
+                            setReviewModalOpen(true)
+                          }}
                           style={{ cursor: 'pointer' }}
                         >
-                          <span className="adm-stf-avatar" style={{ background: isPending ? '#FFF3E0' : undefined, color: isPending ? '#E65100' : undefined }}>
-                            {initials}
-                          </span>
+                          <span className="adm-stf-avatar">{initials}</span>
                           <div className="adm-stf-meta">
                             <span className="adm-stf-name">{req.name}</span>
                             <span className="adm-stf-id">{req.id}</span>
                           </div>
                         </div>
                       </td>
-
+                      <td>{req.contact || '—'}</td>
                       <td>
-                        <span className="adm-stf-contact">{req.contact || '—'}</span>
+                        <span className="adm-stf-position-tag">{req.position || 'Staff'}</span>
                       </td>
-
-                      <td>
-                        <span className="adm-stf-position-badge">
-                          {req.position || 'Staff'}
-                        </span>
-                      </td>
-
                       <td>
                         <div className="adm-stf-date-meta">
                           <span>{req.approvedAt ? new Date(req.approvedAt).toLocaleDateString() : (req.createdAt ? new Date(req.createdAt).toLocaleDateString() : 'Recent')}</span>
                           {req.approvedBy && <small>By: {req.approvedBy}</small>}
                         </div>
                       </td>
-
                       <td>
                         <span className={`adm-stf-approval-pill status-${(req.approvalStatus || 'pending').toLowerCase()}`}>
                           {isPending && <span className="adm-stf-pulse-dot" />}
@@ -736,97 +1149,55 @@ export default function StaffPage() {
                           </div>
                         )}
                       </td>
-
                       <td>
                         {isRfidActive ? (
-                          <span className="adm-stf-rfid-active-badge">
-                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2">
-                              <rect x="2" y="5" width="20" height="14" rx="2" />
-                              <line x1="2" y1="10" x2="22" y2="10" />
-                            </svg>
+                          <div className="adm-stf-rfid-chip-tag">
                             <code>{req.rfidUid}</code>
-                          </span>
+                          </div>
                         ) : isApproved ? (
                           <button
                             type="button"
                             className="adm-stf-enroll-btn"
                             onClick={() => handleStartEnrollment(req)}
                           >
-                            Enroll RFID
+                            Enroll Card
                           </button>
                         ) : (
-                          <span className="adm-stf-rfid-locked">Requires Approval</span>
+                          <span className="adm-stf-rfid-blocked">Awaiting Approval</span>
                         )}
                       </td>
-
                       <td>
-                        <div className="adm-stf-req-actions">
-                          <button
-                            type="button"
-                            className="adm-stf-review-btn"
-                            onClick={() => handleOpenReview(req)}
-                            title="Review applicant information before accepting or rejecting"
-                          >
-                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                              <circle cx="12" cy="12" r="3" />
-                            </svg>
-                            Review
-                          </button>
-
+                        <div className="adm-stf-action-group">
                           {isPending && (
                             <>
                               <button
                                 type="button"
-                                className="adm-stf-accept-btn"
-                                onClick={() => handleApprove(req)}
-                                title="Approve registration and unlock RFID enrollment"
+                                className="adm-stf-req-btn accept-btn"
+                                onClick={() => handleApproveRequest(req)}
+                                title="Approve Request"
                               >
                                 Accept
                               </button>
                               <button
                                 type="button"
-                                className="adm-stf-reject-btn"
-                                onClick={() => handleOpenReject(req)}
-                                title="Reject registration with reason"
+                                className="adm-stf-req-btn reject-btn"
+                                onClick={() => handleOpenRejectRequest(req)}
+                                title="Reject Request"
                               >
                                 Reject
                               </button>
                             </>
                           )}
-
-                          {isApproved && (
-                            <button
-                              type="button"
-                              className="adm-stf-enroll-card-btn"
-                              onClick={() => handleStartEnrollment(req)}
-                            >
-                              Enroll Card
-                            </button>
-                          )}
-
-                          {isRejected && (
-                            <button
-                              type="button"
-                              className="adm-stf-re-review-btn"
-                              onClick={() => handleApprove(req)}
-                              title="Re-review and approve this registration without creating duplicates"
-                            >
-                              Re-review / Accept
-                            </button>
-                          )}
-
                           <button
                             type="button"
-                            className="adm-stf-delete-req-btn"
+                            className="adm-stf-action-btn delete-btn"
                             onClick={() => handleDeleteRequest(req)}
-                            title="Delete this registration request and user account permanently"
+                            title="Delete Request"
                           >
-                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                               <polyline points="3 6 5 6 21 6" />
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                             </svg>
-                            Delete
                           </button>
                         </div>
                       </td>
@@ -835,203 +1206,773 @@ export default function StaffPage() {
                 })}
               </tbody>
             </table>
-
-            {visibleRequests.length === 0 && (
-              <div className="adm-stf-empty">
-                No registration requests found in this category.
-              </div>
-            )}
           </div>
         </section>
       )}
 
-      {/* ══════════════ REVIEW APPLICANT DETAILS MODAL ══════════════ */}
-      {reviewModalOpen && reviewTarget && (
-        <div className="adm-stf-modal-backdrop" onClick={() => setReviewModalOpen(false)}>
-          <div className="adm-stf-modal-card review-modal-card" onClick={(e) => e.stopPropagation()}>
+      {/* ══════════════ MODAL 1: PROFESSIONAL STAFF REGISTRATION ══════════════ */}
+      {addModalOpen && (
+        <div className="adm-stf-modal-backdrop" onClick={() => !isSubmittingAdd && setAddModalOpen(false)}>
+          <div className="adm-stf-modal-card modal-large" onClick={(e) => e.stopPropagation()}>
             <div className="adm-stf-modal-head">
-              <div className="adm-stf-modal-head-icon review-icon">
+              <div className="adm-stf-modal-head-icon" style={{ background: '#E8F5E9', color: '#1B5E20' }}>
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <line x1="19" y1="8" x2="19" y2="14" />
+                  <line x1="22" y1="11" x2="16" y2="11" />
                 </svg>
               </div>
               <div>
-                <h3>Review Staff Application</h3>
-                <p>Suriin ang mga impormasyon ng nag-register bago i-accept o i-reject.</p>
+                <h3>Add New Staff Account</h3>
+                <p>Register complete staff employment records, credentials, and prepare RFID card enrollment.</p>
               </div>
-              <button type="button" className="adm-stf-modal-close" onClick={() => setReviewModalOpen(false)}>
+              <button
+                type="button"
+                className="adm-stf-modal-close"
+                onClick={() => setAddModalOpen(false)}
+                disabled={isSubmittingAdd}
+              >
                 ×
               </button>
             </div>
 
-            <div className="adm-stf-modal-body review-modal-content">
-              {/* Profile Card Header */}
-              <div className="adm-stf-review-profile-header">
-                <span className="adm-stf-review-avatar">
-                  {getInitials(reviewTarget.name)}
-                </span>
-                <div className="adm-stf-review-profile-meta">
-                  <h4>{reviewTarget.name}</h4>
-                  <div className="adm-stf-review-badges">
-                    <span className="adm-stf-position-badge">{reviewTarget.position || 'Staff'}</span>
-                    <span className={`adm-stf-approval-pill status-${(reviewTarget.approvalStatus || 'pending').toLowerCase()}`}>
-                      {reviewTarget.approvalStatus === 'PENDING' && <span className="adm-stf-pulse-dot" />}
-                      <span>{reviewTarget.approvalStatus || 'PENDING'}</span>
+            <form onSubmit={handleSubmitAddStaff} className="adm-stf-modal-body form-modal-body">
+              {/* SECTION A: PERSONAL INFORMATION */}
+              <div className="form-section-card">
+                <div className="form-section-header">
+                  <span className="section-number">1</span>
+                  <h4>Personal Information</h4>
+                </div>
+                <div className="form-grid-3">
+                  <div className="form-field">
+                    <label>First Name <em>*</em></label>
+                    <input
+                      type="text"
+                      value={addForm.firstName}
+                      onChange={(e) => setAddForm({ ...addForm, firstName: e.target.value })}
+                      placeholder="e.g. Juan"
+                      required
+                    />
+                    {addFormErrors.firstName && <span className="field-error">{addFormErrors.firstName}</span>}
+                  </div>
+                  <div className="form-field">
+                    <label>Middle Name <small>(Optional)</small></label>
+                    <input
+                      type="text"
+                      value={addForm.middleName}
+                      onChange={(e) => setAddForm({ ...addForm, middleName: e.target.value })}
+                      placeholder="e.g. Protacio"
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label>Last Name <em>*</em></label>
+                    <input
+                      type="text"
+                      value={addForm.lastName}
+                      onChange={(e) => setAddForm({ ...addForm, lastName: e.target.value })}
+                      placeholder="e.g. Rizal"
+                      required
+                    />
+                    {addFormErrors.lastName && <span className="field-error">{addFormErrors.lastName}</span>}
+                  </div>
+                </div>
+
+                <div className="form-grid-3">
+                  <div className="form-field">
+                    <label>Birthdate <em>*</em></label>
+                    <input
+                      type="date"
+                      value={addForm.birthdate}
+                      onChange={(e) => setAddForm({ ...addForm, birthdate: e.target.value })}
+                      required
+                    />
+                    {addFormErrors.birthdate && <span className="field-error">{addFormErrors.birthdate}</span>}
+                  </div>
+                  <div className="form-field">
+                    <label>Gender</label>
+                    <select
+                      value={addForm.gender}
+                      onChange={(e) => setAddForm({ ...addForm, gender: e.target.value })}
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Prefer not to say">Prefer not to say</option>
+                    </select>
+                  </div>
+                  <div className="form-field">
+                    <label>Contact Number <em>*</em></label>
+                    <input
+                      type="tel"
+                      value={addForm.contactNumber}
+                      onChange={(e) => setAddForm({ ...addForm, contactNumber: e.target.value })}
+                      placeholder="e.g. 09171234567"
+                      required
+                    />
+                    {addFormErrors.contactNumber && <span className="field-error">{addFormErrors.contactNumber}</span>}
+                  </div>
+                </div>
+
+                <div className="form-grid-2">
+                  <div className="form-field">
+                    <label>Email Address <em>*</em></label>
+                    <input
+                      type="email"
+                      value={addForm.email}
+                      onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                      placeholder="e.g. staff.member@gmail.com"
+                      required
+                    />
+                    {addFormErrors.email && <span className="field-error">{addFormErrors.email}</span>}
+                  </div>
+                  <div className="form-field">
+                    <label>Home Address</label>
+                    <input
+                      type="text"
+                      value={addForm.address}
+                      onChange={(e) => setAddForm({ ...addForm, address: e.target.value })}
+                      placeholder="e.g. 123 Rizal St, Legazpi City"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION B: EMPLOYMENT INFORMATION */}
+              <div className="form-section-card">
+                <div className="form-section-header">
+                  <span className="section-number">2</span>
+                  <h4>Employment Information</h4>
+                </div>
+
+                <div className="form-grid-3">
+                  <div className="form-field">
+                    <div className="label-with-action">
+                      <label>Employee ID <em>*</em></label>
+                      <button
+                        type="button"
+                        className="btn-text-action"
+                        onClick={() => setAddForm({ ...addForm, employeeId: `EMP-${Date.now().toString().slice(-4)}` })}
+                      >
+                        Auto-generate
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={addForm.employeeId}
+                      onChange={(e) => setAddForm({ ...addForm, employeeId: e.target.value })}
+                      required
+                    />
+                    {addFormErrors.employeeId && <span className="field-error">{addFormErrors.employeeId}</span>}
+                  </div>
+
+                  <div className="form-field">
+                    <label>Position <em>*</em></label>
+                    <select
+                      value={addForm.position}
+                      onChange={(e) => setAddForm({ ...addForm, position: e.target.value })}
+                      required
+                    >
+                      <option value="Manager">Manager</option>
+                      <option value="Head Chef">Head Chef</option>
+                      <option value="Service Crew">Service Crew</option>
+                      <option value="Staff">Staff</option>
+                    </select>
+                  </div>
+
+                  <div className="form-field">
+                    <label>Date Hired</label>
+                    <input
+                      type="date"
+                      value={addForm.dateHired}
+                      onChange={(e) => setAddForm({ ...addForm, dateHired: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-grid-2">
+                  <div className="form-field">
+                    <label>Employment Status</label>
+                    <select
+                      value={addForm.employmentStatus}
+                      onChange={(e) => setAddForm({ ...addForm, employmentStatus: e.target.value })}
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+                  <div className="form-field-callout">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="16" x2="12" y2="12" />
+                      <line x1="12" y1="8" x2="12.01" y2="8" />
+                    </svg>
+                    <span>
+                      Position is an employment designation. All staff accounts operate under Staff role authorizations. Selecting Manager does not grant Admin privileges.
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Information Grid */}
-              <div className="adm-stf-review-details-grid">
-                <div className="detail-item">
-                  <span className="detail-label">Buong Pangalan (Full Name)</span>
-                  <span className="detail-value">{reviewTarget.name}</span>
+              {/* SECTION C: ACCOUNT INFORMATION */}
+              <div className="form-section-card">
+                <div className="form-section-header">
+                  <span className="section-number">3</span>
+                  <h4>Account Credentials</h4>
                 </div>
-                <div className="detail-item">
-                  <span className="detail-label">Posisyon (Position)</span>
-                  <span className="detail-value position-value">{reviewTarget.position || 'Staff'}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Email Address</span>
-                  <span className="detail-value highlight-value">{reviewTarget.email || '—'}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Contact / Phone</span>
-                  <span className="detail-value">{reviewTarget.contact || '—'}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Staff / Reference ID</span>
-                  <span className="detail-value mono-value">{reviewTarget.id}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Petsa ng Pag-register</span>
-                  <span className="detail-value">
-                    {reviewTarget.createdAt ? new Date(reviewTarget.createdAt).toLocaleString() : 'Kamakailan'}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">RFID Card Status</span>
-                  <span className="detail-value">
-                    {reviewTarget.rfidStatus === 'ACTIVE' ? `Active (${reviewTarget.rfidUid})` : (reviewTarget.rfidStatus || 'UNREGISTERED')}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Approval Status</span>
-                  <span className="detail-value">
-                    {reviewTarget.approvedBy ? `${reviewTarget.approvalStatus} (ni ${reviewTarget.approvedBy})` : reviewTarget.approvalStatus}
-                  </span>
+
+                <div className="form-grid-3">
+                  <div className="form-field">
+                    <label>Username <small>(Defaults to Email)</small></label>
+                    <input
+                      type="text"
+                      value={addForm.username}
+                      onChange={(e) => setAddForm({ ...addForm, username: e.target.value })}
+                      placeholder="e.g. juan.rizal"
+                    />
+                  </div>
+
+                  <div className="form-field">
+                    <div className="label-with-action">
+                      <label>Temporary Password <em>*</em></label>
+                      <button
+                        type="button"
+                        className="btn-text-action"
+                        onClick={() => {
+                          const p = generateRandomPassword()
+                          setAddForm({ ...addForm, password: p, confirmPassword: p })
+                        }}
+                      >
+                        Random
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={addForm.password}
+                      onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
+                      placeholder="Minimum 6 characters"
+                      required
+                    />
+                    {addFormErrors.password && <span className="field-error">{addFormErrors.password}</span>}
+                  </div>
+
+                  <div className="form-field">
+                    <label>Confirm Password <em>*</em></label>
+                    <input
+                      type="text"
+                      value={addForm.confirmPassword}
+                      onChange={(e) => setAddForm({ ...addForm, confirmPassword: e.target.value })}
+                      placeholder="Re-enter password"
+                      required
+                    />
+                    {addFormErrors.confirmPassword && (
+                      <span className="field-error">{addFormErrors.confirmPassword}</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Previous Rejection Reason if any */}
-              {reviewTarget.approvalStatus === 'REJECTED' && reviewTarget.rejectionReason && (
-                <div className="adm-stf-review-rejection-box">
-                  <strong>Rejection Reason:</strong>
-                  <p>{reviewTarget.rejectionReason}</p>
-                </div>
-              )}
-
-              {/* Instructional Guide Box */}
-              <div className="adm-stf-review-guide-alert">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="16" x2="12" y2="12" />
-                  <line x1="12" y1="8" x2="12.01" y2="8" />
-                </svg>
-                <span>
-                  Pakitignan kung tama ang pangalan, contact, at posisyon. Kapag in-<strong>Accept</strong>, maaari nang i-enroll ang RFID card ng staff para sa attendance. Kapag may mali o kulang, i-click ang <strong>Reject</strong> at ipaliwanag ang dahilan.
-                </span>
+              {/* SECTION D: RFID ENROLLMENT OPTION */}
+              <div className="form-section-card rfid-option-card">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={addForm.enrollRfidImmediately}
+                    onChange={(e) => setAddForm({ ...addForm, enrollRfidImmediately: e.target.checked })}
+                  />
+                  <div>
+                    <strong>Launch RFID card enrollment on ESP32 reader immediately after saving</strong>
+                    <p>The system will open an active 180s enrollment session for this staff member.</p>
+                  </div>
+                </label>
               </div>
 
-              {/* Modal Actions */}
-              <div className="adm-stf-modal-actions review-modal-actions">
-                <button
-                  type="button"
-                  className="adm-stf-modal-btn delete-action-btn"
-                  onClick={() => {
-                    const target = reviewTarget
-                    handleDeleteRequest(target)
-                  }}
-                  title="Burahin ang account at application ng user na ito nang permanente"
-                >
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" style={{ marginRight: 4, verticalAlign: 'middle' }}>
-                    <polyline points="3 6 5 6 21 6" />
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                  </svg>
-                  Delete User
-                </button>
-
+              <div className="adm-stf-modal-actions">
                 <button
                   type="button"
                   className="adm-stf-modal-btn cancel-btn"
-                  onClick={() => setReviewModalOpen(false)}
+                  onClick={() => setAddModalOpen(false)}
+                  disabled={isSubmittingAdd}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="adm-stf-modal-btn save-btn"
+                  disabled={isSubmittingAdd}
+                >
+                  {isSubmittingAdd ? 'Creating Staff Account...' : 'Save & Register Staff'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════ MODAL 2: EDIT STAFF MODAL ══════════════ */}
+      {editModalOpen && editTarget && (
+        <div className="adm-stf-modal-backdrop" onClick={() => !isSubmittingEdit && setEditModalOpen(false)}>
+          <div className="adm-stf-modal-card modal-large" onClick={(e) => e.stopPropagation()}>
+            <div className="adm-stf-modal-head">
+              <div className="adm-stf-modal-head-icon" style={{ background: '#E3F2FD', color: '#1565C0' }}>
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+              </div>
+              <div>
+                <h3>Edit Staff Information</h3>
+                <p>Updating profile for <strong>{editTarget.name}</strong> ({editTarget.employeeId || editTarget.id})</p>
+              </div>
+              <button
+                type="button"
+                className="adm-stf-modal-close"
+                onClick={() => setEditModalOpen(false)}
+                disabled={isSubmittingEdit}
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitEditStaff} className="adm-stf-modal-body form-modal-body">
+              <div className="form-section-card">
+                <h4>Personal Details</h4>
+                <div className="form-grid-3">
+                  <div className="form-field">
+                    <label>First Name <em>*</em></label>
+                    <input
+                      type="text"
+                      value={editForm.firstName}
+                      onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                      required
+                    />
+                    {editFormErrors.firstName && <span className="field-error">{editFormErrors.firstName}</span>}
+                  </div>
+                  <div className="form-field">
+                    <label>Middle Name</label>
+                    <input
+                      type="text"
+                      value={editForm.middleName}
+                      onChange={(e) => setEditForm({ ...editForm, middleName: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label>Last Name <em>*</em></label>
+                    <input
+                      type="text"
+                      value={editForm.lastName}
+                      onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                      required
+                    />
+                    {editFormErrors.lastName && <span className="field-error">{editFormErrors.lastName}</span>}
+                  </div>
+                </div>
+
+                <div className="form-grid-3">
+                  <div className="form-field">
+                    <label>Birthdate</label>
+                    <input
+                      type="date"
+                      value={editForm.birthdate}
+                      onChange={(e) => setEditForm({ ...editForm, birthdate: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label>Gender</label>
+                    <select
+                      value={editForm.gender}
+                      onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })}
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Prefer not to say">Prefer not to say</option>
+                    </select>
+                  </div>
+                  <div className="form-field">
+                    <label>Contact Number <em>*</em></label>
+                    <input
+                      type="tel"
+                      value={editForm.contactNumber}
+                      onChange={(e) => setEditForm({ ...editForm, contactNumber: e.target.value })}
+                      required
+                    />
+                    {editFormErrors.contactNumber && (
+                      <span className="field-error">{editFormErrors.contactNumber}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-grid-2">
+                  <div className="form-field">
+                    <label>Email Address <em>*</em></label>
+                    <input
+                      type="email"
+                      value={editForm.email}
+                      onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                      required
+                    />
+                    {editFormErrors.email && <span className="field-error">{editFormErrors.email}</span>}
+                  </div>
+                  <div className="form-field">
+                    <label>Home Address</label>
+                    <input
+                      type="text"
+                      value={editForm.address}
+                      onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-section-card">
+                <h4>Employment Details</h4>
+                <div className="form-grid-3">
+                  <div className="form-field">
+                    <label>Position <em>*</em></label>
+                    <select
+                      value={editForm.position}
+                      onChange={(e) => setEditForm({ ...editForm, position: e.target.value })}
+                      required
+                    >
+                      <option value="Manager">Manager</option>
+                      <option value="Head Chef">Head Chef</option>
+                      <option value="Service Crew">Service Crew</option>
+                      <option value="Staff">Staff</option>
+                    </select>
+                  </div>
+
+                  <div className="form-field">
+                    <label>Date Hired</label>
+                    <input
+                      type="date"
+                      value={editForm.dateHired}
+                      onChange={(e) => setEditForm({ ...editForm, dateHired: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-field">
+                    <label>Employment Status</label>
+                    <select
+                      value={editForm.employmentStatus}
+                      onChange={(e) => setEditForm({ ...editForm, employmentStatus: e.target.value })}
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="adm-stf-modal-actions">
+                <button
+                  type="button"
+                  className="adm-stf-modal-btn cancel-btn"
+                  onClick={() => setEditModalOpen(false)}
+                  disabled={isSubmittingEdit}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="adm-stf-modal-btn save-btn"
+                  disabled={isSubmittingEdit}
+                >
+                  {isSubmittingEdit ? 'Saving Changes...' : 'Save Updates'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════ MODAL 3: STAFF DETAILS & RFID MANAGEMENT MODAL ══════════════ */}
+      {detailsModalOpen && detailsTarget && (
+        <div className="adm-stf-modal-backdrop" onClick={() => setDetailsModalOpen(false)}>
+          <div className="adm-stf-modal-card modal-large" onClick={(e) => e.stopPropagation()}>
+            <div className="adm-stf-modal-head">
+              <div className="adm-stf-modal-head-icon" style={{ background: '#F3E5F5', color: '#7B1FA2' }}>
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </div>
+              <div>
+                <h3>Staff Profile & RFID History</h3>
+                <p>Complete information and attendance card audit trail</p>
+              </div>
+              <button type="button" className="adm-stf-modal-close" onClick={() => setDetailsModalOpen(false)}>
+                ×
+              </button>
+            </div>
+
+            <div className="adm-stf-modal-body">
+              {/* Profile Header Summary */}
+              <div className="details-profile-summary">
+                <div className="summary-avatar">{getInitials(detailsTarget.name)}</div>
+                <div className="summary-texts">
+                  <div className="summary-name-row">
+                    <h3>{detailsTarget.name}</h3>
+                    <span className="adm-stf-position-tag">{detailsTarget.position || detailsTarget.role || 'Staff'}</span>
+                    <span className={`adm-stf-emp-pill ${detailsTarget.employmentStatus === 'Inactive' ? 'status-inactive' : 'status-active'}`}>
+                      {detailsTarget.employmentStatus || 'Active'}
+                    </span>
+                  </div>
+                  <div className="summary-sub-row">
+                    <span><strong>Employee ID:</strong> {detailsTarget.employeeId || detailsTarget.id}</span>
+                    <span>&bull;</span>
+                    <span><strong>Date Hired:</strong> {detailsTarget.dateHired || '—'}</span>
+                    <span>&bull;</span>
+                    <span><strong>Current Shift:</strong> {detailsTarget.status || 'Offline'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Personal & Employment Details Grid */}
+              <div className="details-info-grid">
+                <div className="info-block">
+                  <span className="info-label">Email Address</span>
+                  <span className="info-value">{detailsTarget.email || detailsTarget.contact || '—'}</span>
+                </div>
+                <div className="info-block">
+                  <span className="info-label">Contact Number</span>
+                  <span className="info-value">{detailsTarget.contact || '—'}</span>
+                </div>
+                <div className="info-block">
+                  <span className="info-label">Birthdate</span>
+                  <span className="info-value">{detailsTarget.birthdate || '—'}</span>
+                </div>
+                <div className="info-block">
+                  <span className="info-label">Gender</span>
+                  <span className="info-value">{detailsTarget.gender || '—'}</span>
+                </div>
+                <div className="info-block full-width">
+                  <span className="info-label">Home Address</span>
+                  <span className="info-value">{detailsTarget.address || '—'}</span>
+                </div>
+              </div>
+
+              {/* Active RFID Card Control Card */}
+              <div className="details-rfid-card">
+                <div className="rfid-card-header">
+                  <div className="rfid-card-icon">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                      <rect x="2" y="5" width="20" height="14" rx="2" />
+                      <line x1="2" y1="10" x2="22" y2="10" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4>RFID Attendance Card</h4>
+                    <p>ESP32 RC522 Reader Integration & Attendance Verification</p>
+                  </div>
+                </div>
+
+                <div className="rfid-card-body">
+                  {detailsTarget.rfidUid ? (
+                    <div className="rfid-registered-display">
+                      <div className="rfid-uid-chip">
+                        <span className="chip-badge">ACTIVE CARD</span>
+                        <code>{detailsTarget.rfidUid}</code>
+                      </div>
+                      <div className="rfid-actions-row">
+                        <button
+                          type="button"
+                          className="adm-stf-enroll-btn"
+                          onClick={() => handleStartEnrollment(detailsTarget)}
+                        >
+                          Replace Card
+                        </button>
+                        <button
+                          type="button"
+                          className="adm-stf-deactivate-btn"
+                          onClick={() => handleDeactivateRfid(detailsTarget)}
+                        >
+                          Deactivate Card
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rfid-unregistered-display">
+                      <span className="rfid-not-registered-tag">Not Registered</span>
+                      <p>This staff member does not have an RFID attendance card linked yet.</p>
+                      <button
+                        type="button"
+                        className="adm-stf-enroll-btn"
+                        onClick={() => handleStartEnrollment(detailsTarget)}
+                      >
+                        Register RFID Card Now
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* RFID Assignment History Audit Table */}
+              <div className="details-history-section">
+                <h4>RFID Card Assignment History & Audit Trail</h4>
+                {loadingHistory ? (
+                  <p className="loading-text">Loading card assignment history...</p>
+                ) : rfidHistory.length === 0 ? (
+                  <p className="no-history-text">No previous RFID card assignments found for this staff member.</p>
+                ) : (
+                  <div className="adm-stf-table-scroll">
+                    <table className="adm-stf-table history-table">
+                      <thead>
+                        <tr>
+                          <th>Card UID</th>
+                          <th>Status</th>
+                          <th>Registered At</th>
+                          <th>Registered By</th>
+                          <th>Deactivated At</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rfidHistory.map((h) => (
+                          <tr key={h.id}>
+                            <td><code>{h.rfid_uid}</code></td>
+                            <td>
+                              <span className={`adm-stf-emp-pill ${h.card_status === 'Active' ? 'status-active' : 'status-inactive'}`}>
+                                {h.card_status}
+                              </span>
+                            </td>
+                            <td>{h.registered_at || '—'}</td>
+                            <td>{h.registered_by || 'Admin'}</td>
+                            <td>{h.deactivated_at || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              <div className="adm-stf-modal-actions">
+                <button
+                  type="button"
+                  className="adm-stf-modal-btn cancel-btn"
+                  onClick={() => setDetailsModalOpen(false)}
                 >
                   Close
                 </button>
-
-                {reviewTarget.approvalStatus === 'PENDING' && (
-                  <>
-                    <button
-                      type="button"
-                      className="adm-stf-modal-btn reject-action-btn"
-                      onClick={() => {
-                        const target = reviewTarget
-                        setReviewModalOpen(false)
-                        handleOpenReject(target)
-                      }}
-                    >
-                      Reject Application
-                    </button>
-                    <button
-                      type="button"
-                      className="adm-stf-modal-btn accept-action-btn"
-                      onClick={() => {
-                        const target = reviewTarget
-                        setReviewModalOpen(false)
-                        handleApprove(target)
-                      }}
-                    >
-                      Accept & Unlock RFID
-                    </button>
-                  </>
-                )}
-
-                {reviewTarget.approvalStatus === 'REJECTED' && (
-                  <button
-                    type="button"
-                    className="adm-stf-modal-btn accept-action-btn"
-                    onClick={() => {
-                      const target = reviewTarget
-                      setReviewModalOpen(false)
-                      handleApprove(target)
-                    }}
-                  >
-                    Re-review / Accept
-                  </button>
-                )}
-
-                {reviewTarget.approvalStatus === 'APPROVED' && reviewTarget.rfidStatus !== 'ACTIVE' && (
-                  <button
-                    type="button"
-                    className="adm-stf-modal-btn accept-action-btn"
-                    onClick={() => {
-                      const target = reviewTarget
-                      setReviewModalOpen(false)
-                      handleStartEnrollment(target)
-                    }}
-                  >
-                    Enroll RFID Card
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="adm-stf-modal-btn edit-action-btn"
+                  onClick={() => {
+                    setDetailsModalOpen(false)
+                    handleOpenEditStaff(detailsTarget)
+                  }}
+                >
+                  Edit Profile
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ══════════════ REJECTION REASON MODAL ══════════════ */}
+      {/* ══════════════ MODAL 4: LIVE RFID ENROLLMENT ══════════════ */}
+      {enrollModalOpen && enrollingStaff && (
+        <div className="adm-stf-modal-backdrop" onClick={handleCancelEnrollment}>
+          <div className="adm-stf-modal-card enroll-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="adm-stf-modal-head">
+              <div className="adm-stf-modal-head-icon rfid-icon">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.4">
+                  <rect x="2" y="5" width="20" height="14" rx="2" />
+                  <line x1="2" y1="10" x2="22" y2="10" />
+                </svg>
+              </div>
+              <div>
+                <h3>RFID Attendance Card Enrollment</h3>
+                <p>Linking an RFID card to <strong>{enrollingStaff.name}</strong> ({enrollingStaff.employeeId || enrollingStaff.id})</p>
+              </div>
+              <button type="button" className="adm-stf-modal-close" onClick={handleCancelEnrollment}>
+                ×
+              </button>
+            </div>
+
+            <div className="adm-stf-modal-body enroll-modal-content">
+              {enrollmentStatus === 'waiting' && (
+                <div className="adm-stf-enroll-waiting">
+                  <div className="enroll-status-badge waiting">
+                    <span className="dot pulse" />
+                    <span>Waiting for Card Scan &middot; {enrollCountdown}s</span>
+                  </div>
+
+                  <div className="adm-stf-radar-pulse">
+                    <div className="radar-circle" />
+                    <div className="radar-card-icon">
+                      <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="#2B603A" strokeWidth="2.2">
+                        <rect x="2" y="5" width="20" height="14" rx="2" />
+                        <line x1="2" y1="10" x2="22" y2="10" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div className="adm-stf-oled-mockup">
+                    <div className="oled-header">ESP32 OLED DISPLAY:</div>
+                    <div className="oled-text-line line1">READY TO SCAN</div>
+                    <div className="oled-text-line line2">ENROLL RFID CARD</div>
+                    <div className="oled-text-line line3">{enrollingStaff.name}</div>
+                  </div>
+
+                  <p className="adm-stf-enroll-instruction">
+                    Please tap the physical RFID card onto the <strong>RC522 reader</strong> on your ESP32 terminal now.
+                  </p>
+                  <small className="adm-stf-enroll-note">
+                    The Node backend checks approval, blocks duplicate cards, and logs card assignment history automatically.
+                  </small>
+                </div>
+              )}
+
+              {enrollmentStatus === 'success' && (
+                <div className="adm-stf-enroll-success">
+                  <div className="enroll-status-badge success">
+                    <span>Registered</span>
+                  </div>
+                  <div className="success-icon-wrap">
+                    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#2B603A" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </div>
+                  <h4>REGISTRATION SUCCESSFUL!</h4>
+                  <p>RFID Card <code>{enrolledUid}</code> has been linked to {enrollingStaff.name}.</p>
+                  <div className="adm-stf-oled-mockup success-oled">
+                    <div className="oled-text-line line1">REGISTRATION SUCCESSFUL</div>
+                    <div className="oled-text-line line2">{enrollingStaff.name}</div>
+                    <div className="oled-text-line line3">CARD LINKED</div>
+                  </div>
+                </div>
+              )}
+
+              {enrollmentStatus === 'error' && (
+                <div className="adm-stf-enroll-error">
+                  <div className="enroll-status-badge error">
+                    <span>Enrollment Failed</span>
+                  </div>
+                  <p className="error-msg">{enrollError || 'An error occurred during enrollment.'}</p>
+                  <button
+                    type="button"
+                    className="adm-stf-enroll-btn"
+                    onClick={() => handleStartEnrollment(enrollingStaff)}
+                  >
+                    Try Again
+                  </button>
+                </div>
+              )}
+
+              <div className="adm-stf-modal-actions">
+                <button
+                  type="button"
+                  className="adm-stf-modal-btn cancel-btn"
+                  onClick={handleCancelEnrollment}
+                >
+                  {enrollmentStatus === 'success' ? 'Done' : 'Cancel Enrollment'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════ MODAL 5: REJECTION MODAL (REQUESTS) ══════════════ */}
       {rejectModalOpen && rejectTarget && (
         <div className="adm-stf-modal-backdrop" onClick={() => !isSubmittingReject && setRejectModalOpen(false)}>
           <div className="adm-stf-modal-card" onClick={(e) => e.stopPropagation()}>
@@ -1044,7 +1985,7 @@ export default function StaffPage() {
                 </svg>
               </div>
               <div>
-                <h3>Reject Staff Registration</h3>
+                <h3>Reject Registration Request</h3>
                 <p>Provide a clear reason for rejecting this applicant.</p>
               </div>
               <button
@@ -1057,7 +1998,7 @@ export default function StaffPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmitReject} className="adm-stf-modal-body">
+            <form onSubmit={handleSubmitRejectRequest} className="adm-stf-modal-body">
               <div className="adm-stf-modal-applicant-summary">
                 <span className="summary-name">{rejectTarget.name}</span>
                 <span className="summary-pos">{rejectTarget.position || rejectTarget.role || 'Staff'}</span>
@@ -1078,9 +2019,6 @@ export default function StaffPage() {
                   required
                   autoFocus
                 />
-                <small className="form-help">
-                  This reason will be displayed in the user's mobile app account. RFID enrollment and attendance access will remain blocked.
-                </small>
               </div>
 
               <div className="adm-stf-modal-actions">
@@ -1105,89 +2043,88 @@ export default function StaffPage() {
         </div>
       )}
 
-      {/* ══════════════ LIVE RFID ENROLLMENT MODAL ══════════════ */}
-      {enrollModalOpen && enrollingStaff && (
-        <div className="adm-stf-modal-backdrop" onClick={handleCancelEnrollment}>
-          <div className="adm-stf-modal-card enroll-modal-card" onClick={(e) => e.stopPropagation()}>
+      {/* ══════════════ MODAL 6: REVIEW REQUEST DETAILS ══════════════ */}
+      {reviewModalOpen && reviewTarget && (
+        <div className="adm-stf-modal-backdrop" onClick={() => setReviewModalOpen(false)}>
+          <div className="adm-stf-modal-card review-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="adm-stf-modal-head">
-              <div className="adm-stf-modal-head-icon rfid-icon">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.4">
-                  <rect x="2" y="5" width="20" height="14" rx="2" />
-                  <line x1="2" y1="10" x2="22" y2="10" />
+              <div className="adm-stf-modal-head-icon review-icon">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
                 </svg>
               </div>
               <div>
-                <h3>RFID Attendance Card Enrollment</h3>
-                <p>Linking an RFID card to <strong>{enrollingStaff.name}</strong></p>
+                <h3>Review Staff Applicant Details</h3>
+                <p>Submitted via mobile application &middot; Awaiting Admin decision</p>
               </div>
-              <button type="button" className="adm-stf-modal-close" onClick={handleCancelEnrollment}>
+              <button type="button" className="adm-stf-modal-close" onClick={() => setReviewModalOpen(false)}>
                 ×
               </button>
             </div>
 
-            <div className="adm-stf-modal-body enroll-modal-content">
-              {enrollmentStatus === 'waiting' && (
-                <div className="adm-stf-enroll-waiting">
-                  <div className="adm-stf-radar-pulse">
-                    <div className="radar-circle" />
-                    <div className="radar-card-icon">
-                      <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="#2B603A" strokeWidth="2.2">
-                        <rect x="2" y="5" width="20" height="14" rx="2" />
-                        <line x1="2" y1="10" x2="22" y2="10" />
-                      </svg>
-                    </div>
-                  </div>
-
-                  <div className="adm-stf-oled-mockup">
-                    <div className="oled-header">ESP32 OLED DISPLAY:</div>
-                    <div className="oled-text-line line1">READY TO SCAN</div>
-                    <div className="oled-text-line line2">ENROLL RFID CARD</div>
-                    <div className="oled-text-line line3">{enrollingStaff.name}</div>
-                  </div>
-
-                  <p className="adm-stf-enroll-instruction">
-                    Please tap the physical RFID card onto the <strong>RC522 reader</strong> on your ESP32 device now.
-                  </p>
-                  <small className="adm-stf-enroll-note">
-                    The backend verifies approval and prevents duplicate RFID cards automatically.
-                  </small>
+            <div className="adm-stf-modal-body">
+              <div className="review-profile-header">
+                <span className="review-profile-avatar">{getInitials(reviewTarget.name)}</span>
+                <div className="review-profile-info">
+                  <h4>{reviewTarget.name}</h4>
+                  <span className="adm-stf-position-badge">{reviewTarget.position || reviewTarget.role || 'Staff'}</span>
                 </div>
-              )}
+              </div>
 
-              {enrollmentStatus === 'success' && (
-                <div className="adm-stf-enroll-success">
-                  <div className="success-icon-wrap">
-                    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#2B603A" strokeWidth="3">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                  <h4>REGISTRATION SUCCESSFUL!</h4>
-                  <p>RFID Card <code>{enrolledUid}</code> has been linked to {enrollingStaff.name}.</p>
-                  <div className="adm-stf-oled-mockup success-oled">
-                    <div className="oled-text-line line1">REGISTRATION SUCCESSFUL</div>
-                    <div className="oled-text-line line2">{enrollingStaff.name}</div>
-                    <div className="oled-text-line line3">CARD LINKED</div>
-                  </div>
+              <div className="review-details-grid">
+                <div className="review-detail-item">
+                  <span className="label">Contact Number</span>
+                  <span className="value">{reviewTarget.contact || '—'}</span>
                 </div>
-              )}
-
-              {enrollmentStatus === 'error' && (
-                <div className="adm-stf-enroll-error">
-                  <p className="error-msg">{enrollError || 'An error occurred during enrollment.'}</p>
-                  <button type="button" className="adm-stf-enroll-btn" onClick={() => handleStartEnrollment(enrollingStaff)}>
-                    Try Again
-                  </button>
+                <div className="review-detail-item">
+                  <span className="label">Username</span>
+                  <span className="value">{reviewTarget.username || '—'}</span>
                 </div>
-              )}
+                <div className="review-detail-item">
+                  <span className="label">Email Address</span>
+                  <span className="value">{reviewTarget.email || reviewTarget.contact || '—'}</span>
+                </div>
+                <div className="review-detail-item">
+                  <span className="label">Approval Status</span>
+                  <span className="value">{reviewTarget.approvalStatus || 'PENDING'}</span>
+                </div>
+              </div>
 
-              <div className="adm-stf-modal-actions">
+              <div className="adm-stf-modal-actions review-modal-actions">
                 <button
                   type="button"
                   className="adm-stf-modal-btn cancel-btn"
-                  onClick={handleCancelEnrollment}
+                  onClick={() => setReviewModalOpen(false)}
                 >
-                  {enrollmentStatus === 'success' ? 'Done' : 'Cancel Enrollment'}
+                  Close
                 </button>
+                {reviewTarget.approvalStatus === 'PENDING' && (
+                  <>
+                    <button
+                      type="button"
+                      className="adm-stf-modal-btn reject-action-btn"
+                      onClick={() => {
+                        const target = reviewTarget
+                        setReviewModalOpen(false)
+                        handleOpenRejectRequest(target)
+                      }}
+                    >
+                      Reject Request
+                    </button>
+                    <button
+                      type="button"
+                      className="adm-stf-modal-btn accept-action-btn"
+                      onClick={() => {
+                        const target = reviewTarget
+                        setReviewModalOpen(false)
+                        handleApproveRequest(target)
+                      }}
+                    >
+                      Accept & Enroll RFID
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

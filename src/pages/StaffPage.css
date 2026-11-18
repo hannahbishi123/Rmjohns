@@ -1549,3 +1549,622 @@
   background: #C62828;
   color: #FFFFFF;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STAFF MANAGEMENT SYSTEM — ENHANCED UI STYLES (KPIs, MODALS, DETAILS & RFID)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── KPI Grid ── */
+.adm-stf-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+}
+
+.adm-stf-kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 22px;
+  background: #FFFFFF;
+  border-radius: 16px;
+  border: 1px solid #E4E9DD;
+  box-shadow: 0 4px 14px rgba(20, 42, 30, 0.04);
+}
+
+.kpi-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.kpi-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.kpi-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #6C7D72;
+}
+
+.kpi-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #162B20;
+  line-height: 1.15;
+}
+
+/* ── Multi-Filter Toolbar ── */
+.adm-stf-toolbar-advanced {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.adm-stf-select-wrap select {
+  height: 46px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid #E2E7DB;
+  background-color: #FFFFFF;
+  color: #1A3023;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(20, 42, 30, 0.04);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.adm-stf-select-wrap select:focus,
+.adm-stf-select-wrap select:hover {
+  border-color: #1B3B2B;
+}
+
+/* ── Table Badges ── */
+.adm-stf-empid-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #556B2F;
+  background: #F1F8E9;
+  padding: 1px 7px;
+  border-radius: 6px;
+  margin-top: 2px;
+}
+
+.adm-stf-position-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  background: #E8F5E9;
+  color: #1B5E20;
+}
+
+.adm-stf-position-tag.pos-manager {
+  background: #E1F5FE;
+  color: #0277BD;
+}
+
+.adm-stf-position-tag.pos-head-chef {
+  background: #FFF3E0;
+  color: #E65100;
+}
+
+.adm-stf-position-tag.pos-service-crew {
+  background: #F3E5F5;
+  color: #7B1FA2;
+}
+
+.adm-stf-emp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.adm-stf-emp-pill.status-active {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+
+.adm-stf-emp-pill.status-active .adm-stf-status-dot {
+  background: #2E7D32;
+}
+
+.adm-stf-emp-pill.status-inactive {
+  background: #FFEBEE;
+  color: #C62828;
+}
+
+.adm-stf-emp-pill.status-inactive .adm-stf-status-dot {
+  background: #C62828;
+}
+
+.adm-stf-rfid-chip-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #F1F8E9;
+  border: 1px solid #DCEDC8;
+  color: #2E7D32;
+  font-weight: 600;
+}
+
+.adm-stf-rfid-chip-tag code {
+  font-family: monospace;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.rfid-status-text {
+  font-size: 11px;
+  background: #C8E6C9;
+  color: #1B5E20;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* ── Actions ── */
+.adm-stf-action-btn.view-btn {
+  color: #0288D1;
+}
+
+.adm-stf-action-btn.view-btn:hover {
+  background: #E1F5FE;
+}
+
+.adm-stf-action-btn.rfid-action-btn {
+  color: #689F38;
+}
+
+.adm-stf-action-btn.rfid-action-btn:hover {
+  background: #F1F8E9;
+}
+
+.adm-stf-action-btn.toggle-btn.deactivate-icon {
+  color: #D32F2F;
+}
+
+.adm-stf-action-btn.toggle-btn.deactivate-icon:hover {
+  background: #FFEBEE;
+}
+
+.adm-stf-action-btn.toggle-btn.activate-icon {
+  color: #388E3C;
+}
+
+.adm-stf-action-btn.toggle-btn.activate-icon:hover {
+  background: #E8F5E9;
+}
+
+/* ── Modal Large Size ── */
+.adm-stf-modal-card.modal-large {
+  max-width: 780px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-modal-body {
+  overflow-y: auto;
+  max-height: calc(90vh - 120px);
+  padding: 20px 28px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ── Form Section Cards ── */
+.form-section-card {
+  background: #FAFAF7;
+  border: 1px solid #E6ECE0;
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #1B3B2B;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+
+.form-section-header h4,
+.form-section-card h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1B3B2B;
+}
+
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.label-with-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-text-action {
+  border: none;
+  background: transparent;
+  color: #2E7D32;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.form-field label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #283C31;
+}
+
+.form-field label em {
+  color: #D32F2F;
+  font-style: normal;
+}
+
+.form-field input,
+.form-field select {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #D2DAC9;
+  background: #FFFFFF;
+  color: #162B20;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+  border-color: #1B3B2B;
+  box-shadow: 0 0 0 2px rgba(212, 225, 87, 0.4);
+}
+
+.field-error {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #D32F2F;
+}
+
+.form-field-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #FFF8E1;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #8D6E63;
+  line-height: 1.4;
+}
+
+.form-field-callout svg {
+  flex-shrink: 0;
+  color: #F57F17;
+  margin-top: 2px;
+}
+
+.rfid-option-card {
+  background: #F1F8E9;
+  border-color: #C5E1A5;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  cursor: pointer;
+}
+
+.checkbox-label strong {
+  font-size: 13.5px;
+  color: #1B5E20;
+}
+
+.checkbox-label p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: #558B2F;
+}
+
+.adm-stf-modal-btn.save-btn {
+  background: #1B3B2B;
+  color: #FFFFFF;
+  border: none;
+  font-weight: 800;
+}
+
+.adm-stf-modal-btn.save-btn:hover {
+  background: #132C1F;
+}
+
+/* ── Staff Details Modal Styles ── */
+.details-profile-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #F1F8E9;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.summary-avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #1B3B2B;
+  color: #D4E157;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.summary-texts h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #162B20;
+}
+
+.summary-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.summary-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #556B2F;
+  margin-top: 4px;
+}
+
+.details-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.info-block {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: #FAFAF7;
+  border: 1px solid #ECEFE6;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.info-block.full-width {
+  grid-column: 1 / -1;
+}
+
+.info-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #6C7D72;
+}
+
+.info-value {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #162B20;
+}
+
+.details-rfid-card {
+  border: 1px solid #C8E6C9;
+  background: #E8F5E9;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.rfid-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.rfid-card-icon {
+  color: #2E7D32;
+}
+
+.rfid-card-header h4 {
+  margin: 0;
+  font-size: 15px;
+  color: #1B5E20;
+}
+
+.rfid-card-header p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #388E3C;
+}
+
+.rfid-registered-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.rfid-uid-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #FFFFFF;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid #A5D6A7;
+}
+
+.chip-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #1B5E20;
+  background: #C8E6C9;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.rfid-uid-chip code {
+  font-family: monospace;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1B3B2B;
+}
+
+.rfid-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adm-stf-deactivate-btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid #FFCDD2;
+  background: #FFEBEE;
+  color: #C62828;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.adm-stf-deactivate-btn:hover {
+  background: #C62828;
+  color: #FFFFFF;
+}
+
+.rfid-not-registered-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  background: #ECEFF1;
+  color: #546E7A;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.details-history-section h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1B3B2B;
+  margin: 0 0 8px;
+}
+
+.history-table th,
+.history-table td {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.enroll-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.enroll-status-badge.waiting {
+  background: #FFF3E0;
+  color: #E65100;
+}
+
+.enroll-status-badge.waiting .dot.pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #E65100;
+  animation: pulse 1.2s infinite;
+}
+
+.enroll-status-badge.success {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+
+.enroll-status-badge.error {
+  background: #FFEBEE;
+  color: #C62828;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.7; }
+}
