@@ -14,30 +14,46 @@ import CustomerPages from '../pages/customer/CustomerPages'
 const PUBLIC_PAGES = ['Landing', 'Login']
 
 const PROTECTED_PAGES = {
-  Overview: ['Admin'], Sales: ['Admin'], POS: ['Admin'], Customers: ['Admin'],
+  Overview: ['Admin'], Sales: ['Admin'], Customers: ['Admin'],
   Staff: ['Admin'], Monitoring: ['Admin'], Reports: ['Admin'], Settings: ['Admin'],
   Billing: ['Admin'], Payments: ['Admin'],
   Orders: ['Admin', 'Staff'], Kitchen: ['Admin', 'Staff'],
   'Staff Dashboard': ['Staff'], Attendance: ['Staff'],
-  'Point of Sale': ['Staff', 'Admin'],
-  Home: ['Customer'], Cart: ['Customer'], Checkout: ['Customer'],
-  'My orders': ['Customer'], Loyalty: ['Admin', 'Customer'],
-  Menu: ['Admin', 'Staff', 'Customer'],
-  POS: ['Admin', 'Staff'],
-  Notifications: ['Admin', 'Staff', 'Customer'],
-  Profile: ['Admin', 'Staff', 'Customer'],
+  'Point of Sale': ['Staff'],
+  POS: ['Staff'],
+  Loyalty: ['Admin'],
+  Menu: ['Admin', 'Staff'],
+  Notifications: ['Admin', 'Staff'],
+  Profile: ['Admin', 'Staff'],
 }
 
-const ROLE_HOME = { Admin: 'Overview', Staff: 'Staff Dashboard', Customer: 'Home' }
+const ROLE_HOME = { Admin: 'Overview', Staff: 'Staff Dashboard' }
 
 function RolePage({ role, page }) {
-  const roleRouters = { Admin: AdminPages, Staff: StaffPages, Customer: CustomerPages }
-  const PageRouter = roleRouters[role]
+  const roleRouters = { Admin: AdminPages, Staff: StaffPages }
+  const PageRouter = roleRouters[role] || (role === 'Staff' ? StaffPages : AdminPages)
   if (!PageRouter) throw new Error(`Unsupported account role: ${role}`)
   return <PageRouter page={page} />
 }
 
 function AccessDenied({ role, requestedPage, onRedirect }) {
+  if (role === 'Customer') {
+    return (
+      <main className="database-startup" role="alert" aria-live="assertive">
+        <img src="/rmjohns-logo.jpg" alt="RMJohn's" className="brand-logo" />
+        <h1>Customer Access via Mobile App</h1>
+        <p>
+          Ang pag-order at customer accounts ay available lamang sa aming <strong>RMJohn's Mobile App</strong>.
+        </p>
+        <p style={{ fontSize: '0.9rem', opacity: 0.85, marginTop: '0.5rem' }}>
+          Ang Web System na ito ay nakalaan lamang para sa <strong>Admin</strong> at <strong>Staff</strong> management.
+        </p>
+        <button className="button button-dark" style={{ marginTop: '1.5rem' }} onClick={onRedirect}>
+          Sign in as Staff / Admin →
+        </button>
+      </main>
+    )
+  }
   return (
     <main className="database-startup" role="alert" aria-live="assertive">
       <img src="/rmjohns-logo.jpg" alt="RMJohn's" className="brand-logo" />

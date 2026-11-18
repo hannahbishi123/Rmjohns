@@ -7,9 +7,17 @@ import { useField, useForm, FieldError, fieldClass, rules } from '../lib/validat
 import { swalShowLoading, swalCloseLoading } from '../lib/swal'
 import RefundOrderDialog from './RefundOrderDialog'
 import POSTransactionSuccessModal from './POSTransactionSuccessModal'
+import ForgotPasswordModal from './ForgotPasswordModal'
 
 export default function DialogHost({ dialog, onClose, menu, payments, setMenu, setStaff, setCart, setRewards, setPromotions, refundOrder, notify }) {
   const { deleteMenuItem } = useApp() || {}
+  if (dialog.type === 'forgot-password') {
+    return (
+      <Modal onClose={onClose}>
+        <ForgotPasswordModal onClose={onClose} notify={notify} />
+      </Modal>
+    )
+  }
   if (dialog.type === 'account') return <AccountDialog dialog={dialog} onClose={onClose} notify={notify} />
   if (dialog.type === 'food') return <FoodDetailsDialog item={dialog.item} onClose={onClose} setCart={setCart} notify={notify} />
   if (dialog.type === 'receipt-order') {
@@ -167,6 +175,7 @@ function OrderTrackingDialog({ order, onClose }) {
 }
 
 function CustomerDetailsDialog({ customer, orders, onClose }) {
+  const { deleteCustomer } = useApp() || {}
   return (
     <Modal onClose={onClose}>
       <div className="simple-modal">
@@ -179,7 +188,31 @@ function CustomerDetailsDialog({ customer, orders, onClose }) {
           <p><span>Account status</span><strong>{customer.status}</strong></p>
           <p><span>Recent history</span><strong>{orders.length ? orders.map((order) => `${order.id} (${order.status})`).join(', ') : 'No orders in this session'}</strong></p>
         </div>
-        <button className="button button-dark complete-button" onClick={onClose}>Close customer details</button>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
+          <button
+            type="button"
+            className="button button-danger"
+            style={{ flex: 1, background: '#D32F2F', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            onClick={async () => {
+              const confirmed = window.confirm(`Sigurado ka bang nais mong burahin ang customer account ni ${customer.name}? Mabubura ang record nito nang permanente.`)
+              if (confirmed) {
+                if (deleteCustomer) {
+                  await deleteCustomer(customer.id)
+                }
+                onClose()
+              }
+            }}
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+            Delete Account
+          </button>
+          <button className="button button-dark complete-button" style={{ flex: 1 }} onClick={onClose}>
+            Close
+          </button>
+        </div>
       </div>
     </Modal>
   )
@@ -251,7 +284,20 @@ function AccountDialog({ dialog, onClose, notify }) {
   const { registerAccount, navigate, role: currentRole } = useApp()
   const isAuthorizedAdmin = currentRole === 'Admin' && localStorage.getItem('auth_session_active') === 'true'
   const [mode,      setMode]      = useState(dialog.mode || 'register')
-  const [role,      setRole]      = useState('Customer')
+
+  if (mode === 'forgot') {
+    return (
+      <Modal onClose={onClose}>
+        <ForgotPasswordModal
+          onClose={onClose}
+          onSwitchToRegister={() => setMode('register')}
+          notify={notify}
+        />
+      </Modal>
+    )
+  }
+
+  const [role,      setRole]      = useState(isAuthorizedAdmin ? 'Staff' : 'Staff')
   const [loading,   setLoading]   = useState(false)
   const [shake,     setShake]     = useState(false)
 
@@ -267,8 +313,15 @@ function AccountDialog({ dialog, onClose, notify }) {
   const strength = getPasswordStrength(passF.value)
 
   function handleRoleChange(r) {
-    if (r !== 'Customer' && !isAuthorizedAdmin) {
-      notify('Only an authenticated Administrator can create additional Staff or Admin accounts.', {
+    if (r === 'Customer') {
+      notify('Ang Customer registration at pag-order ay available lamang sa RMJohn\'s Mobile App.', {
+        icon: 'info',
+        title: 'Customer on Mobile Only',
+      })
+      return
+    }
+    if (r === 'Admin' && !isAuthorizedAdmin) {
+      notify('Only an authenticated Administrator can create additional Admin accounts.', {
         icon: 'warning',
         title: 'Administrator authorization required',
       })
@@ -356,14 +409,14 @@ function AccountDialog({ dialog, onClose, notify }) {
 
         {mode === 'register' ? (
           <>
-            <h2>Create your account.</h2>
+            <h2>Create staff account.</h2>
             <p className="form-description">
-              Customers can register freely. Staff and Admin require a privileged setup code.
+              Ang Web portal ay para sa Staff at Admin management. (Para sa Customers, gamitin ang RMJohn&apos;s Mobile App upang mag-order).
             </p>
 
             {/* Role selector */}
             <div className="role-selector" role="group" aria-label="Account role">
-              {(isAuthorizedAdmin ? ['Customer', 'Staff', 'Admin'] : ['Customer']).map((r) => (
+              {(isAuthorizedAdmin ? ['Staff', 'Admin'] : ['Staff']).map((r) => (
                 <button key={r} type="button"
                   className={`role-option${role === r ? ' role-option-active' : ''}`}
                   onClick={() => handleRoleChange(r)} aria-pressed={role === r}>

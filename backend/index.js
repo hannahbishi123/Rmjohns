@@ -44,6 +44,7 @@ import {
   stopFirebaseToMySQLSync,
   getSyncLog,
 } from './firebaseToMySQL.js'
+import { sendPasswordResetOtp, isSmtpConfigured, verifySmtpConnection } from './mailer.js'
 
 const app = express()
 const serverDirectory = path.dirname(fileURLToPath(import.meta.url))
@@ -424,7 +425,10 @@ async function readBootstrap() {
   ] = await Promise.all([
     rows('SELECT menu_item_id AS id, name, category, price, description, emoji, tone, available, image_url AS image FROM menu_items ORDER BY menu_item_id'),
     rows('SELECT customer_id AS id, name, email, contact, orders_count AS orders, total_spend AS spend, points, status FROM customers ORDER BY customer_id'),
-    rows('SELECT staff_id AS id, name, role, contact, status, time_in AS time, time_out AS timeOut FROM staff ORDER BY staff_id'),
+    rows(`SELECT staff_id AS id, name, role, contact, status, time_in AS time, time_out AS timeOut, rfid_uid AS rfidUid,
+                 approval_status AS approvalStatus, rejection_reason AS rejectionReason, approved_by AS approvedBy,
+                 approved_at AS approvedAt, rfid_status AS rfidStatus
+          FROM staff ORDER BY staff_id`),
     rows(`SELECT order_number AS id, customer_name AS customer, items_summary AS items, subtotal, service_charge AS serviceCharge,
                  discount, total, order_type AS type, pickup_location AS pickupLocation, notes, payment_status AS payment,
                  payment_method AS paymentMethod, status, time_label AS time,
@@ -1113,15 +1117,55 @@ app.post('/api/orders/delete', requireStaffOrAdminAuth, async (req, res) => {
 })
 
 // POST /api/customers/delete — delete customer and sync to cloud destinations
-app.post('/api/customers/delete', requireAdminAuth, async (req, res) => {
+app.post('/api/customers/delete', async (req, res) => {
   try {
-    const { id } = req.body || {}
-    if (!id) return res.status(400).json({ error: 'Customer id is required.' })
-    await pool.execute('DELETE FROM customers WHERE customer_id = ?', [id])
-    await deleteCustomer(id)
-    res.json({ ok: true, id })
+    const { id, customer_id } = req.body || {}
+    const targetId = id || customer_id
+    if (!targetId) return res.status(400).json({ error: 'Customer id is required.' })
+
+    const [custRows] = await pool.execute('SELECT * FROM customers WHERE customer_id = ? LIMIT 1', [targetId])
+    const customer = custRows[0]
+
+    await pool.execute('DELETE FROM customers WHERE customer_id = ?', [targetId])
+    if (customer) {
+      await pool.execute(
+        'DELETE FROM user_accounts WHERE customer_id = ? OR email = ? OR contact = ?',
+        [targetId, customer.email, customer.contact]
+      ).catch(() => {})
+    }
+    await deleteCustomer(targetId)
+    console.log(`[customers/delete] Customer ${targetId} and user account deleted.`)
+    res.json({ ok: true, id: targetId, message: 'Customer and user account successfully deleted.' })
   } catch (error) {
     sendError(res, error, 'delete customer')
+  }
+})
+
+// POST /api/accounts/delete — Admin permanently deletes any registered user account
+app.post('/api/accounts/delete', async (req, res) => {
+  try {
+    const { account_id, email, username } = req.body || {}
+    if (!account_id && !email && !username) {
+      return res.status(400).json({ error: 'account_id, email, or username is required.' })
+    }
+
+    const [accRows] = await pool.execute(
+      'SELECT * FROM user_accounts WHERE account_id = ? OR email = ? OR username = ? LIMIT 1',
+      [account_id || null, email || null, username || null]
+    )
+    const acc = accRows[0]
+    if (acc) {
+      await pool.execute('DELETE FROM user_accounts WHERE account_id = ?', [acc.account_id])
+      if (acc.customer_id) {
+        await pool.execute('DELETE FROM customers WHERE customer_id = ?', [acc.customer_id]).catch(() => {})
+        await deleteCustomer(acc.customer_id).catch(() => {})
+      }
+      await pool.execute('DELETE FROM staff WHERE name = ? OR contact = ?', [acc.username, acc.contact]).catch(() => {})
+    }
+
+    res.json({ ok: true, message: 'User account permanently deleted.' })
+  } catch (error) {
+    sendError(res, error, 'delete user account')
   }
 })
 
@@ -1130,11 +1174,668 @@ app.post('/api/staff/delete', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.body || {}
     if (!id) return res.status(400).json({ error: 'Staff id is required.' })
+
+    const [staffRows] = await pool.execute('SELECT * FROM staff WHERE staff_id = ? LIMIT 1', [id])
+    const member = staffRows[0]
+
     await pool.execute('DELETE FROM staff WHERE staff_id = ?', [id])
+    if (member) {
+      await pool.execute(
+        'DELETE FROM user_accounts WHERE contact = ? OR email = ? OR username = ?',
+        [member.contact, member.contact, member.name]
+      ).catch(() => {})
+    }
     await deleteStaff(id)
     res.json({ ok: true, id })
   } catch (error) {
     sendError(res, error, 'delete staff')
+  }
+})
+
+// POST /api/admin/staff-requests/delete — Admin permanently deletes a staff registration request & user account
+app.post('/api/admin/staff-requests/delete', async (req, res) => {
+  try {
+    const { staff_id, staffId, id } = req.body || {}
+    const targetId = staff_id || staffId || id
+    if (!targetId) return res.status(400).json({ error: 'staff_id is required.' })
+
+    const [staffRows] = await pool.execute('SELECT * FROM staff WHERE staff_id = ? LIMIT 1', [targetId])
+    const member = staffRows[0]
+
+    await pool.execute('DELETE FROM staff WHERE staff_id = ?', [targetId])
+    if (member) {
+      await pool.execute(
+        'DELETE FROM user_accounts WHERE contact = ? OR email = ? OR username = ?',
+        [member.contact, member.contact, member.name]
+      ).catch(() => {})
+    }
+    await deleteStaff(targetId)
+
+    console.log(`[staff/delete] Staff request ${targetId} permanently deleted.`)
+    res.json({ ok: true, message: 'Staff registration and account permanently deleted.', id: targetId })
+  } catch (error) {
+    sendError(res, error, 'delete staff request')
+  }
+})
+
+// ── IoT & RFID Staff Attendance System ────────────────────────────────────────
+let iotLastSeen = null
+let iotLastScan = null
+let iotLastUnknownCard = null
+let activeEnrollment = null // { staff_id, staff_name, role, started_at }
+
+// POST /api/staff/assign-rfid — Assign an RFID card UID to a staff member
+app.post('/api/staff/assign-rfid', async (req, res) => {
+  try {
+    const { staff_id, rfid_uid } = req.body || {}
+    if (!staff_id || !rfid_uid) {
+      return res.status(400).json({ error: 'staff_id and rfid_uid are required.' })
+    }
+    const cleanUid = String(rfid_uid).trim().toUpperCase()
+    const rawClean = cleanUid.replace(/[^A-Z0-9]/g, '')
+
+    // Check duplicate UID across other staff
+    const [dupes] = await pool.execute(
+      `SELECT staff_id, name FROM staff 
+       WHERE (UPPER(rfid_uid) = ? OR REPLACE(UPPER(rfid_uid), ':', '') = ? OR REPLACE(UPPER(rfid_uid), '-', '') = ?)
+         AND staff_id != ? LIMIT 1`,
+      [cleanUid, rawClean, rawClean, staff_id]
+    )
+    if (dupes.length > 0) {
+      return res.status(409).json({ error: `RFID card [${cleanUid}] is already assigned to ${dupes[0].name}.` })
+    }
+
+    await pool.execute('UPDATE staff SET rfid_uid = ?, rfid_status = "ACTIVE" WHERE staff_id = ?', [cleanUid, staff_id])
+
+    if (iotLastUnknownCard && iotLastUnknownCard.uid === cleanUid) {
+      iotLastUnknownCard = null
+    }
+
+    const [updated] = await pool.execute(
+      'SELECT staff_id AS id, name, role, contact, status, time_in AS time, time_out AS timeOut, rfid_uid AS rfidUid, approval_status AS approvalStatus, rfid_status AS rfidStatus FROM staff WHERE staff_id = ?',
+      [staff_id]
+    )
+    if (updated[0]) {
+      syncStaff(updated[0]).catch(() => {})
+    }
+    console.log(`[staff/assign-rfid] Assigned RFID ${cleanUid} to staff ${staff_id}`)
+    res.json({ ok: true, staff: updated[0] })
+  } catch (error) {
+    sendError(res, error, 'assign rfid to staff')
+  }
+})
+
+// GET /api/iot/status — Check if physical ESP32 reader is connected / online
+app.get('/api/iot/status', (req, res) => {
+  const isOnline = Boolean(iotLastSeen && (Date.now() - new Date(iotLastSeen).getTime()) < 120000)
+  if (activeEnrollment && (Date.now() - activeEnrollment.started_at > 180000)) {
+    activeEnrollment = null
+  }
+  res.json({
+    online: isOnline,
+    lastSeen: iotLastSeen,
+    lastScan: iotLastScan,
+    lastUnknownCard: iotLastUnknownCard,
+    device: 'ESP32-RC522-ATTENDANCE',
+    enrollment: activeEnrollment,
+    isEnrollmentActive: Boolean(activeEnrollment)
+  })
+})
+
+// POST /api/iot/heartbeat — ESP32 reader ping
+app.post('/api/iot/heartbeat', (req, res) => {
+  iotLastSeen = new Date().toISOString()
+  if (activeEnrollment && (Date.now() - activeEnrollment.started_at > 180000)) {
+    activeEnrollment = null
+  }
+  res.json({
+    ok: true,
+    serverTime: iotLastSeen,
+    enrollment: activeEnrollment,
+    enrollment_active: Boolean(activeEnrollment),
+    staff_name: activeEnrollment ? activeEnrollment.staff_name : ''
+  })
+})
+
+// ── RFID Enrollment Endpoints ──────────────────────────────────────────────────
+
+// POST /api/iot/enrollment/start — Admin begins enrollment mode for approved staff
+app.post('/api/iot/enrollment/start', async (req, res) => {
+  try {
+    const { staff_id, staffId } = req.body || {}
+    const targetStaffId = staff_id || staffId
+    if (!targetStaffId) return res.status(400).json({ error: 'staff_id is required.' })
+
+    const [staffRows] = await pool.execute('SELECT * FROM staff WHERE staff_id = ? LIMIT 1', [targetStaffId])
+    const staffMember = staffRows[0]
+    if (!staffMember) return res.status(404).json({ error: 'Staff member not found.' })
+    if (staffMember.approval_status !== 'APPROVED') {
+      return res.status(400).json({ error: 'Only approved staff members can enroll an RFID card.' })
+    }
+
+    activeEnrollment = {
+      staff_id: staffMember.staff_id,
+      staff_name: staffMember.name,
+      role: staffMember.role,
+      started_at: Date.now()
+    }
+
+    await pool.execute(
+      `UPDATE staff SET rfid_status = 'PENDING_ENROLLMENT' WHERE staff_id = ?`,
+      [targetStaffId]
+    )
+
+    console.log(`[iot/enrollment] Enrollment mode started for ${staffMember.name} (${targetStaffId})`)
+    res.json({
+      ok: true,
+      enrollment: activeEnrollment,
+      session: {
+        staffId: staffMember.staff_id,
+        staffName: staffMember.name,
+        role: staffMember.role,
+        startedAt: activeEnrollment.started_at
+      },
+      message: `Enrollment session started. ESP32 is now READY TO SCAN for ${staffMember.name}.`
+    })
+  } catch (error) {
+    sendError(res, error, 'start rfid enrollment session')
+  }
+})
+
+// POST /api/iot/enrollment/cancel — Cancel active enrollment mode
+app.post('/api/iot/enrollment/cancel', (req, res) => {
+  activeEnrollment = null
+  console.log('[iot/enrollment] Enrollment session cancelled.')
+  res.json({ ok: true, message: 'Enrollment session cancelled.' })
+})
+
+// GET /api/iot/enrollment/status — Poll current enrollment status
+app.get('/api/iot/enrollment/status', (req, res) => {
+  if (activeEnrollment && (Date.now() - activeEnrollment.started_at > 180000)) {
+    activeEnrollment = null
+  }
+  res.json({
+    active: Boolean(activeEnrollment),
+    enrollment: activeEnrollment
+  })
+})
+
+// ── Staff Registration & Approval Endpoints ─────────────────────────────────────
+
+// POST /api/accounts/register-staff — Mobile app registration for staff with position
+app.post('/api/accounts/register-staff', async (req, res) => {
+  try {
+    const { name, fullName, email, phone, contact, password, username, position } = req.body || {}
+    const personName = name || fullName
+    const personPhone = phone || contact
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : ''
+    const normalizedName = typeof personName === 'string' ? personName.trim() : ''
+    const normalizedUsername = typeof username === 'string' && username.trim() ? username.trim() : (normalizedEmail ? normalizedEmail.split('@')[0] : '')
+    const allowedPositions = ['Manager', 'Head Chef', 'Service Crew', 'Staff']
+    const requestedPosition = allowedPositions.includes(position) ? position : 'Staff'
+
+    if (!normalizedName) return res.status(400).json({ error: 'Full name is required.' })
+    if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) return res.status(400).json({ error: 'Valid email address is required.' })
+    if (!password || password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' })
+
+    const [existing] = await pool.execute('SELECT account_id FROM user_accounts WHERE email = ?', [normalizedEmail])
+    if (existing.length) {
+      return res.status(409).json({ error: 'An account with this email address already exists.' })
+    }
+
+    const staffId = 'STAFF-' + Date.now()
+    const passwordHash = await bcrypt.hash(password, 10)
+
+    // Insert into user_accounts with approval_status = 'PENDING'
+    await pool.execute(
+      `INSERT INTO user_accounts (username, email, password_hash, role, position, contact, approval_status, rfid_status)
+       VALUES (?, ?, ?, 'Staff', ?, ?, 'PENDING', 'UNREGISTERED')`,
+      [normalizedUsername, normalizedEmail, passwordHash, requestedPosition, String(personPhone || '').trim()]
+    )
+
+    // Insert into staff table with status = 'Offline', approval_status = 'PENDING', rfid_status = 'UNREGISTERED'
+    await pool.execute(
+      `INSERT INTO staff (staff_id, name, role, contact, status, approval_status, rfid_status)
+       VALUES (?, ?, ?, ?, 'Offline', 'PENDING', 'UNREGISTERED')`,
+      [staffId, normalizedName, requestedPosition, String(personPhone || normalizedEmail).trim()]
+    )
+
+    // Insert real-time Admin notification
+    const notifId = 'NOTIF-' + Date.now()
+    const notifDetail = `${normalizedName} requested registration as ${requestedPosition} (${normalizedEmail})`
+    await pool.execute(
+      `INSERT INTO notifications (notification_id, title, detail, audience, time_label, is_read)
+       VALUES (?, ?, ?, 'admin', 'Just now', 0)`,
+      [notifId, 'New Staff Registration Request', notifDetail]
+    )
+
+    const notifRecord = {
+      id: notifId,
+      title: 'New Staff Registration Request',
+      detail: notifDetail,
+      audience: 'admin',
+      time: 'Just now',
+      isRead: false,
+      read: false,
+    }
+    syncNotification(notifRecord).catch(() => {})
+
+    const staffRecord = {
+      id: staffId,
+      staff_id: staffId,
+      name: normalizedName,
+      role: requestedPosition,
+      position: requestedPosition,
+      contact: String(personPhone || normalizedEmail).trim(),
+      email: normalizedEmail,
+      status: 'Offline',
+      approvalStatus: 'PENDING',
+      rfidStatus: 'UNREGISTERED',
+    }
+    syncStaff(staffRecord).catch(() => {})
+
+    console.log(`[staff/register] New staff applicant registered: ${normalizedName} (${requestedPosition}, PENDING)`)
+
+    res.status(201).json({
+      success: true,
+      staff_id: staffId,
+      id: staffId,
+      user: {
+        id: staffId,
+        name: normalizedName,
+        email: normalizedEmail,
+        position: requestedPosition,
+        approval_status: 'PENDING',
+        rfid_status: 'UNREGISTERED'
+      },
+      approval_status: 'PENDING',
+      message: 'Staff registration submitted successfully. Please wait for Admin approval before RFID enrollment.'
+    })
+  } catch (error) {
+    sendError(res, error, 'register staff applicant')
+  }
+})
+
+// GET /api/admin/staff-requests — Retrieve registration requests for Admin Dashboard
+app.get('/api/admin/staff-requests', async (_req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT s.staff_id AS id, s.name, s.role AS position, s.contact, s.status,
+              COALESCE(u.email, s.contact) AS email,
+              u.username,
+              s.approval_status AS approvalStatus, s.rejection_reason AS rejectionReason,
+              s.approved_by AS approvedBy, s.approved_at AS approvedAt,
+              s.rfid_status AS rfidStatus, s.rfid_uid AS rfidUid,
+              s.created_at AS createdAt
+       FROM staff s
+       LEFT JOIN (
+         SELECT contact, username, MAX(email) AS email 
+         FROM user_accounts 
+         GROUP BY contact, username
+       ) u ON (u.contact = s.contact OR u.username = s.name)
+       GROUP BY s.staff_id
+       ORDER BY (CASE WHEN s.approval_status = 'PENDING' THEN 0 ELSE 1 END), s.created_at DESC`
+    )
+    res.json({ ok: true, requests: rows })
+  } catch (error) {
+    sendError(res, error, 'fetch staff registration requests')
+  }
+})
+
+// POST /api/admin/staff-requests/approve — Admin ACCEPT action
+app.post('/api/admin/staff-requests/approve', async (req, res) => {
+  try {
+    const { staff_id, staffId, admin_id, adminId, admin_name, adminName } = req.body || {}
+    const targetStaffId = staff_id || staffId
+    if (!targetStaffId) return res.status(400).json({ error: 'staff_id is required.' })
+
+    const approver = admin_name || adminName || admin_id || adminId || 'Admin'
+    await pool.execute(
+      `UPDATE staff 
+       SET approval_status = 'APPROVED', approved_by = ?, approved_at = NOW(), rejection_reason = NULL, rfid_status = 'PENDING_ENROLLMENT'
+       WHERE staff_id = ?`,
+      [approver, targetStaffId]
+    )
+
+    const [staffRows] = await pool.execute('SELECT * FROM staff WHERE staff_id = ? LIMIT 1', [targetStaffId])
+    const staffMember = staffRows[0]
+    if (staffMember) {
+      await pool.execute(
+        `UPDATE user_accounts 
+         SET approval_status = 'APPROVED', approved_by = ?, approved_at = NOW(), rejection_reason = NULL, rfid_status = 'PENDING_ENROLLMENT'
+         WHERE contact = ? OR email = ? OR username = ?`,
+        [approver, staffMember.contact, staffMember.contact, staffMember.name]
+      ).catch(() => {})
+
+      // Send real-time notification
+      const notifId = 'NOTIF-' + Date.now()
+      const notifDetail = `Staff registration for ${staffMember.name} (${staffMember.role}) has been APPROVED. Eligible for RFID enrollment.`
+      await pool.execute(
+        `INSERT INTO notifications (notification_id, title, detail, audience, time_label, is_read)
+         VALUES (?, ?, ?, 'all', 'Just now', 0)`,
+        [notifId, 'Staff Registration Approved', notifDetail]
+      )
+
+      const notifRecord = {
+        id: notifId,
+        title: 'Staff Registration Approved',
+        detail: notifDetail,
+        audience: 'all',
+        time: 'Just now',
+        isRead: false,
+      }
+      syncNotification(notifRecord).catch(() => {})
+
+      const updatedStaffRecord = {
+        id: staffMember.staff_id,
+        staff_id: staffMember.staff_id,
+        name: staffMember.name,
+        role: staffMember.role,
+        position: staffMember.role,
+        contact: staffMember.contact,
+        status: staffMember.status,
+        approvalStatus: 'APPROVED',
+        approvedBy: approver,
+        approvedAt: new Date().toISOString(),
+        rfidStatus: 'PENDING_ENROLLMENT',
+        rfidUid: staffMember.rfid_uid || null
+      }
+      syncStaff(updatedStaffRecord).catch(() => {})
+    }
+
+    console.log(`[staff/approve] Staff ${targetStaffId} approved by ${approver}`)
+    res.json({ ok: true, message: 'Staff registration approved. RFID enrollment unlocked.', staff: staffMember })
+  } catch (error) {
+    sendError(res, error, 'approve staff registration')
+  }
+})
+
+// POST /api/admin/staff-requests/reject — Admin REJECT action with required reason
+app.post('/api/admin/staff-requests/reject', async (req, res) => {
+  try {
+    const { staff_id, staffId, rejection_reason, rejectionReason, reason, admin_id, adminId, admin_name, adminName } = req.body || {}
+    const targetStaffId = staff_id || staffId
+    if (!targetStaffId) return res.status(400).json({ error: 'staff_id is required.' })
+    const cleanReason = String(rejection_reason || rejectionReason || reason || '').trim()
+    if (!cleanReason) {
+      return res.status(400).json({ error: 'A rejection reason is required.' })
+    }
+
+    const approver = admin_name || adminName || admin_id || adminId || 'Admin'
+
+    await pool.execute(
+      `UPDATE staff 
+       SET approval_status = 'REJECTED', rejection_reason = ?, approved_by = ?, approved_at = NOW(), rfid_status = 'INACTIVE'
+       WHERE staff_id = ?`,
+      [cleanReason, approver, targetStaffId]
+    )
+
+    const [staffRows] = await pool.execute('SELECT * FROM staff WHERE staff_id = ? LIMIT 1', [targetStaffId])
+    const staffMember = staffRows[0]
+    if (staffMember) {
+      await pool.execute(
+        `UPDATE user_accounts 
+         SET approval_status = 'REJECTED', rejection_reason = ?, approved_by = ?, approved_at = NOW(), rfid_status = 'INACTIVE'
+         WHERE contact = ? OR email = ? OR username = ?`,
+        [cleanReason, approver, staffMember.contact, staffMember.contact, staffMember.name]
+      ).catch(() => {})
+
+      // Send rejection notification
+      const notifId = 'NOTIF-' + Date.now()
+      const notifDetail = `Staff registration for ${staffMember.name} was rejected: "${cleanReason}"`
+      await pool.execute(
+        `INSERT INTO notifications (notification_id, title, detail, audience, time_label, is_read)
+         VALUES (?, ?, ?, 'all', 'Just now', 0)`,
+        [notifId, 'Staff Registration Rejected', notifDetail]
+      )
+
+      const notifRecord = {
+        id: notifId,
+        title: 'Staff Registration Rejected',
+        detail: notifDetail,
+        audience: 'all',
+        time: 'Just now',
+        isRead: false,
+      }
+      syncNotification(notifRecord).catch(() => {})
+
+      const updatedStaffRecord = {
+        id: staffMember.staff_id,
+        staff_id: staffMember.staff_id,
+        name: staffMember.name,
+        role: staffMember.role,
+        position: staffMember.role,
+        contact: staffMember.contact,
+        status: staffMember.status,
+        approvalStatus: 'REJECTED',
+        rejectionReason: cleanReason,
+        approvedBy: approver,
+        approvedAt: new Date().toISOString(),
+        rfidStatus: 'INACTIVE',
+      }
+      syncStaff(updatedStaffRecord).catch(() => {})
+    }
+
+    console.log(`[staff/reject] Staff ${targetStaffId} rejected by ${approver}. Reason: ${cleanReason}`)
+    res.json({ ok: true, message: 'Staff registration rejected with reason saved.', reason: cleanReason, staff: staffMember })
+  } catch (error) {
+    sendError(res, error, 'reject staff registration')
+  }
+})
+
+// POST /api/iot/rfid-scan — Physical RFID scan from ESP32 (Handles Attendance & Enrollment)
+app.post('/api/iot/rfid-scan', async (req, res) => {
+  try {
+    const { rfid_uid, uid, rfidUid, device_id, deviceId } = req.body || {}
+    const incomingUid = rfid_uid || uid || rfidUid
+    if (!incomingUid) {
+      return res.status(400).json({ success: false, message: 'rfid_uid is required' })
+    }
+    const cleanUid = String(incomingUid).trim().toUpperCase()
+    const rawClean = cleanUid.replace(/[^A-Z0-9]/g, '')
+    iotLastSeen = new Date().toISOString()
+
+    // ── CHECK IF ENROLLMENT SESSION IS ACTIVE ──
+    if (activeEnrollment && (Date.now() - activeEnrollment.started_at <= 180000)) {
+      // 1. Check duplicate card UID across other staff members
+      const [dupes] = await pool.execute(
+        `SELECT staff_id, name FROM staff 
+         WHERE (UPPER(rfid_uid) = ? 
+            OR REPLACE(UPPER(rfid_uid), ':', '') = ? 
+            OR REPLACE(UPPER(rfid_uid), '-', '') = ?)
+           AND staff_id != ? LIMIT 1`,
+        [cleanUid, rawClean, rawClean, activeEnrollment.staff_id]
+      )
+      if (dupes.length > 0) {
+        console.warn(`[iot/rfid] Duplicate card attempt: ${cleanUid} is already assigned to ${dupes[0].name}`)
+        return res.status(409).json({
+          success: false,
+          duplicate: true,
+          message: `Card already assigned to ${dupes[0].name}`,
+          staff_name: dupes[0].name
+        })
+      }
+
+      // 2. Link card to enrolling staff member
+      const targetStaffId = activeEnrollment.staff_id
+      const targetStaffName = activeEnrollment.staff_name
+      await pool.execute(
+        `UPDATE staff SET rfid_uid = ?, rfid_status = 'ACTIVE', updated_at = NOW() WHERE staff_id = ?`,
+        [cleanUid, targetStaffId]
+      )
+
+      // Also link to user_accounts if matching contact / email / username
+      await pool.execute(
+        `UPDATE user_accounts SET rfid_uid = ?, rfid_status = 'ACTIVE' 
+         WHERE contact = ? OR email = ? OR username = ?`,
+        [cleanUid, targetStaffName, targetStaffName, targetStaffName]
+      ).catch(() => {})
+
+      // 3. Persistent notification
+      const notifId = 'NOTIF-' + Date.now()
+      const notifDetail = `RFID card [${cleanUid}] successfully registered to ${targetStaffName}.`
+      await pool.execute(
+        `INSERT INTO notifications (notification_id, title, detail, audience, time_label, is_read)
+         VALUES (?, ?, ?, 'all', 'Just now', 0)`,
+        [notifId, 'RFID Registration Successful', notifDetail]
+      )
+      syncNotification({
+        id: notifId,
+        title: 'RFID Registration Successful',
+        detail: notifDetail,
+        audience: 'all',
+        time: 'Just now',
+        isRead: false
+      }).catch(() => {})
+
+      const [updatedRows] = await pool.execute(
+        `SELECT staff_id AS id, name, role, contact, status, time_in AS time, time_out AS timeOut, rfid_uid AS rfidUid,
+                approval_status AS approvalStatus, rfid_status AS rfidStatus
+         FROM staff WHERE staff_id = ?`,
+        [targetStaffId]
+      )
+      if (updatedRows[0]) {
+        syncStaff(updatedRows[0]).catch(() => {})
+      }
+
+      console.log(`[iot/rfid] ENROLLMENT SUCCESS: Card ${cleanUid} assigned to ${targetStaffName} (${targetStaffId})`)
+      activeEnrollment = null
+
+      return res.json({
+        success: true,
+        is_enrollment: true,
+        action: 'Enrollment',
+        staff_id: targetStaffId,
+        staff_name: targetStaffName,
+        rfid_uid: cleanUid,
+        message: 'REGISTRATION SUCCESSFUL'
+      })
+    }
+
+    // ── NORMAL ATTENDANCE SCAN ──
+    const [staffRows] = await pool.execute(
+      `SELECT staff_id, name, role, contact, status, time_in, time_out, rfid_uid,
+              approval_status, rfid_status
+       FROM staff 
+       WHERE UPPER(rfid_uid) = ? 
+          OR REPLACE(UPPER(rfid_uid), ':', '') = ? 
+          OR REPLACE(UPPER(rfid_uid), '-', '') = ? 
+       LIMIT 1`,
+      [cleanUid, rawClean, rawClean]
+    )
+
+    if (staffRows.length === 0) {
+      iotLastUnknownCard = { uid: cleanUid, time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) }
+      console.log(`[iot/rfid] Unknown card scanned: ${cleanUid} (Device: ${device_id || 'unknown'})`)
+      return res.status(404).json({
+        success: false,
+        status: 'unregistered',
+        message: `RFID card [${cleanUid}] is not registered to any staff member.`,
+        rfid_uid: cleanUid
+      })
+    }
+
+    const staffMember = staffRows[0]
+
+    // Verify approval status
+    if (staffMember.approval_status === 'REJECTED') {
+      return res.status(403).json({
+        success: false,
+        message: 'Account Rejected - Attendance Denied',
+        staff_name: staffMember.name
+      })
+    }
+    if (staffMember.approval_status === 'PENDING') {
+      return res.status(403).json({
+        success: false,
+        message: 'Account Pending Approval',
+        staff_name: staffMember.name
+      })
+    }
+    if (staffMember.rfid_status !== 'ACTIVE') {
+      return res.status(403).json({
+        success: false,
+        message: 'RFID Inactive - Attendance Denied',
+        staff_name: staffMember.name
+      })
+    }
+
+    const now = new Date()
+    const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+
+    // 2. Toggle Time In / Time Out: If currently Present -> Time Out (Offline), otherwise -> Time In (Present)
+    const isClockingIn = staffMember.status !== 'Present'
+    const action = isClockingIn ? 'Time in' : 'Time out'
+    const newStatus = isClockingIn ? 'Present' : 'Offline'
+    const timeInVal = isClockingIn ? timeStr : (staffMember.time_in || timeStr)
+    const timeOutVal = isClockingIn ? '—' : timeStr
+
+    // 3. Update staff record in MySQL
+    await pool.execute(
+      'UPDATE staff SET status = ?, time_in = ?, time_out = ?, updated_at = NOW() WHERE staff_id = ?',
+      [newStatus, timeInVal, timeOutVal, staffMember.staff_id]
+    )
+
+    // 4. Insert scan event into attendance_events table
+    const [eventResult] = await pool.execute(
+      'INSERT INTO attendance_events (staff_id, staff_name, event_time, action) VALUES (?, ?, ?, ?)',
+      [staffMember.staff_id, staffMember.name, timeStr, action]
+    )
+    const eventId = eventResult.insertId
+
+    const attendanceEventRecord = {
+      id: eventId,
+      event_id: eventId,
+      staff_id: staffMember.staff_id,
+      staffId: staffMember.staff_id,
+      name: staffMember.name,
+      staff_name: staffMember.name,
+      time: timeStr,
+      event_time: timeStr,
+      action: action
+    }
+
+    const updatedStaffRecord = {
+      id: staffMember.staff_id,
+      staff_id: staffMember.staff_id,
+      name: staffMember.name,
+      role: staffMember.role,
+      contact: staffMember.contact,
+      status: newStatus,
+      time: timeInVal,
+      time_in: timeInVal,
+      timeOut: timeOutVal,
+      time_out: timeOutVal,
+      rfid_uid: cleanUid,
+      approvalStatus: staffMember.approval_status,
+      rfidStatus: staffMember.rfid_status
+    }
+
+    // 5. Realtime sync to Firebase Realtime Database
+    syncAttendanceEvent(attendanceEventRecord).catch((err) => console.warn('[iot/rfid] syncAttendanceEvent warn:', err.message))
+    syncStaff(updatedStaffRecord).catch((err) => console.warn('[iot/rfid] syncStaff warn:', err.message))
+
+    iotLastScan = {
+      staff_name: staffMember.name,
+      action,
+      time: timeStr,
+      rfid_uid: cleanUid
+    }
+
+    console.log(`[iot/rfid] SUCCESS: ${staffMember.name} (${staffMember.role}) -> ${action} at ${timeStr}`)
+
+    return res.json({
+      success: true,
+      staff_id: staffMember.staff_id,
+      staff_name: staffMember.name,
+      role: staffMember.role,
+      action,
+      status: newStatus,
+      time: timeStr,
+      message: `${staffMember.name} successfully clocked ${action.toLowerCase()} at ${timeStr}.`
+    })
+  } catch (error) {
+    sendError(res, error, 'process rfid attendance scan')
   }
 })
 
@@ -1220,6 +1921,7 @@ app.post('/api/auth/login', async (req, res) => {
     const [accounts] = await pool.execute(
       `SELECT ua.account_id, ua.username, ua.email, ua.password_hash AS passwordHash,
               ua.role, ua.contact, ua.firebase_uid, ua.customer_id,
+              ua.position, ua.approval_status, ua.rejection_reason, ua.rfid_status,
               COALESCE(c.name, ua.username) AS name
        FROM user_accounts ua
        LEFT JOIN customers c ON c.customer_id = ua.customer_id
@@ -1232,14 +1934,18 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'The username/email or password did not match an account.' })
     }
 
-    // Return name so the frontend can update the profile greeting immediately
+    // Return account details so the mobile app or web frontend gets approval status immediately
     res.json({
       account: {
         username: account.username,
         email:    account.email,
         role:     account.role,
+        position: account.position || account.role,
         contact:  account.contact,
         name:     account.name,
+        approval_status: account.approval_status || 'APPROVED',
+        rejection_reason: account.rejection_reason || null,
+        rfid_status: account.rfid_status || 'INACTIVE',
       },
     })
 
@@ -1377,6 +2083,190 @@ app.post('/api/auth/update-uid', async (req, res) => {
   } catch (error) {
     sendError(res, error, 'update firebase uid')
   }
+})
+
+// ── Password Reset OTP Store & Endpoints ─────────────────────────────────────
+const passwordResetStore = new Map() // email -> { otpCode, expiresAt, username, attempts }
+
+// Clean up expired OTPs periodically (every 5 mins)
+setInterval(() => {
+  const now = Date.now()
+  for (const [email, entry] of passwordResetStore.entries()) {
+    if (now > entry.expiresAt) passwordResetStore.delete(email)
+  }
+}, 5 * 60 * 1000)
+
+// POST /api/auth/forgot-password
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body || {}
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ error: 'Please enter your registered email address.' })
+    }
+
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' })
+    }
+
+    // Check if account exists in MySQL
+    let user = null
+    try {
+      const [rows] = await pool.execute(
+        `SELECT account_id, username, email, role FROM user_accounts WHERE LOWER(email) = ? LIMIT 1`,
+        [normalizedEmail],
+      )
+      if (rows && rows.length > 0) user = rows[0]
+    } catch (dbErr) {
+      console.warn('[forgot-password] MySQL lookup note:', dbErr.message)
+    }
+
+    // Check mockAccounts fallback if not found in MySQL
+    if (!user) {
+      const mock = (mockAccounts || []).find((a) => a.email && a.email.toLowerCase() === normalizedEmail)
+      if (mock) {
+        user = { username: mock.username || mock.name || 'User', email: normalizedEmail, role: mock.role }
+      }
+    }
+
+    if (!user) {
+      return res.status(404).json({ error: 'No account found with this email address.' })
+    }
+
+    // Generate 6-digit numeric OTP code
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString()
+    const expiresAt = Date.now() + 15 * 60 * 1000 // 15 minutes
+
+    passwordResetStore.set(normalizedEmail, {
+      otpCode,
+      expiresAt,
+      username: user.username || 'User',
+      attempts: 0,
+    })
+
+    // Send email via mailer
+    const mailResult = await sendPasswordResetOtp({
+      toEmail: normalizedEmail,
+      otpCode,
+      username: user.username || 'User',
+    })
+
+    res.json({
+      success: true,
+      message: 'Password reset code has been sent to your email.',
+      simulated: Boolean(mailResult?.simulated),
+    })
+  } catch (err) {
+    console.error('[forgot-password] Error:', err.message)
+    res.status(500).json({ error: err.message || 'Failed to send password reset code. Please try again.' })
+  }
+})
+
+// POST /api/auth/verify-reset-otp
+app.post('/api/auth/verify-reset-otp', (req, res) => {
+  try {
+    const { email, otp } = req.body || {}
+    if (!email || !otp) {
+      return res.status(400).json({ error: 'Email and verification code are required.' })
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase()
+    const cleanOtp = String(otp).trim()
+    const record = passwordResetStore.get(normalizedEmail)
+
+    if (!record || Date.now() > record.expiresAt) {
+      return res.status(400).json({ error: 'The verification code has expired. Please request a new code.' })
+    }
+
+    if (record.attempts >= 5) {
+      passwordResetStore.delete(normalizedEmail)
+      return res.status(429).json({ error: 'Too many invalid attempts. Please request a new code.' })
+    }
+
+    if (record.otpCode !== cleanOtp) {
+      record.attempts += 1
+      return res.status(400).json({ error: 'Invalid verification code. Please check your email and try again.' })
+    }
+
+    res.json({ success: true, message: 'Verification code verified successfully.' })
+  } catch (err) {
+    res.status(500).json({ error: 'Verification failed.' })
+  }
+})
+
+// POST /api/auth/reset-password
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body || {}
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ error: 'Email, verification code, and new password are required.' })
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase()
+    const cleanOtp = String(otp).trim()
+    const record = passwordResetStore.get(normalizedEmail)
+
+    if (!record || Date.now() > record.expiresAt) {
+      return res.status(400).json({ error: 'The verification code has expired. Please request a new code.' })
+    }
+
+    if (record.otpCode !== cleanOtp) {
+      return res.status(400).json({ error: 'Invalid verification code.' })
+    }
+
+    if (typeof newPassword !== 'string' || newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long.' })
+    }
+
+    // Hash the new password with bcrypt
+    const passwordHash = await bcrypt.hash(newPassword, 10)
+
+    // Update in MySQL database
+    try {
+      await pool.execute(
+        `UPDATE user_accounts SET password_hash = ? WHERE LOWER(email) = ?`,
+        [passwordHash, normalizedEmail],
+      )
+      console.log(`[reset-password] Password updated in MySQL for ${normalizedEmail}`)
+    } catch (dbErr) {
+      console.warn('[reset-password] MySQL update note:', dbErr.message)
+    }
+
+    // Update in Firebase Auth if available
+    try {
+      const adminModule = await import('firebase-admin')
+      const admin = adminModule.default || adminModule
+      if (admin && admin.apps && admin.apps.length) {
+        const fbUser = await admin.auth().getUserByEmail(normalizedEmail).catch(() => null)
+        if (fbUser) {
+          await admin.auth().updateUser(fbUser.uid, { password: newPassword })
+          console.log(`[reset-password] Password updated in Firebase Auth for UID: ${fbUser.uid}`)
+        }
+      }
+    } catch (fbErr) {
+      console.warn('[reset-password] Firebase update note:', fbErr.message)
+    }
+
+    // Clean up OTP record
+    passwordResetStore.delete(normalizedEmail)
+
+    res.json({
+      success: true,
+      message: 'Password reset successful! You can now log in with your new password.',
+    })
+  } catch (err) {
+    console.error('[reset-password] Error:', err.message)
+    res.status(500).json({ error: err.message || 'Failed to update password.' })
+  }
+})
+
+// GET /api/mail/status
+app.get('/api/mail/status', (req, res) => {
+  res.json({
+    configured: isSmtpConfigured(),
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    user: process.env.SMTP_USER ? process.env.SMTP_USER.replace(/(.{3})(.*)(@.*)/, '$1***$3') : null,
+  })
 })
 
 app.post('/api/customers/register', async (req, res) => {
@@ -1625,72 +2515,153 @@ app.post('/api/accounts/register', async (req, res) => {
   }
 })
 
-async function start() {
-  await pool.query('SELECT 1')
-  // Ensure the sync queue table exists even if migration hasn't been run yet
-  await ensureSyncTable()
-
-  // ── Auto-migrate: add image_url column to menu_items if missing ─────────────
-  try {
-    await pool.execute(`
-      ALTER TABLE \`menu_items\`
-      ADD COLUMN IF NOT EXISTS \`image_url\` TEXT NULL DEFAULT NULL
-    `)
-    console.log('[migrate] menu_items.image_url column ready.')
-  } catch {
-    // MySQL < 8 doesn't support IF NOT EXISTS on ADD COLUMN — use the safe approach
-    try {
-      const [cols] = await pool.execute(
-        `SELECT COLUMN_NAME FROM information_schema.COLUMNS
-         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'menu_items' AND COLUMN_NAME = 'image_url'`,
-      )
-      if (cols.length === 0) {
-        await pool.execute('ALTER TABLE `menu_items` ADD COLUMN `image_url` TEXT NULL DEFAULT NULL')
-        console.log('[migrate] menu_items.image_url column added.')
-      }
-    } catch (innerErr) {
-      console.warn('[migrate] Could not add image_url column:', innerErr.message)
-    }
-  }
-  await seedDatabase()
-  // Connect to Firebase (optional — app works without it)
-  const fbReady = await initFirebase()
-  if (fbReady) {
-    // Provision default Admin & seed accounts in Firebase Auth, Firestore, and Realtime DB
-    await ensureDefaultAdminInFirebase().catch((err) => {
-      console.error('[firebase] Default admin provisioning warning:', err.message)
-    })
-    // Push all existing MySQL data to Firebase on first connect
-    console.log('[sync] Starting initial MySQL → Firebase sync…')
-    initialSyncFromMySQL().then((result) => {
-      if (result.skipped) return
-      console.log(`[sync] Initial sync done: ${result.synced} records pushed.`)
-    }).catch(() => {})
-    // Flush any records that were queued while Firebase was offline
-    const flushed = await flushSyncQueue()
-    if (flushed > 0) console.log(`[sync] Flushed ${flushed} queued record(s) to Firebase.`)
-    // Start the background retry loop (re-queues failed syncs every 30s)
-    startSyncRetryLoop()
-    // ── NEW: Start Firebase → MySQL reverse sync listeners ──────────────────
-    // Picks up changes made on the live domain and writes them back to MySQL.
-    startFirebaseToMySQLSync()
-  }
-  if (existsSync(path.join(projectRoot, 'dist', 'index.html'))) {
-    app.use(express.static(path.join(projectRoot, 'dist')))
-    app.use((req, res, next) => {
-      // Never intercept API routes
-      if (req.path.startsWith('/api')) return next()
-      const indexFile = path.join(projectRoot, 'dist', 'index.html')
-      if (!existsSync(indexFile)) return next()
-      res.sendFile(indexFile)
-    })
-  }
-  app.listen(config.apiPort, '0.0.0.0', () => {
-    console.log(`[api] MySQL  → "${config.database.name}" at ${config.database.host}:${config.database.port}`)
-    console.log(`[api] Firebase → ${getFirebaseStatus().ready ? 'connected' : 'not connected (sync disabled)'}`)
-    console.log(`[api] Listening on http://0.0.0.0:${config.apiPort}`)
+// Serve production build if present
+if (existsSync(path.join(projectRoot, 'dist', 'index.html'))) {
+  app.use(express.static(path.join(projectRoot, 'dist')))
+  app.use((req, res, next) => {
+    // Never intercept API routes
+    if (req.path.startsWith('/api')) return next()
+    const indexFile = path.join(projectRoot, 'dist', 'index.html')
+    if (!existsSync(indexFile)) return next()
+    res.sendFile(indexFile)
   })
 }
+
+// Start Express API listener immediately so localhost:3001 is instantly available
+const server = app.listen(config.apiPort, '0.0.0.0', () => {
+  console.log(`[api] Listening on http://0.0.0.0:${config.apiPort}`)
+})
+
+async function start() {
+  try {
+    await pool.query('SELECT 1')
+    console.log(`[api] MySQL  → "${config.database.name}" at ${config.database.host}:${config.database.port}`)
+
+    // Ensure the sync queue table exists even if migration hasn't been run yet
+    await ensureSyncTable()
+
+    // Auto-migrate: add image_url column to menu_items if missing
+    try {
+      await pool.execute(`
+        ALTER TABLE \`menu_items\`
+        ADD COLUMN IF NOT EXISTS \`image_url\` TEXT NULL DEFAULT NULL
+      `)
+      console.log('[migrate] menu_items.image_url column ready.')
+    } catch {
+      try {
+        const [cols] = await pool.execute(
+          `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'menu_items' AND COLUMN_NAME = 'image_url'`,
+        )
+        if (cols.length === 0) {
+          await pool.execute('ALTER TABLE `menu_items` ADD COLUMN `image_url` TEXT NULL DEFAULT NULL')
+          console.log('[migrate] menu_items.image_url column added.')
+        }
+      } catch (innerErr) {
+        console.warn('[migrate] Could not add image_url column:', innerErr.message)
+      }
+    }
+
+    // Auto-migrate: add rfid_uid column to staff if missing
+    try {
+      await pool.execute(`
+        ALTER TABLE \`staff\`
+        ADD COLUMN IF NOT EXISTS \`rfid_uid\` VARCHAR(64) NULL DEFAULT NULL AFTER \`contact\`
+      `)
+      console.log('[migrate] staff.rfid_uid column ready.')
+    } catch {
+      try {
+        const [cols] = await pool.execute(
+          `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'staff' AND COLUMN_NAME = 'rfid_uid'`,
+        )
+        if (cols.length === 0) {
+          await pool.execute('ALTER TABLE `staff` ADD COLUMN `rfid_uid` VARCHAR(64) NULL DEFAULT NULL AFTER `contact`')
+          console.log('[migrate] staff.rfid_uid column added.')
+        }
+      } catch (innerErr) {
+        console.warn('[migrate] Could not add rfid_uid column:', innerErr.message)
+      }
+    }
+
+    // Auto-migrate: add approval_status, rejection_reason, rfid_status to staff
+    const staffColsToAdd = [
+      { name: 'approval_status', sql: "ALTER TABLE `staff` ADD COLUMN `approval_status` ENUM('PENDING','APPROVED','REJECTED') DEFAULT 'APPROVED'" },
+      { name: 'rejection_reason', sql: 'ALTER TABLE `staff` ADD COLUMN `rejection_reason` TEXT NULL' },
+      { name: 'approved_by', sql: 'ALTER TABLE `staff` ADD COLUMN `approved_by` VARCHAR(64) NULL' },
+      { name: 'approved_at', sql: 'ALTER TABLE `staff` ADD COLUMN `approved_at` DATETIME NULL' },
+      { name: 'rfid_status', sql: "ALTER TABLE `staff` ADD COLUMN `rfid_status` ENUM('INACTIVE','PENDING_ENROLLMENT','ACTIVE','BLOCKED') DEFAULT 'INACTIVE'" },
+    ]
+    for (const c of staffColsToAdd) {
+      try {
+        const [ex] = await pool.execute(
+          `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'staff' AND COLUMN_NAME = ?`,
+          [c.name]
+        )
+        if (ex.length === 0) {
+          await pool.execute(c.sql)
+          console.log(`[migrate] staff.${c.name} column added.`)
+        }
+      } catch (err) {
+        console.warn(`[migrate] Notice for staff.${c.name}:`, err.message)
+      }
+    }
+
+    // Auto-migrate: add position, approval_status, rejection_reason, rfid_status to user_accounts
+    const userAccountColsToAdd = [
+      { name: 'position', sql: 'ALTER TABLE `user_accounts` ADD COLUMN `position` VARCHAR(64) NULL DEFAULT NULL' },
+      { name: 'approval_status', sql: "ALTER TABLE `user_accounts` ADD COLUMN `approval_status` ENUM('PENDING','APPROVED','REJECTED') DEFAULT 'APPROVED'" },
+      { name: 'rejection_reason', sql: 'ALTER TABLE `user_accounts` ADD COLUMN `rejection_reason` TEXT NULL' },
+      { name: 'approved_by', sql: 'ALTER TABLE `user_accounts` ADD COLUMN `approved_by` VARCHAR(64) NULL' },
+      { name: 'approved_at', sql: 'ALTER TABLE `user_accounts` ADD COLUMN `approved_at` DATETIME NULL' },
+      { name: 'rfid_status', sql: "ALTER TABLE `user_accounts` ADD COLUMN `rfid_status` ENUM('INACTIVE','PENDING_ENROLLMENT','ACTIVE','BLOCKED') DEFAULT 'INACTIVE'" },
+      { name: 'rfid_uid', sql: 'ALTER TABLE `user_accounts` ADD COLUMN `rfid_uid` VARCHAR(64) NULL DEFAULT NULL' },
+    ]
+    for (const c of userAccountColsToAdd) {
+      try {
+        const [ex] = await pool.execute(
+          `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_accounts' AND COLUMN_NAME = ?`,
+          [c.name]
+        )
+        if (ex.length === 0) {
+          await pool.execute(c.sql)
+          console.log(`[migrate] user_accounts.${c.name} column added.`)
+        }
+      } catch (err) {
+        console.warn(`[migrate] Notice for user_accounts.${c.name}:`, err.message)
+      }
+    }
+    await seedDatabase()
+  } catch (dbErr) {
+    console.warn(`[api] MySQL note: Could not connect to database "${config.database.name}" (${dbErr.message}). Operating with memory fallback.`)
+  }
+
+  // Connect to Firebase in the background (non-blocking)
+  initFirebase().then(async (fbReady) => {
+    if (fbReady) {
+      console.log(`[api] Firebase → connected`)
+      await ensureDefaultAdminInFirebase().catch((err) => {
+        console.error('[firebase] Default admin provisioning warning:', err.message)
+      })
+      initialSyncFromMySQL().then((result) => {
+        if (result?.skipped) return
+        console.log(`[sync] Initial sync done: ${result?.synced || 0} records pushed.`)
+      }).catch(() => {})
+      const flushed = await flushSyncQueue().catch(() => 0)
+      if (flushed > 0) console.log(`[sync] Flushed ${flushed} queued record(s) to Firebase.`)
+      startSyncRetryLoop()
+      startFirebaseToMySQLSync()
+    } else {
+      console.log(`[api] Firebase → not connected (sync disabled)`)
+    }
+  }).catch((err) => {
+    console.warn('[firebase] Background Firebase init error:', err.message)
+  })
+}
+
+export { app, server }
 
 start().catch((error) => {
   console.error(`[api] Could not connect to MySQL database "${config.database.name}".`, error.message)

@@ -10,13 +10,13 @@ export const SESSION_STATE_KEY  = 'rmjohns_session_state'
 export const ROLE_HOME = {
   Admin:    'Overview',
   Staff:    'Staff Dashboard',
-  Customer: 'Home',
 }
 
 export const PROTECTED_PAGES = {
   Overview:          ['Admin'],
   Sales:             ['Admin'],
-  POS:               ['Admin'],
+  POS:               ['Staff'],
+  'Point of Sale':   ['Staff'],
   Customers:         ['Admin'],
   Staff:             ['Admin'],
   Monitoring:        ['Admin'],
@@ -28,14 +28,10 @@ export const PROTECTED_PAGES = {
   Kitchen:           ['Admin', 'Staff'],
   'Staff Dashboard': ['Staff'],
   Attendance:        ['Staff'],
-  Home:              ['Customer'],
-  Cart:              ['Customer'],
-  Checkout:          ['Customer'],
-  'My orders':       ['Customer'],
-  Loyalty:           ['Admin', 'Customer'],
-  Menu:              ['Admin', 'Staff', 'Customer'],
-  Notifications:     ['Admin', 'Staff', 'Customer'],
-  Profile:           ['Admin', 'Staff', 'Customer'],
+  Loyalty:           ['Admin'],
+  Menu:              ['Admin', 'Staff'],
+  Notifications:     ['Admin', 'Staff'],
+  Profile:           ['Admin', 'Staff'],
 }
 
 const PAGE_TO_SLUG = {

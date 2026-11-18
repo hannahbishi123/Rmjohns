@@ -36,7 +36,7 @@ function buildCustomerPageTokens(currentPage, totalPages) {
 }
 
 export default function CustomersPage() {
-  const { customers = [], orders = [], setDialog } = useApp()
+  const { customers = [], orders = [], setDialog, deleteCustomer } = useApp()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('All customers')
   const [currentPage, setCurrentPage] = useState(1)
@@ -284,23 +284,57 @@ export default function CustomersPage() {
                       </span>
                     </td>
 
-                    {/* 7. Actions (Three-dot menu button) */}
+                    {/* 7. Actions */}
                     <td className="col-actions">
-                      <button
-                        type="button"
-                        className="adm-cst-more-btn"
-                        aria-label={`View details for ${customer.name}`}
-                        title={`View ${customer.name} profile`}
-                        onClick={() =>
-                          setDialog({
-                            type: 'customer',
-                            customer,
-                            orders: customerOrders,
-                          })
-                        }
-                      >
-                        &bull;&bull;&bull;
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <button
+                          type="button"
+                          className="adm-cst-more-btn"
+                          aria-label={`View details for ${customer.name}`}
+                          title={`View ${customer.name} profile`}
+                          onClick={() =>
+                            setDialog({
+                              type: 'customer',
+                              customer,
+                              orders: customerOrders,
+                            })
+                          }
+                        >
+                          &bull;&bull;&bull;
+                        </button>
+                        <button
+                          type="button"
+                          className="adm-cst-delete-btn"
+                          aria-label={`Delete ${customer.name}`}
+                          title={`Delete ${customer.name} and user account`}
+                          onClick={async () => {
+                            const confirmed = window.confirm(`Sigurado ka bang nais mong burahin ang customer account ni ${customer.name}? Mabubura ang record nito nang permanente.`)
+                            if (confirmed && deleteCustomer) {
+                              await deleteCustomer(customer.id)
+                            }
+                          }}
+                          style={{
+                            border: '1px solid #FFCDD2',
+                            background: '#FFEBEE',
+                            color: '#C62828',
+                            borderRadius: '6px',
+                            padding: '4px 8px',
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )

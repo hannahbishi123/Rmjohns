@@ -731,3 +731,821 @@
     justify-content: space-between;
   }
 }
+
+/* ── STAFF NAVIGATION TABS ──────────────────────────────────────────────── */
+.adm-stf-nav-tabs {
+  display: flex;
+  gap: 12px;
+  border-bottom: 2px solid var(--stf-border);
+  padding-bottom: 6px;
+}
+
+.adm-stf-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 10px 18px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--stf-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: -8px;
+}
+
+.adm-stf-tab-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.adm-stf-tab-btn:hover {
+  color: var(--stf-forest);
+}
+
+.adm-stf-tab-btn.is-active {
+  color: var(--stf-forest);
+  border-bottom-color: var(--stf-forest);
+}
+
+.adm-stf-tab-badge {
+  background: #ECEFE6;
+  color: var(--stf-forest);
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.adm-stf-tab-badge-pending {
+  background: #FFF3E0;
+  color: #E65100;
+  border: 1px solid #FFE0B2;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+  animation: pulse-border 1.8s infinite;
+}
+
+@keyframes pulse-border {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(230, 81, 0, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(230, 81, 0, 0); }
+}
+
+/* ── REQUEST FILTER PILLS ───────────────────────────────────────────────── */
+.adm-stf-requests-filter-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.adm-stf-req-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--stf-border);
+  background: #FFFFFF;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--stf-text-muted);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.adm-stf-req-filter-pill:hover {
+  border-color: var(--stf-forest);
+  color: var(--stf-forest);
+}
+
+.adm-stf-req-filter-pill.is-active {
+  background: var(--stf-forest);
+  border-color: var(--stf-forest);
+  color: #FFFFFF;
+}
+
+.adm-stf-pending-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #E65100;
+}
+
+/* ── REQUESTS TABLE ELEMENTS ────────────────────────────────────────────── */
+.adm-stf-row.is-pending-row {
+  background: rgba(255, 248, 225, 0.35);
+}
+
+.adm-stf-position-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #E8F5E9;
+  color: #1B5E20;
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: 8px;
+}
+
+.adm-stf-date-meta {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  color: var(--stf-text-muted);
+}
+
+.adm-stf-date-meta small {
+  font-size: 10.5px;
+  color: #8C9B91;
+}
+
+.adm-stf-approval-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.adm-stf-approval-pill.status-pending {
+  background: #FFF3E0;
+  color: #E65100;
+  border: 1px solid #FFE0B2;
+}
+
+.adm-stf-approval-pill.status-approved {
+  background: #E8F5E9;
+  color: #2E7D32;
+  border: 1px solid #C8E6C9;
+}
+
+.adm-stf-approval-pill.status-rejected {
+  background: #FFEBEE;
+  color: #C62828;
+  border: 1px solid #FFCDD2;
+}
+
+.adm-stf-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #E65100;
+  box-shadow: 0 0 0 2px rgba(230, 81, 0, 0.3);
+}
+
+.adm-stf-rejection-note {
+  font-size: 11px;
+  color: #C62828;
+  margin-top: 4px;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm-stf-rfid-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #E8F5E9;
+  color: #1B5E20;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.adm-stf-rfid-active-badge code {
+  font-family: monospace;
+  font-size: 11.5px;
+}
+
+.adm-stf-rfid-locked {
+  font-size: 11.5px;
+  color: var(--stf-text-muted);
+  font-style: italic;
+}
+
+.adm-stf-enroll-btn {
+  background: #E3F2FD;
+  color: #1565C0;
+  border: 1px solid #BBDEFB;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.adm-stf-enroll-btn:hover {
+  background: #1565C0;
+  color: #FFFFFF;
+}
+
+/* Action Buttons */
+.adm-stf-req-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.adm-stf-accept-btn {
+  background: #2E7D32;
+  color: #FFFFFF;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.adm-stf-accept-btn:hover {
+  background: #1B5E20;
+}
+
+.adm-stf-reject-btn {
+  background: transparent;
+  color: #C62828;
+  border: 1px solid #FFCDD2;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.adm-stf-reject-btn:hover {
+  background: #FFEBEE;
+  border-color: #EF5350;
+}
+
+.adm-stf-re-review-btn {
+  background: #FFF8E1;
+  color: #F57F17;
+  border: 1px solid #FFE082;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-stf-re-review-btn:hover {
+  background: #F57F17;
+  color: #FFFFFF;
+}
+
+.adm-stf-enroll-card-btn {
+  background: var(--stf-forest);
+  color: #FFFFFF;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-stf-enroll-card-btn:hover {
+  background: var(--stf-forest-mid);
+}
+
+/* ── MODALS (REJECT & ENROLL) ───────────────────────────────────────────── */
+.adm-stf-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(19, 44, 31, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.adm-stf-modal-card {
+  background: #FFFFFF;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  animation: modal-enter 0.22s ease-out;
+}
+
+@keyframes modal-enter {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.adm-stf-modal-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 24px 28px 18px;
+  border-bottom: 1px solid var(--stf-border);
+  position: relative;
+}
+
+.adm-stf-modal-head-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.adm-stf-modal-head-icon.reject-icon {
+  background: #FFEBEE;
+  color: #C62828;
+}
+
+.adm-stf-modal-head-icon.rfid-icon {
+  background: #E8F5E9;
+  color: var(--stf-forest);
+}
+
+.adm-stf-modal-head h3 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--stf-text);
+  margin: 0 0 4px;
+}
+
+.adm-stf-modal-head p {
+  font-size: 13px;
+  color: var(--stf-text-muted);
+  margin: 0;
+}
+
+.adm-stf-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  font-size: 26px;
+  color: var(--stf-text-muted);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.adm-stf-modal-body {
+  padding: 22px 28px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.adm-stf-modal-applicant-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #F9F9F6;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.adm-stf-modal-applicant-summary .summary-name {
+  font-weight: 800;
+  color: var(--stf-text);
+}
+
+.adm-stf-modal-applicant-summary .summary-pos {
+  background: #E8F5E9;
+  color: #1B5E20;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.adm-stf-modal-applicant-summary .summary-contact {
+  color: var(--stf-text-muted);
+  margin-left: auto;
+}
+
+.adm-stf-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.adm-stf-form-field label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--stf-text);
+}
+
+.adm-stf-form-field label em {
+  color: #C62828;
+  font-style: normal;
+}
+
+.adm-stf-form-field textarea {
+  border: 1.5px solid var(--stf-border);
+  border-radius: 12px;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: var(--stf-text);
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.18s ease;
+}
+
+.adm-stf-form-field textarea:focus {
+  border-color: var(--stf-forest);
+}
+
+.adm-stf-form-field .form-help {
+  font-size: 11.5px;
+  color: var(--stf-text-muted);
+}
+
+.adm-stf-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.adm-stf-modal-btn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+  border: none;
+  transition: all 0.18s ease;
+}
+
+.adm-stf-modal-btn.cancel-btn {
+  background: #F1F4EE;
+  color: var(--stf-text-muted);
+}
+
+.adm-stf-modal-btn.confirm-reject-btn {
+  background: #C62828;
+  color: #FFFFFF;
+}
+
+.adm-stf-modal-btn.confirm-reject-btn:hover {
+  background: #B71C1C;
+}
+
+/* ── LIVE OLED / RADAR ENROLLMENT STYLES ─────────────────────────────────── */
+.enroll-modal-content {
+  align-items: center;
+  text-align: center;
+}
+
+.adm-stf-radar-pulse {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 10px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radar-circle {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(43, 96, 58, 0.15);
+  animation: radar-expand 2s infinite ease-out;
+}
+
+@keyframes radar-expand {
+  0% { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.radar-card-icon {
+  position: relative;
+  z-index: 2;
+}
+
+.adm-stf-oled-mockup {
+  background: #000000;
+  border: 3px solid #333333;
+  border-radius: 12px;
+  padding: 14px 20px;
+  width: 260px;
+  margin: 12px auto;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+}
+
+.oled-header {
+  font-family: monospace;
+  font-size: 9px;
+  color: #666666;
+  text-align: left;
+  margin-bottom: 6px;
+}
+
+.oled-text-line {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #00FFFF;
+  letter-spacing: 0.5px;
+  margin: 2px 0;
+}
+
+.oled-text-line.line1 {
+  color: #FFFF00;
+}
+
+.oled-text-line.line3 {
+  color: #00FF66;
+}
+
+.adm-stf-enroll-instruction {
+  font-size: 14px;
+  color: var(--stf-text);
+  margin: 8px 0 2px;
+}
+
+.adm-stf-enroll-note {
+  font-size: 12px;
+  color: var(--stf-text-muted);
+}
+
+.adm-stf-enroll-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.success-icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #E8F5E9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adm-stf-enroll-success h4 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #2E7D32;
+  margin: 0;
+}
+
+.adm-stf-enroll-success code {
+  background: #F1F4EE;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 800;
+}
+
+/* ── REVIEW APPLICANT MODAL & BUTTONS ───────────────────────────────────────── */
+.adm-stf-review-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid #C5D8F0;
+  background: #F0F6FD;
+  color: #1565C0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.adm-stf-review-btn:hover {
+  background: #E3F2FD;
+  border-color: #90CAF9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(21, 101, 192, 0.15);
+}
+
+.review-modal-card {
+  max-width: 620px;
+}
+
+.adm-stf-modal-head-icon.review-icon {
+  background: #E3F2FD;
+  color: #1976D2;
+}
+
+.adm-stf-review-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #F8FBF6;
+  border: 1px solid #E2EBDC;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.adm-stf-review-avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #2B603A;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 10px rgba(43, 96, 58, 0.2);
+}
+
+.adm-stf-review-profile-meta {
+  flex: 1;
+}
+
+.adm-stf-review-profile-meta h4 {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #1C2E20;
+}
+
+.adm-stf-review-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.adm-stf-review-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 600px) {
+  .adm-stf-review-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  background: #FFFFFF;
+  border: 1px solid #EAEFE6;
+  border-radius: 8px;
+}
+
+.detail-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #6C7D68;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #213524;
+  word-break: break-word;
+}
+
+.detail-value.position-value {
+  color: #2B603A;
+  font-weight: 800;
+}
+
+.detail-value.highlight-value {
+  color: #1565C0;
+}
+
+.detail-value.mono-value {
+  font-family: monospace;
+  font-size: 13px;
+  background: #F4F6F2;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.adm-stf-review-rejection-box {
+  padding: 12px 16px;
+  background: #FFEBEE;
+  border: 1px solid #FFCDD2;
+  border-radius: 8px;
+  color: #C62828;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.adm-stf-review-rejection-box strong {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.adm-stf-review-rejection-box p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.adm-stf-review-guide-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #E8F5E9;
+  border: 1px solid #C8E6C9;
+  border-radius: 8px;
+  color: #2E7D32;
+  font-size: 12.5px;
+  line-height: 1.45;
+  margin-bottom: 20px;
+}
+
+.adm-stf-review-guide-alert svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.adm-stf-modal-actions.review-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.adm-stf-modal-btn.accept-action-btn {
+  background: #2E7D32;
+  color: #FFFFFF;
+  border: none;
+}
+
+.adm-stf-modal-btn.accept-action-btn:hover {
+  background: #1B5E20;
+}
+
+.adm-stf-modal-btn.reject-action-btn {
+  background: #D32F2F;
+  color: #FFFFFF;
+  border: none;
+}
+
+.adm-stf-modal-btn.reject-action-btn:hover {
+  background: #C62828;
+}
+
+.adm-stf-delete-req-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid #FFCDD2;
+  background: #FFEBEE;
+  color: #C62828;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.adm-stf-delete-req-btn:hover {
+  background: #FFCDD2;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(198, 40, 40, 0.2);
+}
+
+.adm-stf-modal-btn.delete-action-btn {
+  background: #FFEBEE;
+  color: #C62828;
+  border: 1px solid #FFCDD2;
+  margin-right: auto;
+}
+
+.adm-stf-modal-btn.delete-action-btn:hover {
+  background: #C62828;
+  color: #FFFFFF;
+}

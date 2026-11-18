@@ -265,7 +265,16 @@ export function AppProvider({ children }) {
           }
         }
 
-        if (!resolvedRole || !['Admin', 'Staff', 'Customer'].includes(resolvedRole)) {
+        if (resolvedRole === 'Customer') {
+          await firebaseSignOut().catch(() => {})
+          clearPersistedSession()
+          setFirebaseAuthReady(true)
+          setRole('Staff')
+          setPage('Login')
+          return
+        }
+
+        if (!resolvedRole || !['Admin', 'Staff'].includes(resolvedRole)) {
           await firebaseSignOut().catch(() => {})
           clearPersistedSession()
           setFirebaseAuthReady(true)
@@ -746,6 +755,10 @@ export function AppProvider({ children }) {
         body: JSON.stringify({ identifier, password, role: expectedRole }),
       })
 
+      if (account.role === 'Customer') {
+        throw new Error('Ang Customer access ay eksklusibo lamang para sa RMJohn\'s Mobile App. Mangyaring gamitin ang mobile app para mag-order.')
+      }
+
       // Also sign into Firebase Auth so the browser has a valid session.
       // This is required for saveToFirebase (checks auth.currentUser before writing).
       const usernameEmailMap = {
@@ -871,8 +884,14 @@ export function AppProvider({ children }) {
       else role = 'Customer'
     }
 
-    // Validate — if role is not one of the three supported values, refuse login
-    if (!['Admin', 'Staff', 'Customer'].includes(role)) {
+    // Validate — only Admin and Staff are permitted on the Web System
+    if (role === 'Customer') {
+      await firebaseSignOut().catch(() => {})
+      clearPersistedSession()
+      throw new Error('Ang Customer access ay eksklusibo lamang para sa RMJohn\'s Mobile App. Mangyaring gamitin ang mobile app para mag-order.')
+    }
+
+    if (!['Admin', 'Staff'].includes(role)) {
       await firebaseSignOut().catch(() => {})
       throw new Error('Your account does not have a recognized role. Contact the system administrator.')
     }
@@ -1192,6 +1211,20 @@ export function AppProvider({ children }) {
     setCustomers((current) => [...current, { ...customer, id: `CU-${String(1043 + current.length - initialCustomers.length).padStart(4, '0')}`, orders: 0, spend: 0, points: 0, status: 'Active' }])
   }
 
+  async function deleteCustomer(customerId) {
+    if (!customerId) return
+    try {
+      await apiRequest('/api/customers/delete', {
+        method: 'POST',
+        body: JSON.stringify({ id: customerId }),
+      })
+    } catch (err) {
+      console.warn('[deleteCustomer] API delete failed, applying local delete:', err.message)
+    }
+    setCustomers((current) => current.filter((c) => (c.id !== customerId && c.customer_id !== customerId)))
+    notify('Customer and user account record deleted', { icon: 'info' })
+  }
+
   // ── Universal account registration ────────────────────────────────────────
   // ARCHITECTURE:
   //   Customer:
@@ -1438,7 +1471,7 @@ export function AppProvider({ children }) {
     firebaseConnected, firebaseAuthReady,
     notify, confirmAction, showError, swalSuccess, swalWarning, swalInfo, swalShowLoading, swalCloseLoading, withDatabaseAlert,
     navigate, loginAs, signIn, logout, addToCart, changeQuantity, clearCart, placeOrder,
-    completeSale, cancelSale, recordPayment, refundOrder, updateOrder, updateMenuItem, addMenuItem, deleteMenuItem, reorder, addCustomer, registerAccount, registerCustomerAccount, addNotification, redeemReward,
+    completeSale, cancelSale, recordPayment, refundOrder, updateOrder, updateMenuItem, addMenuItem, deleteMenuItem, deleteCustomer, reorder, addCustomer, registerAccount, registerCustomerAccount, addNotification, redeemReward,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

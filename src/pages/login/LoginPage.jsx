@@ -290,7 +290,19 @@ export default function LoginPage() {
             </div>
 
             <h2 className="rmj-login-heading">Sign in to Your Account</h2>
-            <p className="rmj-login-subtitle">Access your Rmjohns Eatery dashboard</p>
+            <p className="rmj-login-subtitle">Admin &amp; Staff Management Portal</p>
+            <div style={{
+              fontSize: '0.8rem',
+              color: '#468223',
+              background: '#EAF5E9',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              marginBottom: '16px',
+              textAlign: 'center',
+              fontWeight: '500'
+            }}>
+              📱 Customers: Please use the RMJohn&apos;s Mobile App to order.
+            </div>
 
             <div className="rmj-login-field-group">
               {/* Email or Username Field */}

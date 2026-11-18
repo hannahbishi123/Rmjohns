@@ -85,9 +85,9 @@ export const initialStaff = [
 ]
 
 export const navByRole = {
-  Admin:    [['Overview', '◫'], ['Orders', '▤'], ['Kitchen', '♨'], ['POS', '＋'], ['Sales', '↗'], ['Menu', '▦'], ['Customers', '♙'], ['Staff', '♧'], ['Monitoring', '◉'], ['Loyalty', '✳'], ['Reports', '▥'], ['Notifications', '♢'], ['Settings', '⚙']],
-  Staff:    [['Staff Dashboard', '◫'], ['Kitchen', '♨'], ['Orders', '▤'], ['Attendance', '◷'], ['Notifications', '♢'], ['Profile', '♙']],
-  Customer: [['Home', '⌂'], ['Menu', '▦'], ['Cart', '＋'], ['My orders', '▤'], ['Loyalty', '✳'], ['Notifications', '♢'], ['Profile', '♙']],
+  Admin:    [['Overview', '◫'], ['Orders', '▤'], ['Kitchen', '♨'], ['Sales', '↗'], ['Menu', '▦'], ['Customers', '♙'], ['Staff', '♧'], ['Monitoring', '◉'], ['Loyalty', '✳'], ['Reports', '▥'], ['Notifications', '♢'], ['Settings', '⚙']],
+  Staff:    [['Staff Dashboard', '◫'], ['POS', '＋'], ['Kitchen', '♨'], ['Orders', '▤'], ['Attendance', '◷'], ['Notifications', '♢'], ['Profile', '♙']],
+  Customer: [],
 }
 
 export const money = (amount) => `₱${Number(amount).toLocaleString('en-PH')}`

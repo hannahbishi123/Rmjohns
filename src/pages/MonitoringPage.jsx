@@ -1,12 +1,77 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { Pagination, usePagination } from '../components/shared'
 import './MonitoringPage.css'
 
 export default function MonitoringPage() {
-  const { staff, deviceConnected, setDeviceConnected, scanEvents, recordStaffScan, notify } = useApp()
+  const { staff, setStaff, deviceConnected, setDeviceConnected, scanEvents, recordStaffScan, notify } = useApp()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('All')
+  const [isHwOnline, setIsHwOnline] = useState(false)
+  const [lastUnknownCard, setLastUnknownCard] = useState(null)
+  const [assignModalOpen, setAssignModalOpen] = useState(false)
+  const [selectedStaff, setSelectedStaff] = useState(null)
+  const [rfidInput, setRfidInput] = useState('')
+  const [isSavingRfid, setIsSavingRfid] = useState(false)
+
+  // Auto-detect real ESP32 RFID hardware status
+  useEffect(() => {
+    let active = true
+    const checkHw = async () => {
+      try {
+        const res = await fetch('/api/iot/status')
+        if (res.ok) {
+          const data = await res.json()
+          if (active) {
+            setIsHwOnline(Boolean(data.online))
+            if (data.online) {
+              setDeviceConnected(true)
+            }
+            if (data.lastUnknownCard) {
+              setLastUnknownCard(data.lastUnknownCard)
+            }
+          }
+        }
+      } catch {}
+    }
+    checkHw()
+    const timer = setInterval(checkHw, 4000)
+    return () => {
+      active = false
+      clearInterval(timer)
+    }
+  }, [setDeviceConnected])
+
+  async function handleSaveRfid(e) {
+    if (e) e.preventDefault()
+    if (!selectedStaff || !rfidInput.trim()) {
+      return notify('Please select a staff member and enter an RFID UID')
+    }
+    const cleanUid = rfidInput.trim().toUpperCase()
+    setIsSavingRfid(true)
+    try {
+      const res = await fetch('/api/staff/assign-rfid', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staff_id: selectedStaff.id, rfid_uid: cleanUid }),
+      })
+      const data = await res.json()
+      if (res.ok && data.ok) {
+        setStaff((curr) =>
+          curr.map((p) => (p.id === selectedStaff.id ? { ...p, rfidUid: cleanUid } : p))
+        )
+        setLastUnknownCard(null)
+        setAssignModalOpen(false)
+        notify(`RFID card ${cleanUid} assigned to ${selectedStaff.name}!`)
+      } else {
+        notify(data.error || 'Failed to assign RFID card')
+      }
+    } catch (err) {
+      notify('Network error assigning RFID: ' + err.message)
+    } finally {
+      setIsSavingRfid(false)
+    }
+  }
 
   // Live formatted current date
   const todayFormatted = useMemo(() => {
@@ -110,11 +175,11 @@ export default function MonitoringPage() {
             <div className="adm-mon-device-title-row">
               <h2>ESP32 Attendance Reader</h2>
               <span className={`adm-mon-status-pill ${deviceConnected ? 'connected' : 'offline'}`}>
-                <i /> {deviceConnected ? 'Connected · Live Demo' : 'Offline · Reader Disconnected'}
+                <i /> {isHwOnline ? 'ESP32 Hardware Online · Active' : deviceConnected ? 'Connected · Live Demo' : 'Offline · Reader Disconnected'}
               </span>
             </div>
             <p className="adm-mon-device-desc">
-              Visual simulation mode &bull; NodeMCU ESP32-WROOM &bull; 13.56 MHz RFID Sensor
+              {isHwOnline ? 'Physical Hardware Connected · NodeMCU ESP32 + RC522 RFID Sensor' : 'Visual simulation mode • NodeMCU ESP32-WROOM • 13.56 MHz RFID Sensor'}
             </p>
           </div>
         </div>
@@ -140,6 +205,90 @@ export default function MonitoringPage() {
           )}
         </button>
       </section>
+
+      {/* ── 2.5 UNREGISTERED CARD DETECTED BANNER ───────────────────────── */}
+      {lastUnknownCard && (
+        <section
+          style={{
+            margin: '16px 0 24px',
+            padding: '14px 20px',
+            background: 'linear-gradient(135deg, #FFF8E1, #FFECB3)',
+            border: '1.5px solid #FFA000',
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+            boxShadow: '0 4px 14px rgba(255, 160, 0, 0.15)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '12px',
+                background: '#FF8F00',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '22px',
+                flexShrink: 0,
+              }}
+            >
+              💳
+            </div>
+            <div>
+              <div style={{ fontWeight: '700', color: '#E65100', fontSize: '15px' }}>
+                New Physical RFID Card Detected: <span style={{ fontFamily: 'monospace', background: '#fff', padding: '2px 8px', borderRadius: '6px', border: '1px solid #FFB74D', fontSize: '14px' }}>{lastUnknownCard.uid}</span>
+              </div>
+              <div style={{ fontSize: '12.5px', color: '#5D4037', marginTop: '3px' }}>
+                Tapped on the ESP32 reader at {lastUnknownCard.time}. Link this card to a staff member for instant Time In / Time Out.
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>
+            <button
+              type="button"
+              style={{
+                background: '#E65100',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '10px',
+                padding: '8px 18px',
+                fontWeight: '700',
+                fontSize: '13px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(230, 81, 0, 0.3)',
+              }}
+              onClick={() => {
+                setRfidInput(lastUnknownCard.uid)
+                setSelectedStaff(staff[0] || null)
+                setAssignModalOpen(true)
+              }}
+            >
+              Link Card to Staff
+            </button>
+            <button
+              type="button"
+              style={{
+                background: 'rgba(0,0,0,0.06)',
+                border: '1px solid rgba(0,0,0,0.12)',
+                borderRadius: '10px',
+                padding: '8px 14px',
+                color: '#5D4037',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: 'pointer',
+              }}
+              onClick={() => setLastUnknownCard(null)}
+            >
+              Dismiss
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* ── 3. ATTENDANCE SUMMARY STAT CARDS ─────────────────────────────── */}
       <div className="adm-mon-stats-grid">
@@ -277,6 +426,7 @@ export default function MonitoringPage() {
                 <th>Staff Member</th>
                 <th>Position</th>
                 <th>Staff ID</th>
+                <th>RFID Card</th>
                 <th>Time In</th>
                 <th>Time Out</th>
                 <th>Status</th>
@@ -304,6 +454,62 @@ export default function MonitoringPage() {
                     <td className="adm-mon-role-cell">{person.role || 'Service Staff'}</td>
                     <td>
                       <span className="adm-mon-id-badge">{person.id}</span>
+                    </td>
+                    <td>
+                      {person.rfidUid ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedStaff(person)
+                            setRfidInput(person.rfidUid)
+                            setAssignModalOpen(true)
+                          }}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            fontFamily: 'monospace',
+                            fontWeight: '600',
+                            background: '#E8F5E9',
+                            color: '#1B5E20',
+                            border: '1px solid #A5D6A7',
+                            cursor: 'pointer',
+                          }}
+                          title="Click to edit or reassign RFID UID"
+                        >
+                          <span>💳</span>
+                          <span>{person.rfidUid}</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedStaff(person)
+                            setRfidInput(lastUnknownCard?.uid || '')
+                            setAssignModalOpen(true)
+                          }}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '4px 9px',
+                            borderRadius: '8px',
+                            fontSize: '11.5px',
+                            fontWeight: '600',
+                            background: '#F5F5F5',
+                            color: '#616161',
+                            border: '1px dashed #BDBDBD',
+                            cursor: 'pointer',
+                          }}
+                          title="Assign RFID Card to this staff"
+                        >
+                          <span>+</span>
+                          <span>Link Card</span>
+                        </button>
+                      )}
                     </td>
                     <td>
                       <span className={`adm-mon-time-cell ${person.time ? '' : 'empty'}`}>
@@ -403,6 +609,172 @@ export default function MonitoringPage() {
 
         <Pagination {...scanPagination} />
       </section>
+
+      {/* ── 6. ASSIGN RFID MODAL ─────────────────────────────────────────── */}
+      {assignModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.55)',
+            backdropFilter: 'blur(3px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '16px',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setAssignModalOpen(false)
+          }}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: '20px',
+              maxWidth: '460px',
+              width: '100%',
+              padding: '24px 28px',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.25)',
+              border: '1px solid #E0E0E0',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '24px' }}>💳</span>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#1B5E20' }}>
+                  Assign RFID Card
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAssignModalOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  color: '#9E9E9E',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveRfid}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#424242', marginBottom: '6px' }}>
+                  Staff Member:
+                </label>
+                <select
+                  value={selectedStaff?.id || ''}
+                  onChange={(e) => {
+                    const found = staff.find((p) => p.id === e.target.value)
+                    setSelectedStaff(found || null)
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #CFD8DC',
+                    fontSize: '14px',
+                    background: '#FAFAFA',
+                  }}
+                >
+                  {staff.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.role || 'Staff'}) — ID: {p.id} {p.rfidUid ? `[Card: ${p.rfidUid}]` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '18px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#424242' }}>
+                    RFID Card UID (Hex):
+                  </label>
+                  {lastUnknownCard?.uid && (
+                    <button
+                      type="button"
+                      onClick={() => setRfidInput(lastUnknownCard.uid)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#E65100',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                      }}
+                    >
+                      Paste Last Tapped: {lastUnknownCard.uid}
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  placeholder="e.g. 4A7B2C19"
+                  value={rfidInput}
+                  onChange={(e) => setRfidInput(e.target.value.toUpperCase())}
+                  maxLength={32}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #2E7D32',
+                    fontSize: '15px',
+                    fontFamily: 'monospace',
+                    fontWeight: '600',
+                    letterSpacing: '1px',
+                    boxSizing: 'border-box',
+                  }}
+                  autoFocus
+                />
+                <p style={{ margin: '6px 0 0', fontSize: '11.5px', color: '#757575' }}>
+                  Tap card on the ESP32 reader or type the UID manually from the Serial Monitor.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                <button
+                  type="button"
+                  onClick={() => setAssignModalOpen(false)}
+                  style={{
+                    padding: '10px 16px',
+                    borderRadius: '10px',
+                    border: '1px solid #BDBDBD',
+                    background: '#fff',
+                    color: '#616161',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingRfid || !rfidInput.trim()}
+                  style={{
+                    padding: '10px 22px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    background: '#2E7D32',
+                    color: '#fff',
+                    fontWeight: '700',
+                    cursor: isSavingRfid ? 'wait' : 'pointer',
+                    boxShadow: '0 4px 12px rgba(46, 125, 50, 0.3)',
+                  }}
+                >
+                  {isSavingRfid ? 'Saving...' : 'Link Card'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

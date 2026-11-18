@@ -375,6 +375,12 @@ export function formatFirestoreDocument(entityType, entityId, payload) {
         attendanceStatus: payload.attendanceStatus || (payload.status === 'On Duty' ? 'present' : (payload.status === 'Break' ? 'onBreak' : 'offDuty')),
         timeIn: payload.time || payload.time_in || payload.timeIn || '',
         timeOut: payload.timeOut || payload.time_out || '',
+        rfidUid: payload.rfidUid || payload.rfid_uid || '',
+        rfidStatus: payload.rfidStatus || payload.rfid_status || 'INACTIVE',
+        approvalStatus: payload.approvalStatus || payload.approval_status || 'APPROVED',
+        rejectionReason: payload.rejectionReason || payload.rejection_reason || null,
+        approvedBy: payload.approvedBy || payload.approved_by || null,
+        approvedAt: payload.approvedAt || payload.approved_at || null,
         updatedAt: now(),
       }
     }
@@ -406,7 +412,12 @@ export function formatFirestoreDocument(entityType, entityId, payload) {
         phone: payload.phone || payload.contact || '',
         role: normalizedRole,
         title: normalizedRole === 'admin' ? 'Manager' : (payload.role || 'Customer'),
+        position: payload.position || payload.role || '',
         status: payload.status || 'Active',
+        approvalStatus: payload.approvalStatus || payload.approval_status || 'APPROVED',
+        rejectionReason: payload.rejectionReason || payload.rejection_reason || null,
+        rfidStatus: payload.rfidStatus || payload.rfid_status || 'INACTIVE',
+        rfidUid: payload.rfidUid || payload.rfid_uid || '',
         updatedAt: now(),
       }
     }
@@ -1109,7 +1120,11 @@ export async function initialSyncFromMySQL() {
     // 6. staff
     const [staffRows] = await pool.execute(
       `SELECT staff_id AS id, name, role, contact, status,
-              time_in AS time, time_out AS timeOut FROM staff ORDER BY staff_id`,
+              time_in AS time, time_out AS timeOut, rfid_uid AS rfidUid,
+              approval_status AS approvalStatus, rejection_reason AS rejectionReason,
+              approved_by AS approvedBy, approved_at AS approvedAt,
+              rfid_status AS rfidStatus
+       FROM staff ORDER BY staff_id`,
     )
     for (const row of staffRows) {
       const key = toFirebaseKey(row.id)

@@ -1,7 +1,6 @@
 import OverviewPage from '../OverviewPage'
 import OrdersPage from '../OrdersPage'
 import KitchenPage from '../KitchenPage'
-import POSPage from '../POSPage'
 import SalesPage from '../SalesPage'
 import MenuPage from '../MenuPage'
 import CustomersPage from '../CustomersPage'
@@ -16,7 +15,7 @@ import ProfilePage from '../ProfilePage'
 import SettingsPage from '../SettingsPage'
 
 const adminPages = {
-  Overview: OverviewPage, Orders: OrdersPage, Kitchen: KitchenPage, POS: POSPage,
+  Overview: OverviewPage, Orders: OrdersPage, Kitchen: KitchenPage,
   Sales: SalesPage, Menu: MenuPage, Customers: CustomersPage, Staff: StaffPage,
   Monitoring: MonitoringPage, Loyalty: LoyaltyPage, Reports: ReportsPage,
   Notifications: NotificationsPage, Billing: BillingPage, Payments: PaymentsPage,

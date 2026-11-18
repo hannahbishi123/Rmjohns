@@ -123,8 +123,10 @@ async function handleOrders(snapshot) {
 async function handleCustomers(snapshot) {
   if (!snapshot || typeof snapshot !== 'object') return
   let upserted = 0
-  for (const [, c] of Object.entries(snapshot)) {
-    if (!c || !c.id) continue
+  for (const [key, c] of Object.entries(snapshot)) {
+    if (!c) continue
+    const customerId = c.id || c.customer_id || key
+    if (!customerId) continue
     const ok = await safeExecute(
       `INSERT INTO customers (customer_id, name, email, contact, orders_count, total_spend, points, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -133,13 +135,55 @@ async function handleCustomers(snapshot) {
          orders_count=VALUES(orders_count), total_spend=VALUES(total_spend),
          points=VALUES(points), status=VALUES(status),
          firebase_sync_status='synced', firebase_synced_at=NOW()`,
-      [c.id, c.name, c.email || null, c.contact || null,
-       c.orders || 0, c.spend || 0, c.points || 0, c.status || 'Active'],
+      [customerId, c.name || 'Customer', c.email || null, c.contact || c.phone || null,
+       c.orders || c.orders_count || 0, c.spend || c.total_spent || 0, c.points || 0, c.status || 'Active'],
       'handleCustomers',
     )
     if (ok) upserted++
   }
   if (upserted > 0) log('info', `customers: upserted ${upserted} record(s) from Firebase`)
+}
+
+async function handleUserAccounts(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return
+  let upserted = 0
+  for (const [key, ua] of Object.entries(snapshot)) {
+    if (!ua || !ua.email) continue
+    const email = ua.email.trim().toLowerCase()
+    const username = ua.username || email.split('@')[0]
+    const role = ua.role === 'customer' ? 'Customer' : (ua.role || 'Customer')
+    const contact = ua.contact || ua.phone || null
+    const firebaseUid = ua.firebase_uid || ua.uid || key
+    const customerId = ua.customer_id || (role === 'Customer' ? firebaseUid : null)
+
+    if (customerId) {
+      await safeExecute(
+        `INSERT INTO customers (customer_id, name, email, contact)
+         VALUES (?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           name = COALESCE(name, VALUES(name)),
+           email = COALESCE(email, VALUES(email)),
+           contact = COALESCE(contact, VALUES(contact))`,
+        [customerId, ua.name || username, email, contact],
+        'ensureCustomerForUserAccount',
+      )
+    }
+
+    const ok = await safeExecute(
+      `INSERT INTO user_accounts (username, email, password_hash, role, contact, customer_id, firebase_uid)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         username=VALUES(username),
+         role=VALUES(role),
+         contact=COALESCE(VALUES(contact), contact),
+         customer_id=COALESCE(VALUES(customer_id), customer_id),
+         firebase_uid=COALESCE(VALUES(firebase_uid), firebase_uid)`,
+      [username, email, ua.password_hash || '$2a$10$wK1Wq6W0n7g6j1Y5E7DqUeYm7o3gE4j9k0p1q2r3s4t5u6v7w8x9y', role, contact, customerId, firebaseUid],
+      'handleUserAccounts',
+    )
+    if (ok) upserted++
+  }
+  if (upserted > 0) log('info', `user_accounts: upserted ${upserted} record(s) from Firebase`)
 }
 
 async function handleStaff(snapshot) {
@@ -225,6 +269,7 @@ const COLLECTIONS = [
   { path: 'eateries/menu_items',    handler: handleMenuItems    },
   { path: 'eateries/orders',        handler: handleOrders        },
   { path: 'eateries/customers',     handler: handleCustomers     },
+  { path: 'eateries/user_accounts', handler: handleUserAccounts  },
   { path: 'eateries/staff',         handler: handleStaff         },
   { path: 'eateries/rewards',       handler: handleRewards       },
   { path: 'eateries/promotions',    handler: handlePromotions    },
