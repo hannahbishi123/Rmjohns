@@ -44,16 +44,34 @@ export function getAdminAuth() {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 export async function initFirebase() {
-  if (!existsSync(serviceAccountPath)) {
+  const admin = require('firebase-admin')
+  let credential = null
+
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+    try {
+      const parsed = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
+      credential = admin.credential.cert(parsed)
+    } catch (e) {
+      console.warn('[firebase] Could not parse FIREBASE_SERVICE_ACCOUNT_JSON:', e.message)
+    }
+  } else if (existsSync(serviceAccountPath)) {
+    try {
+      const serviceAccount = require(serviceAccountPath)
+      credential = admin.credential.cert(serviceAccount)
+    } catch (e) {
+      console.warn('[firebase] Error reading service account file:', e.message)
+    }
+  }
+
+  if (!credential) {
     console.warn('[firebase] Service account not found - Firebase sync disabled.')
     return false
   }
+
   try {
-    const admin = require('firebase-admin')
     if (!admin.apps.length) {
-      const serviceAccount = require(serviceAccountPath)
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
+        credential,
         databaseURL: DATABASE_URL,
       })
     }

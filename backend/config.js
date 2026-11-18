@@ -27,7 +27,7 @@ export const config = {
     password: process.env.DB_PASSWORD || '',
     name:     process.env.DB_NAME     || 'eateries_db',
   },
-  apiPort: Number(process.env.API_PORT || 3001),
+  apiPort: Number(process.env.PORT || process.env.API_PORT || 3001),
   firebase: {
     databaseURL:        process.env.FIREBASE_DATABASE_URL || 'https://rmjohns-eateries-default-rtdb.firebaseio.com',
     serviceAccountPath: resolveServiceAccount(),
