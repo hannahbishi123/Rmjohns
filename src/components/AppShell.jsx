@@ -248,7 +248,6 @@ const ADMIN_NAV_ITEMS = [
   { page: 'Staff',         label: 'Staff Monitoring', hasChevron: false },
   { page: 'Loyalty',       label: 'Loyalty Program',  hasChevron: false },
   { page: 'Kitchen',       label: 'Kitchen Queue',    hasChevron: false },
-  { page: 'POS',           label: 'Point of Sale',    hasChevron: false },
   { page: 'Customers',     label: 'Customers',        hasChevron: false },
   { page: 'Monitoring',    label: 'RFID Attendance',  hasChevron: false },
   { page: 'Reports',       label: 'Analytics',        hasChevron: false },
@@ -614,18 +613,6 @@ export default function AppShell() {
                 </button>
               )
             })}
-
-            {/* Logout Item inside navigation flow matching reference image */}
-            <button
-              type="button"
-              className="adm-nav-item adm-nav-logout"
-              onClick={(e) => { e.stopPropagation(); logout() }}
-            >
-              <span className="adm-nav-icon">
-                <IconLogout />
-              </span>
-              <span className="adm-nav-text">Logout</span>
-            </button>
           </nav>
 
           {/* Bottom Script Quote & Botanical Garnish */}
