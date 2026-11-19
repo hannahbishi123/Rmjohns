@@ -1,0 +1,501 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   rmjohns Kitchen & Bar — Admin Profile Page Styles
+   Strictly scoped to .adm-profile-container so no other module is affected.
+   Design identity:
+   - Forest Green : #1B3B2B / #133320
+   - Sage Green   : #A3B18A / #C2D66D
+   - Lime Green   : #D4E157
+   - Cream        : #F4F6EE / #F9F9F6
+   - White        : #FFFFFF
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Hide generic AppShell page heading when Admin ProfilePage is mounted */
+.page-content.adm-profile-page-content > .page-heading,
+.page-content:has(.adm-profile-container) > .page-heading {
+  display: none !important;
+}
+
+.adm-profile-container {
+  --adm-forest: #1B3B2B;
+  --adm-forest-deep: #133320;
+  --adm-forest-mid: #25523A;
+  --adm-forest-light: #2E6346;
+  --adm-lime: #D4E157;
+  --adm-sage: #A3B18A;
+  --adm-sage-pale: #E7EFE3;
+  --adm-cream-bg: #F4F6EE;
+  --adm-cream-border: #E2E6DC;
+  --adm-text-dark: #162B20;
+  --adm-text-body: #2C3E33;
+  --adm-text-muted: #738379;
+  --adm-lock-icon: #9AABA1;
+
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--adm-text-dark);
+  position: relative;
+  padding-bottom: 32px;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.adm-profile-container *,
+.adm-profile-container *::before,
+.adm-profile-container *::after {
+  box-sizing: border-box;
+}
+
+/* ────────────────────── 1. PROFILE HEADER BANNER ────────────────────── */
+.adm-profile-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 26px 36px;
+  min-height: 120px;
+  border-radius: 20px;
+  background: linear-gradient(115deg, #133320 0%, #1B442B 52%, #295D38 100%);
+  color: #FFFFFF;
+  box-shadow: 0 12px 30px rgba(19, 44, 31, 0.16);
+  overflow: hidden;
+}
+
+.adm-profile-banner-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.adm-profile-banner-leaves {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 180px;
+  height: 120px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.adm-profile-banner-left {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-profile-date {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--adm-lime);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.adm-profile-banner-left h1 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(32px, 3vw, 42px);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+  color: #FFFFFF;
+}
+
+.adm-profile-banner-left p {
+  margin: 6px 0 0;
+  font-size: 14.5px;
+  font-weight: 400;
+  color: rgba(249, 249, 246, 0.92);
+}
+
+.adm-profile-banner-accent-bar {
+  display: block;
+  width: 32px;
+  height: 2.5px;
+  background: rgba(212, 225, 87, 0.55);
+  border-radius: 999px;
+  margin-top: 8px;
+}
+
+/* ────────────────────── 2. MAIN PROFILE CARD ────────────────────── */
+.adm-profile-card {
+  position: relative;
+  background: #FFFFFF;
+  border-radius: 24px;
+  border: 1px solid #ECEFE6;
+  box-shadow: 0 10px 32px rgba(19, 44, 31, 0.06);
+  padding: 38px 48px 46px 48px;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* Botanical leaf decorations in card corners */
+.adm-profile-card-decor-tl {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 140px;
+  height: 125px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.7;
+}
+
+.adm-profile-card-decor-br {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  width: 150px;
+  height: 135px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.65;
+}
+
+/* Top-Right Action Header */
+.adm-profile-top-actions {
+  position: absolute;
+  top: 32px;
+  right: 36px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.adm-profile-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 22px;
+  border-radius: 999px;
+  border: none;
+  background: var(--adm-forest);
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(27, 59, 43, 0.22);
+  transition: all 0.2s ease;
+}
+
+.adm-profile-edit-btn:hover {
+  background: var(--adm-forest-mid);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(27, 59, 43, 0.28);
+}
+
+.adm-profile-edit-btn svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.2;
+}
+
+/* Cancel & Save buttons when in editing mode */
+.adm-profile-cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1.5px solid #CCD5C7;
+  background: #FFFFFF;
+  color: var(--adm-text-body);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.adm-profile-cancel-btn:hover {
+  background: #F4F6EE;
+  border-color: #B5C2AF;
+  color: var(--adm-text-dark);
+}
+
+.adm-profile-save-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 24px;
+  border-radius: 999px;
+  border: none;
+  background: var(--adm-forest);
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(27, 59, 43, 0.25);
+  transition: all 0.2s ease;
+}
+
+.adm-profile-save-btn:hover:not(:disabled) {
+  background: var(--adm-forest-mid);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(27, 59, 43, 0.3);
+}
+
+.adm-profile-save-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ────────────────────── 3. AVATAR & USERNAME ────────────────────── */
+.adm-profile-avatar-wrap {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4px;
+  margin-bottom: 28px;
+}
+
+.adm-profile-avatar-outer-ring {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background-color: var(--adm-sage-pale);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 1.5px rgba(163, 177, 138, 0.35);
+  transition: transform 0.25s ease;
+}
+
+.adm-profile-avatar-inner-circle {
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  background-color: var(--adm-forest);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(19, 44, 31, 0.2);
+}
+
+.adm-profile-avatar-inner-circle svg {
+  width: 44px;
+  height: 44px;
+  fill: #FFFFFF;
+}
+
+.adm-profile-username {
+  margin: 12px 0 0 0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--adm-text-dark);
+  text-align: center;
+}
+
+/* ────────────────────── 4. PERSONAL INFORMATION SECTION ────────────────────── */
+.adm-profile-section {
+  position: relative;
+  z-index: 2;
+  border-top: 1px solid #EEF2E8;
+  padding-top: 26px;
+}
+
+.adm-profile-sec-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.adm-profile-sec-icon {
+  margin-top: 3px;
+  color: var(--adm-forest);
+  flex-shrink: 0;
+}
+
+.adm-profile-sec-titles h2 {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--adm-text-dark);
+  line-height: 1.2;
+}
+
+.adm-profile-sec-titles p {
+  margin: 3px 0 0 0;
+  font-size: 13.5px;
+  color: var(--adm-text-muted);
+  font-weight: 400;
+}
+
+/* ────────────────────── 5. FORM GRIDS ────────────────────── */
+.adm-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* 3 columns: First Name, Middle Name, Last Name */
+.adm-profile-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+/* 2 columns: Email Address, Phone Number */
+.adm-profile-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+/* 1 column: Account Role */
+.adm-profile-grid-1 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+.adm-profile-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.adm-profile-field-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--adm-text-body);
+  letter-spacing: 0.005em;
+}
+
+.adm-profile-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.adm-profile-input {
+  width: 100%;
+  height: 48px;
+  border-radius: 12px;
+  padding: 0 42px 0 16px;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--adm-text-dark);
+  border: 1px solid var(--adm-cream-border);
+  background-color: var(--adm-cream-bg);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+/* Read-Only State (Default) */
+.adm-profile-input.is-readonly {
+  cursor: default;
+  user-select: none;
+}
+
+/* Editable State (Edit Mode) */
+.adm-profile-input.is-editable {
+  background-color: #FFFFFF;
+  border: 1.5px solid var(--adm-forest-mid);
+  cursor: text;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.adm-profile-input.is-editable:focus {
+  border-color: var(--adm-forest);
+  box-shadow: 0 0 0 3px rgba(37, 82, 58, 0.16);
+}
+
+/* Lock Icon */
+.adm-profile-lock-icon {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--adm-lock-icon);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adm-profile-lock-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.1;
+}
+
+/* Bottom submit actions (visible during edit mode) */
+.adm-profile-bottom-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 20px;
+  border-top: 1px dashed #E2E7DC;
+}
+
+/* ────────────────────── 6. RESPONSIVE MEDIA QUERIES ────────────────────── */
+@media (max-width: 900px) {
+  .adm-profile-card {
+    padding: 30px 24px 36px 24px;
+  }
+
+  .adm-profile-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .adm-profile-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .adm-profile-top-actions {
+    position: static;
+    margin-bottom: 20px;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 600px) {
+  .adm-profile-banner {
+    padding: 20px;
+  }
+
+  .adm-profile-banner-leaves {
+    display: none;
+  }
+
+  .adm-profile-top-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .adm-profile-edit-btn,
+  .adm-profile-save-btn,
+  .adm-profile-cancel-btn {
+    flex: 1;
+  }
+}

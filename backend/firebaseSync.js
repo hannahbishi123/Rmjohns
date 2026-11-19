@@ -1229,7 +1229,7 @@ export async function initialSyncFromMySQL() {
 
     // 12. app_profiles & preferences
     const [profileRows] = await pool.execute(
-      `SELECT name, email, phone, loyalty_points AS points
+      `SELECT name, first_name AS firstName, middle_name AS middleName, last_name AS lastName, email, phone, loyalty_points AS points
        FROM app_profiles WHERE profile_id = 1`,
     )
     if (profileRows[0]) {

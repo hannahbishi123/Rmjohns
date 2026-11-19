@@ -56,7 +56,14 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(path.join(uploadsDir, 'menu'), { recursive: true })
 }
 app.use('/uploads', express.static(uploadsDir))
-const profileSeed = { name: 'Maureen Santos', email: 'maureen.santos@email.com', phone: '+63 917 555 0142' }
+const profileSeed = {
+  name: 'Admin Demo Account',
+  firstName: 'Admin',
+  middleName: 'Demo',
+  lastName: 'Account',
+  email: 'admin@rmjohns.com',
+  phone: '+63 917 555 0101',
+}
 const loyaltySeed = [
   { id: 1, date: 'Today', detail: 'Lunch order · VK-2841', delta: 7 },
   { id: 2, date: 'Sep 26', detail: 'Dinner with friends', delta: 12 },
@@ -448,7 +455,7 @@ async function readBootstrap() {
           FROM notifications ORDER BY created_at DESC, notification_id DESC`),
     rows(`SELECT event_id AS id, staff_name AS name, staff_id AS staffId, event_time AS time, action
           FROM attendance_events ORDER BY created_at DESC, event_id DESC`),
-    rows('SELECT name, email, phone, loyalty_points AS points FROM app_profiles WHERE profile_id = 1'),
+    rows('SELECT name, first_name AS firstName, middle_name AS middleName, last_name AS lastName, email, phone, loyalty_points AS points FROM app_profiles WHERE profile_id = 1'),
     rows('SELECT state_key AS stateKey, state_value AS stateValue FROM app_state'),
     rows(`SELECT username, email, role, contact FROM user_accounts
           WHERE role IN ('Admin', 'Staff', 'Customer') ORDER BY account_id`),
@@ -709,11 +716,16 @@ async function saveSnapshot(state) {
       )
     }
 
+    const pFirst = state.profile.firstName || (state.profile.name ? state.profile.name.split(' ')[0] : 'Admin')
+    const pLast = state.profile.lastName || (state.profile.name ? state.profile.name.split(' ').slice(1).join(' ') : 'Account')
+    const pMiddle = state.profile.middleName || ''
+    const pFullName = [pFirst, pMiddle, pLast].filter(Boolean).join(' ') || state.profile.name || 'Admin Demo Account'
+
     await connection.execute(
-      `INSERT INTO app_profiles (profile_id, name, email, phone, loyalty_points)
-       VALUES (1, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE name=VALUES(name), email=VALUES(email), phone=VALUES(phone), loyalty_points=VALUES(loyalty_points)`,
-      [state.profile.name, state.profile.email, state.profile.phone || '', Number(state.points) || 0],
+      `INSERT INTO app_profiles (profile_id, name, first_name, middle_name, last_name, email, phone, loyalty_points)
+       VALUES (1, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE name=VALUES(name), first_name=VALUES(first_name), middle_name=VALUES(middle_name), last_name=VALUES(last_name), email=VALUES(email), phone=VALUES(phone), loyalty_points=VALUES(loyalty_points)`,
+      [pFullName, pFirst, pMiddle, pLast, state.profile.email, state.profile.phone || '', Number(state.points) || 0],
     )
     await connection.execute(
       `INSERT INTO app_state (state_key, state_value) VALUES ('reservation', ?)
@@ -1225,6 +1237,68 @@ app.post('/api/admin/staff-requests/delete', async (req, res) => {
 let iotLastSeen = null
 let iotLastScan = null
 let iotLastUnknownCard = null
+// POST /api/profile/update — updates admin profile details
+app.post('/api/profile/update', async (req, res) => {
+  try {
+    const { firstName, middleName, lastName, phone, email } = req.body || {}
+    if (!firstName || !firstName.trim()) {
+      return res.status(400).json({ error: 'First name is required.' })
+    }
+    if (!lastName || !lastName.trim()) {
+      return res.status(400).json({ error: 'Last name is required.' })
+    }
+
+    const cleanFirst = firstName.trim()
+    const cleanMiddle = (middleName || '').trim()
+    const cleanLast = lastName.trim()
+    const cleanPhone = (phone || '').trim()
+    const fullName = [cleanFirst, cleanMiddle, cleanLast].filter(Boolean).join(' ')
+
+    await pool.execute(
+      `UPDATE app_profiles 
+       SET first_name = ?, middle_name = ?, last_name = ?, name = ?, phone = ?
+       WHERE profile_id = 1`,
+      [cleanFirst, cleanMiddle, cleanLast, fullName, cleanPhone]
+    )
+
+    if (cleanPhone) {
+      await pool.execute(
+        `UPDATE user_accounts SET contact = ? WHERE role = 'Admin' AND email = 'admin@rmjohns.com'`,
+        [cleanPhone]
+      ).catch(() => {})
+    }
+
+    const [rows] = await pool.execute(
+      `SELECT name, first_name AS firstName, middle_name AS middleName, last_name AS lastName, email, phone, loyalty_points AS points FROM app_profiles WHERE profile_id = 1`
+    )
+    const updatedProfile = rows[0] || {
+      name: fullName,
+      firstName: cleanFirst,
+      middleName: cleanMiddle,
+      lastName: cleanLast,
+      email: email || 'admin@rmjohns.com',
+      phone: cleanPhone,
+    }
+
+    // Sync to Firebase RTDB if available
+    try {
+      const fbStatus = getFirebaseStatus()
+      if (fbStatus.ready && fbStatus.rtdb) {
+        await fbStatus.rtdb.ref('eateries/profile').update({
+          ...updatedProfile,
+          _syncedAt: new Date().toISOString(),
+        })
+      }
+    } catch (fbErr) {
+      console.warn('[Profile Update] Firebase RTDB sync notice:', fbErr.message)
+    }
+
+    res.json({ ok: true, profile: updatedProfile })
+  } catch (error) {
+    sendError(res, error, 'update profile')
+  }
+})
+
 let activeEnrollment = null // { staff_id, staff_name, role, started_at }
 
 // POST /api/staff/assign-rfid — Assign an RFID card UID to a staff member
