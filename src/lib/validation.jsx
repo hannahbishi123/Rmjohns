@@ -93,6 +93,38 @@ export const rules = {
   },
 }
 
+// ── Password requirement breakdown for real-time validation UI ───────────────
+export function checkPasswordRequirements(password) {
+  const p = String(password || '')
+  return [
+    {
+      id: 'length',
+      label: 'At least 8 characters long',
+      pass: p.length >= 8,
+    },
+    {
+      id: 'uppercase',
+      label: 'At least one uppercase letter (A–Z)',
+      pass: /[A-Z]/.test(p),
+    },
+    {
+      id: 'lowercase',
+      label: 'At least one lowercase letter (a–z)',
+      pass: /[a-z]/.test(p),
+    },
+    {
+      id: 'number',
+      label: 'At least one number (0–9)',
+      pass: /[0-9]/.test(p),
+    },
+    {
+      id: 'special',
+      label: 'At least one special character (e.g., @, #, $, !, %)',
+      pass: /[^A-Za-z0-9]/.test(p),
+    },
+  ]
+}
+
 // ── Compose multiple rules into one validator ─────────────────────────────────
 // First failing rule wins.
 export function compose(...validators) {

@@ -3,7 +3,7 @@ import { money } from '../data/mockData'
 import { useApp } from '../context/AppContext'
 import { Modal, getCategoryIcon } from './shared'
 import { apiRequest } from '../lib/api'
-import { useField, useForm, FieldError, fieldClass, rules } from '../lib/validation'
+import { useField, useForm, FieldError, fieldClass, rules, checkPasswordRequirements } from '../lib/validation'
 import { swalShowLoading, swalCloseLoading } from '../lib/swal'
 import RefundOrderDialog from './RefundOrderDialog'
 import POSTransactionSuccessModal from './POSTransactionSuccessModal'
@@ -305,12 +305,21 @@ function AccountDialog({ dialog, onClose, notify }) {
   const nameF    = useField('', rules.name('Full name'))
   const emailF   = useField('', rules.email)
   const phoneF   = useField('', rules.phone)
-  const passF    = useField('', rules.password)
-  const confirmF = useField('', (v) =>
-    v !== passF.value ? 'Passwords do not match.' : !v ? 'Please confirm your password.' : null,
-  )
+  const passF    = useField('', (v) => {
+    if (!v) return 'Password cannot be empty.'
+    const reqs = checkPasswordRequirements(v)
+    if (!reqs.every((r) => r.pass)) return 'Password does not meet all requirements.'
+    return null
+  })
+  const confirmF = useField('', (v) => {
+    if (!v) return 'Confirm Password cannot be empty.'
+    if (v !== passF.value) return 'Passwords do not match.'
+    return null
+  })
   const form = useForm({ nameF, emailF, passF, confirmF })
-  const strength = getPasswordStrength(passF.value)
+  const passwordRequirements = checkPasswordRequirements(passF.value)
+  const isPasswordValid = passwordRequirements.every((r) => r.pass)
+  const passwordsMatch = passF.value.length > 0 && confirmF.value.length > 0 && passF.value === confirmF.value
 
   function handleRoleChange(r) {
     if (r === 'Customer') {
@@ -348,7 +357,13 @@ function AccountDialog({ dialog, onClose, notify }) {
     nameF.forceTouch(); emailF.forceTouch(); phoneF.forceTouch()
     passF.forceTouch(); confirmF.forceTouch()
 
-    if (!form.isValid || (phoneF.value && phoneF.error)) {
+    if (
+      !nameF.value.trim() || nameF.error ||
+      !emailF.value.trim() || emailF.error ||
+      !passF.value || !isPasswordValid ||
+      !confirmF.value || !passwordsMatch ||
+      (phoneF.value && phoneF.error)
+    ) {
       triggerShake()
       return
     }
@@ -492,34 +507,51 @@ function AccountDialog({ dialog, onClose, notify }) {
                 autoComplete="new-password"
                 placeholder="Min. 8 chars — Aa1! required"
                 value={passF.value}
-                onChange={(e) => { passF.onChange(e); passF.onBlur() }}
+                onChange={passF.onChange}
                 onBlur={passF.onBlur}
-                className={fieldClass(passF)}
+                className={
+                  passF.touched && !passF.value
+                    ? 'v-invalid'
+                    : passF.value && isPasswordValid
+                    ? 'v-valid'
+                    : passF.touched && !isPasswordValid
+                    ? 'v-invalid'
+                    : ''
+                }
               />
-              <FieldError field={passF} label="Password" />
+              {passF.touched && !passF.value && (
+                <span className="v-error" role="alert">
+                  <span className="v-icon v-icon-error" aria-hidden="true">✕</span>
+                  Password cannot be empty.
+                </span>
+              )}
             </label>
 
-            {/* Password strength meter */}
-            {passF.value.length > 0 && (
-              <div className="password-strength">
-                <div className="strength-bars">
-                  {[1,2,3,4,5].map((level) => (
-                    <div key={level} className="strength-bar"
-                      style={{ background: strength.score >= level ? strengthColors[strength.score] : 'var(--line)' }} />
-                  ))}
-                </div>
-                <span className="strength-label" style={{ color: strengthColors[strength.score] }}>
-                  {strength.label}
-                </span>
-                <ul className="strength-checks">
-                  {strength.checks.map((c) => (
-                    <li key={c.label} className={c.pass ? 'check-pass' : 'check-fail'}>
-                      {c.pass ? '✓' : '✕'} {c.label}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {/* Real-time Password Requirements Checklist */}
+            <div className="pwd-checklist-card">
+              <div className="pwd-checklist-title">Password Requirements:</div>
+              <ul className="pwd-checklist-list">
+                {passwordRequirements.map((req) => (
+                  <li
+                    key={req.id}
+                    className={`pwd-checklist-item ${req.pass ? 'is-satisfied' : 'is-unsatisfied'}`}
+                  >
+                    <span className="pwd-req-icon" aria-hidden="true">
+                      {req.pass ? (
+                        <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </span>
+                    <span className="pwd-req-label">{req.label}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
             {/* Confirm password */}
             <label>
@@ -535,14 +567,58 @@ function AccountDialog({ dialog, onClose, notify }) {
                 value={confirmF.value}
                 onChange={confirmF.onChange}
                 onBlur={confirmF.onBlur}
-                className={fieldClass(confirmF)}
+                className={
+                  confirmF.value
+                    ? passwordsMatch
+                      ? 'v-valid'
+                      : 'v-invalid'
+                    : confirmF.touched
+                    ? 'v-invalid'
+                    : ''
+                }
               />
-              <FieldError field={confirmF} label="Confirm password" />
+              {confirmF.value ? (
+                passwordsMatch ? (
+                  <span className="v-success" aria-live="polite">
+                    <span className="v-icon v-icon-success" aria-hidden="true">✓</span>
+                    Passwords match.
+                  </span>
+                ) : (
+                  <span className="v-error" role="alert">
+                    <span className="v-icon v-icon-error" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                      </svg>
+                    </span>
+                    Passwords do not match.
+                  </span>
+                )
+              ) : confirmF.touched ? (
+                <span className="v-error" role="alert">
+                  <span className="v-icon v-icon-error" aria-hidden="true">✕</span>
+                  Confirm Password cannot be empty.
+                </span>
+              ) : null}
             </label>
 
-            <button className="button button-dark complete-button"
-              disabled={loading || (passF.value.length > 0 && strength.score < 5)}>
-              {loading ? 'Creating account\u2026' : `Create ${role} account \u2192`}
+            <button
+              className="button button-dark complete-button"
+              disabled={
+                loading ||
+                !nameF.value.trim() ||
+                Boolean(nameF.error) ||
+                !emailF.value.trim() ||
+                Boolean(emailF.error) ||
+                !passF.value ||
+                !isPasswordValid ||
+                !confirmF.value ||
+                !passwordsMatch ||
+                Boolean(phoneF.value && phoneF.error)
+              }
+            >
+              {loading ? 'Creating account\u2026' : `Register`}
             </button>
 
             <div className="account-links">

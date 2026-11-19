@@ -1485,6 +1485,26 @@ app.post('/api/admin/staff/create', async (req, res) => {
       })
     }
 
+    // Validate password rules
+    if (userPassword.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters.' })
+    }
+    if (userPassword.length > 64) {
+      return res.status(400).json({ error: 'Password must be 64 characters or fewer.' })
+    }
+    if (!/[A-Z]/.test(userPassword)) {
+      return res.status(400).json({ error: 'Password must contain at least one uppercase letter (A–Z).' })
+    }
+    if (!/[a-z]/.test(userPassword)) {
+      return res.status(400).json({ error: 'Password must contain at least one lowercase letter (a–z).' })
+    }
+    if (!/[0-9]/.test(userPassword)) {
+      return res.status(400).json({ error: 'Password must contain at least one number (0–9).' })
+    }
+    if (!/[^A-Za-z0-9]/.test(userPassword)) {
+      return res.status(400).json({ error: 'Password must contain at least one special character (e.g. !@#$%).' })
+    }
+
     // 2. Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(userEmail)) {
@@ -1865,7 +1885,13 @@ app.post('/api/accounts/register-staff', async (req, res) => {
 
     if (!normalizedName) return res.status(400).json({ error: 'Full name is required.' })
     if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) return res.status(400).json({ error: 'Valid email address is required.' })
-    if (!password || password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' })
+    if (!password || typeof password !== 'string') return res.status(400).json({ error: 'Password is required.' })
+    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' })
+    if (password.length > 64) return res.status(400).json({ error: 'Password must be 64 characters or fewer.' })
+    if (!/[A-Z]/.test(password)) return res.status(400).json({ error: 'Password must contain at least one uppercase letter (A–Z).' })
+    if (!/[a-z]/.test(password)) return res.status(400).json({ error: 'Password must contain at least one lowercase letter (a–z).' })
+    if (!/[0-9]/.test(password)) return res.status(400).json({ error: 'Password must contain at least one number (0–9).' })
+    if (!/[^A-Za-z0-9]/.test(password)) return res.status(400).json({ error: 'Password must contain at least one special character (e.g. !@#$%).' })
 
     const [existing] = await pool.execute('SELECT account_id FROM user_accounts WHERE email = ?', [normalizedEmail])
     if (existing.length) {

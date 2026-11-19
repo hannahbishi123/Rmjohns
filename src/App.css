@@ -3938,6 +3938,76 @@ h1 {
 .check-pass { color: var(--success); }
 .check-fail { color: var(--muted); }
 
+/* ── Real-Time Password Requirements Checklist ───────────────────────────── */
+.pwd-checklist-card {
+  margin: 6px 0 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm, 10px);
+  background: var(--bg-warm, #F9F9F6);
+  border: 1px solid var(--line-light, #E3E8DC);
+}
+
+.pwd-checklist-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--primary, #1B3B2B);
+  margin-bottom: 8px;
+  letter-spacing: 0.01em;
+}
+
+.pwd-checklist-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pwd-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  font-weight: 600;
+  transition: color 0.18s ease;
+}
+
+.pwd-checklist-item.is-satisfied {
+  color: #2E7D32 !important;
+}
+
+.pwd-checklist-item.is-unsatisfied {
+  color: #D32F2F !important;
+}
+
+.pwd-req-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: all 0.18s ease;
+}
+
+.pwd-checklist-item.is-satisfied .pwd-req-icon {
+  background-color: #E8F5E9;
+  color: #2E7D32;
+}
+
+.pwd-checklist-item.is-unsatisfied .pwd-req-icon {
+  background-color: #FFEBEE;
+  color: #D32F2F;
+}
+
+.pwd-req-label {
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
 /* ── Per-field inline error (phone validation) ───────────────────────────── */
 .field-error {
   display: block;

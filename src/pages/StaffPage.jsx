@@ -22,12 +22,21 @@ function getInitials(name = '') {
 }
 
 function generateRandomPassword() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*'
-  let pwd = ''
-  for (let i = 0; i < 10; i++) {
-    pwd += chars.charAt(Math.floor(Math.random() * chars.length))
+  const uppers = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
+  const lowers = 'abcdefghijkmnpqrstuvwxyz'
+  const digits = '23456789'
+  const specials = '!@#$%^&*'
+  let pwd = [
+    uppers.charAt(Math.floor(Math.random() * uppers.length)),
+    lowers.charAt(Math.floor(Math.random() * lowers.length)),
+    digits.charAt(Math.floor(Math.random() * digits.length)),
+    specials.charAt(Math.floor(Math.random() * specials.length)),
+  ]
+  const all = uppers + lowers + digits + specials
+  while (pwd.length < 10) {
+    pwd.push(all.charAt(Math.floor(Math.random() * all.length)))
   }
-  return pwd
+  return pwd.sort(() => 0.5 - Math.random()).join('')
 }
 
 export default function StaffPage() {
@@ -243,9 +252,23 @@ export default function StaffPage() {
       errors.email = 'Please enter a valid email address'
     }
     if (!addForm.employeeId.trim()) errors.employeeId = 'Employee ID is required'
-    if (!addForm.password) errors.password = 'Password is required'
-    else if (addForm.password.length < 6) errors.password = 'Password must be at least 6 characters'
-    if (addForm.password !== addForm.confirmPassword) {
+    if (!addForm.password) {
+      errors.password = 'Password is required'
+    } else if (addForm.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters'
+    } else if (!/[A-Z]/.test(addForm.password)) {
+      errors.password = 'Password must contain at least one uppercase letter (A–Z)'
+    } else if (!/[a-z]/.test(addForm.password)) {
+      errors.password = 'Password must contain at least one lowercase letter (a–z)'
+    } else if (!/[0-9]/.test(addForm.password)) {
+      errors.password = 'Password must contain at least one number (0–9)'
+    } else if (!/[^A-Za-z0-9]/.test(addForm.password)) {
+      errors.password = 'Password must contain at least one special character (!@#$%…)'
+    }
+
+    if (!addForm.confirmPassword) {
+      errors.confirmPassword = 'Confirm Password is required'
+    } else if (addForm.password !== addForm.confirmPassword) {
       errors.confirmPassword = 'Passwords do not match'
     }
 
